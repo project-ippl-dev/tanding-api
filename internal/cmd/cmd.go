@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"database/sql"
-	"github.com/dytlan/tanding-api/config"
-	"github.com/dytlan/tanding-api/internal/db"
-	"github.com/dytlan/tanding-api/internal/test"
+
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/project-ippl-dev/tanding-api/config"
+	"github.com/project-ippl-dev/tanding-api/internal/db"
+	"github.com/project-ippl-dev/tanding-api/internal/test"
 )
 
 func Run() error {

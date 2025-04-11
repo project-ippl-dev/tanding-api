@@ -1,4 +1,4 @@
-module github.com/dytlan/tanding-api
+module github.com/project-ippl-dev/tanding-api
 
 go 1.16
 

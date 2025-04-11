@@ -1,6 +1,6 @@
 package test
 
-import "github.com/dytlan/tanding-api/internal/db"
+import "github.com/project-ippl-dev/tanding-api/internal/db"
 
 type Usecase struct {
 	repository *db.Queries
