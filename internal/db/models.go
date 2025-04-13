@@ -3,6 +3,7 @@
 package db
 
 import (
+	"fmt"
 	"database/sql"
 
 	"github.com/google/uuid"
@@ -15,3 +16,49 @@ type Test struct {
 	CreatedAt sql.NullTime `json:"created_at"`
 	UpdatedAt sql.NullTime `json:"updated_at"`
 }
+
+type AccountType string
+
+const (
+	AccountTypeManual   AccountType = "manual"
+	AccountTypeFacebook AccountType = "facebook"
+	AccountTypeGoogle   AccountType = "google"
+)
+
+func (e *AccountType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = AccountType(s)
+	case string:
+		*e = AccountType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for AccountType: %T", src)
+	}
+	return nil
+}
+
+type Role string
+
+const (
+	RoleAdmin Role = "admin"
+	RoleUser  Role = "user"
+)
+
+func (e *Role) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = Role(s)
+	case string:
+		*e = Role(s)
+	default:
+		return fmt.Errorf("unsupported scan type for Role: %T", src)
+	}
+	return nil
+}
+
+type PrivilegeType string
+
+const (
+	PrivilegeTypeMain        PrivilegeType = "main"
+	PrivilegeTypeCompetition PrivilegeType = "competition"
+)
