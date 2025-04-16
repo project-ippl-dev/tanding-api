@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/dytlan/tanding-api/internal/cmd"
-	"github.com/spf13/viper"
 	"log"
+
+	"github.com/project-ippl-dev/tanding-api/internal/cmd"
+	"github.com/spf13/viper"
 )
 
 func main() {
