@@ -3,6 +3,7 @@ module github.com/project-ippl-dev/tanding-api
 go 1.16
 
 require (
+	github.com/aws/aws-sdk-go v1.55.6 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0

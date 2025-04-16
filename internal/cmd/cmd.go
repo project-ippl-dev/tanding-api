@@ -2,12 +2,17 @@ package cmd
 
 import (
 	"database/sql"
+	"fmt"
 
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/go-redis/redis/v8"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/project-ippl-dev/tanding-api/config"
+	"github.com/project-ippl-dev/tanding-api/internal/auth"
 	"github.com/project-ippl-dev/tanding-api/internal/db"
-	"github.com/project-ippl-dev/tanding-api/internal/test"
+	middlewareApp "github.com/project-ippl-dev/tanding-api/internal/middleware"
+	"github.com/project-ippl-dev/tanding-api/internal/user"
 )
 
 func Run() error {
@@ -16,14 +21,20 @@ func Run() error {
 		return err
 	}
 	defer dbConn.Close()
+	rdb, err := config.RedisConnection()
+	if err != nil {
+		return err
+	}
+	defer rdb.Close()
+	sess := config.S3Connection()
 	e := echo.New()
 
-	routing(dbConn, e)
+	routing(dbConn, rdb, sess, e)
 
-	return e.Start(config.Configuration().Server.Port)
+	return e.Start(fmt.Sprintf("%s:%s", config.Configuration().Server.Host, config.Configuration().Server.Port))
 }
 
-func routing(dbConn *sql.DB, e *echo.Echo) {
+func routing(dbConn *sql.DB, rdb *redis.Client, sess *session.Session, e *echo.Echo) {
 	//Setup Cors
 	e.Use(middleware.CORS())
 
@@ -33,11 +44,24 @@ func routing(dbConn *sql.DB, e *echo.Echo) {
 	//Set Logger for every http request
 	e.Use(middleware.Logger())
 
+	//Register Static Files
+	e.Static("/icon", "public/icon")
+
 	repository := db.New(dbConn)
 
+	//Init Middleware
+	m := middlewareApp.InitMiddleware(repository)
+
+	middlewareArgs := middlewareApp.Params{Middleware: m}
+
+	//Declare Raw Repository
+	userRepository := user.NewRepository(dbConn)
+
 	//Declare Usecase
-	testUsecase := test.NewUsecase(repository)
+	authUsecase := auth.NewUsecase(repository, dbConn, rdb)
+	userUsecase := user.NewUsecase(repository, userRepository)
 
 	//Declare Handlers
-	test.RegisterHandler(testUsecase, e)
+	auth.RegisterHandler(authUsecase, e)
+	user.RegisterHandler(userUsecase, middlewareArgs, e)
 }

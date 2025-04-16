@@ -34,7 +34,11 @@ type ServerConfig struct {
 }
 
 // S3Config is specific configuration used for connect to AWS S3 Bucket
+
+// S3Config is specific configuration used for connect to AWS S3 Bucket
 type S3Config struct {
+	Endpoint  string
+	PublicURL string
 	AccessKey string `mapstructure:"access-key"`
 	SecretKey string `mapstructure:"secret-key"`
 	Region    string
