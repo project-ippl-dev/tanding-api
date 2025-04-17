@@ -62,3 +62,10 @@ const (
 	PrivilegeTypeMain        PrivilegeType = "main"
 	PrivilegeTypeCompetition PrivilegeType = "competition"
 )
+
+type SportType string
+
+const (
+	SportTypeESport SportType = "e-sport"
+	SportTypeSport  SportType = "sport"
+)

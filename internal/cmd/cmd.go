@@ -12,6 +12,7 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/auth"
 	"github.com/project-ippl-dev/tanding-api/internal/db"
 	middlewareApp "github.com/project-ippl-dev/tanding-api/internal/middleware"
+	"github.com/project-ippl-dev/tanding-api/internal/sport"
 	"github.com/project-ippl-dev/tanding-api/internal/user"
 )
 
@@ -56,12 +57,15 @@ func routing(dbConn *sql.DB, rdb *redis.Client, sess *session.Session, e *echo.E
 
 	//Declare Raw Repository
 	userRepository := user.NewRepository(dbConn)
+	sportRepository := sport.NewRepository(dbConn)
 
 	//Declare Usecase
 	authUsecase := auth.NewUsecase(repository, dbConn, rdb)
 	userUsecase := user.NewUsecase(repository, userRepository)
+	sportUsecase := sport.NewUsecase(repository, sportRepository)
 
 	//Declare Handlers
 	auth.RegisterHandler(authUsecase, e)
 	user.RegisterHandler(userUsecase, middlewareArgs, e)
+	sport.RegisterHandler(sportUsecase, middlewareArgs, e)
 }
