@@ -3,7 +3,6 @@ package cmd
 import (
 	"database/sql"
 	"fmt"
-
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/go-redis/redis/v8"
 	"github.com/labstack/echo/v4"

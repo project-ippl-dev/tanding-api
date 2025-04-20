@@ -10,7 +10,7 @@ CREATE TABLE users(
   identity_number VARCHAR(16) NOT NULL DEFAULT '',
   phone VARCHAR(18) NOT NULL DEFAULT '',
   photo VARCHAR(255) NOT NULL DEFAULT '',
-  role role DEFAULT 'user',
+  role role NOT NULL DEFAULT 'user',
   gender VARCHAR(6) NOT NULL DEFAULT '',
   about TEXT NOT NULL DEFAULT '',
   status BOOL NOT NULL DEFAULT '1',
