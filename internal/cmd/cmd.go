@@ -10,6 +10,7 @@ import (
 	"github.com/project-ippl-dev/tanding-api/config"
 	"github.com/project-ippl-dev/tanding-api/internal/auth"
 	"github.com/project-ippl-dev/tanding-api/internal/db"
+	"github.com/project-ippl-dev/tanding-api/internal/document"
 	middlewareApp "github.com/project-ippl-dev/tanding-api/internal/middleware"
 	"github.com/project-ippl-dev/tanding-api/internal/user"
 )
@@ -53,14 +54,19 @@ func routing(dbConn *sql.DB, rdb *redis.Client, sess *session.Session, e *echo.E
 
 	middlewareArgs := middlewareApp.Params{Middleware: m}
 
+	//Init new group route
+	profileRoute := e.Group("/profile", middlewareArgs.JWTMiddleware())
+
 	//Declare Raw Repository
 	userRepository := user.NewRepository(dbConn)
 
 	//Declare Usecase
 	authUsecase := auth.NewUsecase(repository, dbConn, rdb)
 	userUsecase := user.NewUsecase(repository, userRepository)
+	documentUsecase := document.NewUsecase(repository)
 
 	//Declare Handlers
 	auth.RegisterHandler(authUsecase, e)
 	user.RegisterHandler(userUsecase, middlewareArgs, e)
+	document.RegisterHandler(documentUsecase, profileRoute)
 }
