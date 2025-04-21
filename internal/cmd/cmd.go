@@ -3,7 +3,6 @@ package cmd
 import (
 	"database/sql"
 	"fmt"
-	"github.com/project-ippl-dev/tanding-api/internal/document"
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/go-redis/redis/v8"
@@ -13,6 +12,7 @@ import (
 	"github.com/project-ippl-dev/tanding-api/config"
 	"github.com/project-ippl-dev/tanding-api/internal/auth"
 	"github.com/project-ippl-dev/tanding-api/internal/db"
+	"github.com/project-ippl-dev/tanding-api/internal/document"
 	"github.com/project-ippl-dev/tanding-api/internal/file"
 	middlewareApp "github.com/project-ippl-dev/tanding-api/internal/middleware"
 	"github.com/project-ippl-dev/tanding-api/internal/user"
