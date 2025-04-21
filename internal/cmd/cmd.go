@@ -3,14 +3,17 @@ package cmd
 import (
 	"database/sql"
 	"fmt"
+	"github.com/project-ippl-dev/tanding-api/internal/document"
+
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/go-redis/redis/v8"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+
 	"github.com/project-ippl-dev/tanding-api/config"
 	"github.com/project-ippl-dev/tanding-api/internal/auth"
 	"github.com/project-ippl-dev/tanding-api/internal/db"
-	"github.com/project-ippl-dev/tanding-api/internal/document"
+	"github.com/project-ippl-dev/tanding-api/internal/file"
 	middlewareApp "github.com/project-ippl-dev/tanding-api/internal/middleware"
 	"github.com/project-ippl-dev/tanding-api/internal/user"
 )
@@ -64,9 +67,11 @@ func routing(dbConn *sql.DB, rdb *redis.Client, sess *session.Session, e *echo.E
 	authUsecase := auth.NewUsecase(repository, dbConn, rdb)
 	userUsecase := user.NewUsecase(repository, userRepository)
 	documentUsecase := document.NewUsecase(repository)
+	fileUsecase := file.NewUsecase(sess)
 
 	//Declare Handlers
 	auth.RegisterHandler(authUsecase, e)
 	user.RegisterHandler(userUsecase, middlewareArgs, e)
 	document.RegisterHandler(documentUsecase, profileRoute)
+	file.RegisterHandler(fileUsecase, middlewareArgs, e)
 }
