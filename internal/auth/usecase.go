@@ -36,12 +36,12 @@ func (u Usecase) register(ctx context.Context, req registerRequest, host string,
 
 	hashedPassword, err := tools.HashPassword(req.Password)
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in hashing password : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in hashing password : %s", err.Error())
 	}
 
 	tx, err := u.db.Begin()
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in start transaction : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in start transaction : %s", err.Error())
 	}
 	txQuery := u.repository.WithTx(tx)
 	userID, err := txQuery.UserCreate(ctx, db.UserCreateParams{
@@ -55,10 +55,10 @@ func (u Usecase) register(ctx context.Context, req registerRequest, host string,
 		About:          "",
 	})
 	if err != nil {
-		if err := tx.Rollback(); err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("rollback fail in create user tx : " + err.Error())
+		if err = tx.Rollback(); err != nil {
+			return http.StatusInternalServerError, fmt.Errorf("rollback fail in create user tx : %s", err.Error())
 		}
-		return http.StatusInternalServerError, fmt.Errorf("error in rollback create user tx : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in rollback create user tx : %s", err.Error())
 	}
 	accountID, err := txQuery.AccountCreate(ctx, db.AccountCreateParams{
 		Username: req.Email,
@@ -68,9 +68,9 @@ func (u Usecase) register(ctx context.Context, req registerRequest, host string,
 	})
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("rollback fail in in rollback create account tx : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("rollback fail in in rollback create account tx : %s", err.Error())
 		}
-		return http.StatusInternalServerError, fmt.Errorf("error in rollback create account tx : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in rollback create account tx : %s", err.Error())
 	}
 	//Create Verification Token
 	token, err := tools.JWTCreateToken(tools.JWT{
@@ -80,26 +80,26 @@ func (u Usecase) register(ctx context.Context, req registerRequest, host string,
 	})
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("rollback fail in generate token : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("rollback fail in generate token : %s", err.Error())
 		}
-		return http.StatusInternalServerError, fmt.Errorf("error in rollback generate token : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in rollback generate token : %s", err.Error())
 	}
 
-	if err := u.rdb.Set(ctx, "verify-"+req.Email, token.AccessToken, 24*time.Hour).Err(); err != nil {
+	if err = u.rdb.Set(ctx, "verify-"+req.Email, token.AccessToken, 24*time.Hour).Err(); err != nil {
 		if err := tx.Rollback(); err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("rollback fail in set redis keyval : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("rollback fail in set redis keyval : %s", err.Error())
 		}
-		return http.StatusInternalServerError, fmt.Errorf("error in rollback set redis keyval : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in rollback set redis keyval : %s", err.Error())
 	}
 
-	if err := tx.Commit(); err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in commit tx : " + err.Error())
+	if err = tx.Commit(); err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("error in commit tx : %s", err.Error())
 	}
 
 	go func(data sendMailRequest) {
 		buffer, err := mail.TemplateToBuffer(data.BodyPath, data.BodyParam)
 		if err != nil {
-			log.Println("error in converting html file to buffer : " + err.Error())
+			log.Printf("error in converting html file to buffer : %s \n", err.Error())
 		}
 		mail.SendMail(mail.Request{
 			To:      req.Email,
@@ -123,20 +123,20 @@ func (u Usecase) verify(ctx context.Context, kind string, decoded tools.JWT, tok
 		Type: db.AccountTypeManual,
 	})
 	if err != nil {
-		return http.StatusNotFound, "", fmt.Errorf("error in fetch account : " + err.Error())
+		return http.StatusNotFound, "", fmt.Errorf("error in fetch account : %s", err.Error())
 	}
 	retrievedToken, err := u.rdb.Get(ctx, kind+"-"+email).Result()
 	if err != nil {
-		return http.StatusNotFound, "", fmt.Errorf("error in get redis key, it's possible because token is already used or expired. error : " + err.Error())
+		return http.StatusNotFound, "", fmt.Errorf("error in get redis key, it's possible because token is already used or expired. error : %s", err.Error())
 	}
 	if token != retrievedToken {
 		return http.StatusUnauthorized, "", fmt.Errorf("error in comparing outcoming token with retrieved token")
 	}
-	if err := u.repository.AccountUpdateStatusByID(ctx, decoded.AccountID); err != nil {
-		return http.StatusInternalServerError, "", fmt.Errorf("error in update status account : " + err.Error())
+	if err = u.repository.AccountUpdateStatusByID(ctx, decoded.AccountID); err != nil {
+		return http.StatusInternalServerError, "", fmt.Errorf("error in update status account : %s", err.Error())
 	}
-	if err := u.rdb.Del(ctx, kind+"-"+email).Err(); err != nil {
-		return http.StatusInternalServerError, "", fmt.Errorf("error in del key in redis : " + err.Error())
+	if err = u.rdb.Del(ctx, kind+"-"+email).Err(); err != nil {
+		return http.StatusInternalServerError, "", fmt.Errorf("error in del key in redis : %s", err.Error())
 	}
 	return http.StatusOK, email, nil
 }
@@ -148,14 +148,14 @@ func (u Usecase) login(ctx context.Context, req loginReq) (statusCode int, respo
 	})
 
 	if err != nil {
-		return http.StatusNotFound, response, fmt.Errorf("error in fetch account : " + err.Error())
+		return http.StatusNotFound, response, fmt.Errorf("error in fetch account : %s", err.Error())
 	}
-	if err := tools.HashCheckPassword(account.Password, req.Password); err != nil {
-		return http.StatusUnauthorized, response, fmt.Errorf("error in comparing password :" + err.Error())
+	if err = tools.HashCheckPassword(account.Password, req.Password); err != nil {
+		return http.StatusUnauthorized, response, fmt.Errorf("error in comparing password : %s", err.Error())
 	}
 
 	//Fetch And Store Geo IP
-	if err := u.storeLoginDetail(ctx, account.UserID); err != nil {
+	if err = u.storeLoginDetail(ctx, account.UserID); err != nil {
 		return http.StatusInternalServerError, response, err
 	}
 
@@ -165,13 +165,13 @@ func (u Usecase) login(ctx context.Context, req loginReq) (statusCode int, respo
 		RoleName:  account.Role,
 	})
 	if err != nil {
-		return http.StatusInternalServerError, response, fmt.Errorf("error in generate access token : " + err.Error())
+		return http.StatusInternalServerError, response, fmt.Errorf("error in generate access token : %s", err.Error())
 	}
 
 	//Fetch Privilege
 	privileges, err := u.repository.PrivilegeFetchByUserID(ctx, account.UserID)
 	if err != nil {
-		return http.StatusInternalServerError, response, fmt.Errorf("error in fetch user privilege : " + err.Error())
+		return http.StatusInternalServerError, response, fmt.Errorf("error in fetch user privilege : %s", err.Error())
 	}
 
 	return http.StatusOK, loginResponse{
@@ -201,7 +201,7 @@ func (u Usecase) storeLoginDetail(ctx context.Context, userID uuid.UUID) error {
 	//}
 
 	if err := u.repository.LoginDetailCreate(ctx, userID); err != nil {
-		return fmt.Errorf("error in store login detail : " + err.Error())
+		return fmt.Errorf("error in store login detail : %s", err.Error())
 	}
 	return nil
 }
@@ -241,7 +241,7 @@ func (u Usecase) callback(ctx context.Context, kind string, accessToken string) 
 		RoleName:  account.Role,
 	})
 	if err != nil {
-		return http.StatusInternalServerError, response, fmt.Errorf("error in generate token : " + err.Error())
+		return http.StatusInternalServerError, response, fmt.Errorf("error in generate token : %s", err.Error())
 	}
 
 	//Fetch Privilege
@@ -249,7 +249,7 @@ func (u Usecase) callback(ctx context.Context, kind string, accessToken string) 
 	if account.Role != "admin" {
 		privileges, err = u.repository.PrivilegeFetchByUserID(ctx, account.UserID)
 		if err != nil {
-			return http.StatusInternalServerError, response, fmt.Errorf("error in fetch user privilege : " + err.Error())
+			return http.StatusInternalServerError, response, fmt.Errorf("error in fetch user privilege : %s", err.Error())
 		}
 	}
 
@@ -274,9 +274,8 @@ func (u Usecase) hitSocialAuth(kind string, token string, response *profileData)
 			Response: &response,
 		})
 		if err != nil {
-			return statusCode, fmt.Errorf("google : " + err.Error())
+			return statusCode, fmt.Errorf("google : %s", err.Error())
 		}
-		break
 	case string(db.AccountTypeFacebook):
 		var profileFB profileFacebook
 		statusCode, err = tools.HTTPRequest(tools.HTTPParams{
@@ -287,7 +286,7 @@ func (u Usecase) hitSocialAuth(kind string, token string, response *profileData)
 			Response: &profileFB,
 		})
 		if err != nil {
-			return statusCode, fmt.Errorf("facebook : " + err.Error())
+			return statusCode, fmt.Errorf("facebook : %s", err.Error())
 		}
 		*response = profileData{
 			ID:       profileFB.ID,
@@ -296,7 +295,6 @@ func (u Usecase) hitSocialAuth(kind string, token string, response *profileData)
 			Name:     profileFB.Name,
 			Photo:    profileFB.Picture.Data.URL,
 		}
-		break
 	default:
 		return http.StatusNotFound, fmt.Errorf("login via %s is not found, login only via facebook or twitter", kind)
 	}
@@ -306,7 +304,7 @@ func (u Usecase) hitSocialAuth(kind string, token string, response *profileData)
 func (u Usecase) storeFromCallback(ctx context.Context, req profileData, kind string) (statusCode int, response storeFromCallbackResponse, err error) {
 	tx, err := u.db.Begin()
 	if err != nil {
-		return http.StatusInternalServerError, response, fmt.Errorf("error in start transaction : " + err.Error())
+		return http.StatusInternalServerError, response, fmt.Errorf("error in start transaction : %s", err.Error())
 	}
 	txQuery := u.repository.WithTx(tx)
 	userID, err := txQuery.UserCreate(ctx, db.UserCreateParams{
@@ -320,10 +318,10 @@ func (u Usecase) storeFromCallback(ctx context.Context, req profileData, kind st
 		About:          "",
 	})
 	if err != nil {
-		if err := tx.Rollback(); err != nil {
-			return http.StatusInternalServerError, response, fmt.Errorf("rollback fail in create user tx : " + err.Error())
+		if err = tx.Rollback(); err != nil {
+			return http.StatusInternalServerError, response, fmt.Errorf("rollback fail in create user tx : %s", err.Error())
 		}
-		return http.StatusInternalServerError, response, fmt.Errorf("error in rollback create user tx : " + err.Error())
+		return http.StatusInternalServerError, response, fmt.Errorf("error in rollback create user tx : %s", err.Error())
 	}
 
 	accountID, err := txQuery.AccountCreate(ctx, db.AccountCreateParams{
@@ -333,14 +331,14 @@ func (u Usecase) storeFromCallback(ctx context.Context, req profileData, kind st
 		UserID:   userID,
 	})
 	if err != nil {
-		if err := tx.Rollback(); err != nil {
-			return http.StatusInternalServerError, response, fmt.Errorf("rollback fail in in rollback create account tx : " + err.Error())
+		if err = tx.Rollback(); err != nil {
+			return http.StatusInternalServerError, response, fmt.Errorf("rollback fail in in rollback create account tx : %s", err.Error())
 		}
-		return http.StatusInternalServerError, response, fmt.Errorf("error in rollback create account tx : " + err.Error())
+		return http.StatusInternalServerError, response, fmt.Errorf("error in rollback create account tx : %s", err.Error())
 	}
 
-	if err := tx.Commit(); err != nil {
-		return http.StatusInternalServerError, response, fmt.Errorf("error in commit tx : " + err.Error())
+	if err = tx.Commit(); err != nil {
+		return http.StatusInternalServerError, response, fmt.Errorf("error in commit tx : %s", err.Error())
 	}
 
 	return http.StatusOK, storeFromCallbackResponse{
@@ -364,7 +362,7 @@ func (u Usecase) check(ctx context.Context, kind string, username string) (db.Us
 			Headers:  nil,
 			Response: &profileFB,
 		}); err != nil {
-			return db.UserFetchOneRow{}, fmt.Errorf("facebook : " + err.Error())
+			return db.UserFetchOneRow{}, fmt.Errorf("facebook : %s", err.Error())
 		}
 		return u.repository.UserFetchOne(ctx, profileFB.Email)
 	case string(db.AccountTypeGoogle):
@@ -376,7 +374,7 @@ func (u Usecase) check(ctx context.Context, kind string, username string) (db.Us
 			Headers:  nil,
 			Response: &profile,
 		}); err != nil {
-			return db.UserFetchOneRow{}, fmt.Errorf("google : " + err.Error())
+			return db.UserFetchOneRow{}, fmt.Errorf("google : %s", err.Error())
 		}
 		return u.repository.UserFetchOne(ctx, profile.Email)
 	default:
@@ -387,7 +385,7 @@ func (u Usecase) check(ctx context.Context, kind string, username string) (db.Us
 func (u Usecase) forgot(ctx context.Context, username string, host string, feHost string) (statusCode int, err error) {
 	user, err := u.repository.UserFetchOneTypeManual(ctx, username)
 	if err != nil {
-		return http.StatusNotFound, fmt.Errorf("error in fetch user : " + err.Error())
+		return http.StatusNotFound, fmt.Errorf("error in fetch user : %s", err.Error())
 	}
 	token, err := tools.JWTCreateToken(tools.JWT{
 		ID:        user.ID.String(),
@@ -395,17 +393,17 @@ func (u Usecase) forgot(ctx context.Context, username string, host string, feHos
 		RoleName:  user.Role,
 	})
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in generate token : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in generate token : %s", err.Error())
 	}
 
-	if err := u.rdb.Set(ctx, "forgot-"+user.Username, token.AccessToken, 24*time.Hour).Err(); err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in set redis keyval : " + err.Error())
+	if err = u.rdb.Set(ctx, "forgot-"+user.Username, token.AccessToken, 24*time.Hour).Err(); err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("error in set redis keyval : %s", err.Error())
 	}
 
 	go func(data sendMailRequest) {
 		buffer, err := mail.TemplateToBuffer(data.BodyPath, data.BodyParam)
 		if err != nil {
-			log.Println("error in converting html file to buffer : " + err.Error())
+			log.Printf("error in converting html file to buffer : %s \n", err.Error())
 		}
 		mail.SendMail(mail.Request{
 			To:      user.Username,
@@ -432,29 +430,29 @@ func (u Usecase) reset(ctx context.Context, req resetRequest, decoded tools.JWT,
 		Type: db.AccountTypeManual,
 	})
 	if err != nil {
-		return http.StatusNotFound, fmt.Errorf("error in fetch account : " + err.Error())
+		return http.StatusNotFound, fmt.Errorf("error in fetch account : %s", err.Error())
 	}
 
 	retrievedToken, err := u.rdb.Get(ctx, "forgot-"+username).Result()
 	if err != nil {
-		return http.StatusNotFound, fmt.Errorf("error in fetch data in redis : " + err.Error())
+		return http.StatusNotFound, fmt.Errorf("error in fetch data in redis : %s", err.Error())
 	}
 	if retrievedToken != token {
 		return http.StatusForbidden, fmt.Errorf("error in comparing outcoming token with retrieved token")
 	}
 	hashedPassword, err := tools.HashPassword(req.Password)
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in generate hash password : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in generate hash password : %s", err.Error())
 	}
-	if err := u.repository.AccountUpdatePassword(ctx, db.AccountUpdatePasswordParams{
+	if err = u.repository.AccountUpdatePassword(ctx, db.AccountUpdatePasswordParams{
 		Password: hashedPassword,
 		ID:       decoded.AccountID,
 	}); err != nil {
-		return http.StatusNotFound, fmt.Errorf("error in update account : " + err.Error())
+		return http.StatusNotFound, fmt.Errorf("error in update account : %s", err.Error())
 	}
 
-	if err := u.rdb.Del(ctx, "forgot-"+username).Err(); err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in del key redis : " + err.Error())
+	if err = u.rdb.Del(ctx, "forgot-"+username).Err(); err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("error in del key redis : %s", err.Error())
 	}
 
 	return http.StatusOK, nil
@@ -469,7 +467,7 @@ func (u Usecase) resend(ctx context.Context, username string, kind string) (stat
 	}
 	user, err := u.repository.UserFetchOne(ctx, username)
 	if err != nil {
-		return http.StatusNotFound, fmt.Errorf("error in fetch user by username : " + err.Error())
+		return http.StatusNotFound, fmt.Errorf("error in fetch user by username : %s", err.Error())
 	}
 	token, err := tools.JWTCreateToken(tools.JWT{
 		ID:        user.ID.String(),
@@ -477,10 +475,10 @@ func (u Usecase) resend(ctx context.Context, username string, kind string) (stat
 		RoleName:  user.Role,
 	})
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in create token : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in create token : %s", err.Error())
 	}
-	if err := u.rdb.Set(ctx, kind+"-"+username, token.AccessToken, 24*time.Hour).Err(); err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in set redis value : " + err.Error())
+	if err = u.rdb.Set(ctx, kind+"-"+username, token.AccessToken, 24*time.Hour).Err(); err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("error in set redis value : %s", err.Error())
 	}
 	return http.StatusOK, nil
 }
@@ -493,27 +491,26 @@ func (u Usecase) binding(ctx context.Context, arg bindingParams) (statusCode int
 		if err != nil {
 			return statusCode, err
 		}
-		if _, err := u.repository.AccountFetchOneByEmail(ctx, db.AccountFetchOneByEmailParams{
+		if _, err = u.repository.AccountFetchOneByEmail(ctx, db.AccountFetchOneByEmailParams{
 			Username: profile.Email,
 			Type:     db.AccountType(arg.Kind),
 		}); err == nil {
 			return http.StatusBadRequest, fmt.Errorf("account already binded or used in another account")
 		}
-		if _, err := u.repository.AccountCreate(ctx, db.AccountCreateParams{
+		if _, err = u.repository.AccountCreate(ctx, db.AccountCreateParams{
 			Username: profile.Email,
 			Type:     db.AccountType(arg.Kind),
 			UserID:   uuid.MustParse(arg.Decoded.ID),
 			Status:   true,
 		}); err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("error in create account : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in create account : %s", err.Error())
 		}
-		break
 	case string(db.AccountTypeManual):
 		hashedPassword, err := tools.HashPassword(arg.Request.Password)
 		if err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("error in hash password : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in hash password : %s", err.Error())
 		}
-		if _, err := u.repository.AccountFetchOneByEmail(ctx, db.AccountFetchOneByEmailParams{
+		if _, err = u.repository.AccountFetchOneByEmail(ctx, db.AccountFetchOneByEmailParams{
 			Username: arg.Request.Email,
 			Type:     db.AccountType(arg.Kind),
 		}); err == nil {
@@ -527,7 +524,7 @@ func (u Usecase) binding(ctx context.Context, arg bindingParams) (statusCode int
 			Status:   false,
 		})
 		if err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("error in create account : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in create account : %s", err.Error())
 		}
 		token, err := tools.JWTCreateToken(tools.JWT{
 			ID:        arg.Decoded.ID,
@@ -535,21 +532,21 @@ func (u Usecase) binding(ctx context.Context, arg bindingParams) (statusCode int
 			RoleName:  arg.Decoded.RoleName,
 		})
 		if err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("error in create token : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in create token : %s", err.Error())
 		}
 		if err := u.rdb.Set(ctx, "binding-"+arg.Request.Email, token.AccessToken, 24*time.Hour).Err(); err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("error in set redis value : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in set redis value : %s", err.Error())
 		}
 
 		name, err := u.repository.UserFetchNameByID(ctx, uuid.MustParse(arg.Decoded.ID))
 		if err != nil {
-			return http.StatusNotFound, fmt.Errorf("error in get user name : " + err.Error())
+			return http.StatusNotFound, fmt.Errorf("error in get user name : %s", err.Error())
 		}
 
 		go func(data sendMailRequest) {
 			buffer, err := mail.TemplateToBuffer(data.BodyPath, data.BodyParam)
 			if err != nil {
-				log.Println("error in converting html file to buffer : " + err.Error())
+				log.Printf("error in converting html file to buffer : %s \n", err.Error())
 			}
 			mail.SendMail(mail.Request{
 				To:      arg.Request.Email,
@@ -564,7 +561,6 @@ func (u Usecase) binding(ctx context.Context, arg bindingParams) (statusCode int
 			},
 			BodyPath: "public/templates/mail/binding-account.html",
 		})
-		break
 	default:
 		return http.StatusNotFound, fmt.Errorf("only binding by username and password, google, or facebook")
 	}

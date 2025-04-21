@@ -32,7 +32,7 @@ func (u Usecase) search(ctx context.Context, args searchParams, userID string) (
 func (u Usecase) fetchOne(ctx context.Context, userID string) (basicInformationResponse, error) {
 	basic, err := u.repository.UserFetchBasicInformation(ctx, uuid.MustParse(userID))
 	if err != nil {
-		return basicInformationResponse{}, fmt.Errorf("error in fetch basic information : " + err.Error())
+		return basicInformationResponse{}, fmt.Errorf("error in fetch basic information : %s", err.Error())
 	}
 	return basicInformationResponse{
 		UserFetchBasicInformationRow: basic,
@@ -60,7 +60,7 @@ func (u Usecase) update(ctx context.Context, arg updateBasicInformationParams, u
 		About:          arg.About,
 		ID:             uuid.MustParse(userID),
 	}); err != nil {
-		return fmt.Errorf("error in update basic information : " + err.Error())
+		return fmt.Errorf("error in update basic information : %s", err.Error())
 	}
 
 	return nil
@@ -70,14 +70,14 @@ func (u Usecase) fetchAll(ctx context.Context, page, pageSize int32) (tools.Pagi
 	skip := tools.PaginationSkip(page, pageSize)
 	count, err := u.repository.UserCountAll(ctx)
 	if err != nil {
-		return tools.Pagination{}, fmt.Errorf("error in count user : " + err.Error())
+		return tools.Pagination{}, fmt.Errorf("error in count user : %s", err.Error())
 	}
 	users, err := u.repository.UserFetchAll(ctx, db.UserFetchAllParams{
 		Limit:  pageSize,
 		Offset: skip,
 	})
 	if err != nil {
-		return tools.Pagination{}, fmt.Errorf("error in fetch user : " + err.Error())
+		return tools.Pagination{}, fmt.Errorf("error in fetch user : %s", err.Error())
 	}
 
 	return tools.Pagination{
@@ -92,14 +92,14 @@ func (u Usecase) fetchLastLogin(ctx context.Context, page, pageSize int32) (tool
 	skip := tools.PaginationSkip(page, pageSize)
 	count, err := u.repository.LoginDetailCount(ctx)
 	if err != nil {
-		return tools.Pagination{}, fmt.Errorf("error count last login : " + err.Error())
+		return tools.Pagination{}, fmt.Errorf("error count last login : %s", err.Error())
 	}
 	lastLogin, err := u.repository.LoginDetailFetchAll(ctx, db.LoginDetailFetchAllParams{
 		Limit:  pageSize,
 		Offset: skip,
 	})
 	if err != nil {
-		return tools.Pagination{}, fmt.Errorf("error fetch last login : " + err.Error())
+		return tools.Pagination{}, fmt.Errorf("error fetch last login : %s", err.Error())
 	}
 	return tools.Pagination{
 		TotalItem: count,
