@@ -215,3 +215,10 @@ type User struct {
 	CreatedAt      time.Time    `json:"created_at"`
 	UpdatedAt      sql.NullTime `json:"updated_at"`
 }
+
+type SportType string
+
+const (
+	SportTypeESport SportType = "e-sport"
+	SportTypeSport  SportType = "sport"
+)
