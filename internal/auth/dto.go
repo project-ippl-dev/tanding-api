@@ -142,7 +142,7 @@ type bindingParams struct {
 	Host    string
 }
 
-type userIPDetail struct {
-	Country string `json:"country"`
-	Region  string `json:"region"`
-}
+//type userIPDetail struct {
+//	Country string `json:"country"`
+//	Region  string `json:"region"`
+//}

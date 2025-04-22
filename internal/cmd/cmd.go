@@ -8,9 +8,12 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+
 	"github.com/project-ippl-dev/tanding-api/config"
 	"github.com/project-ippl-dev/tanding-api/internal/auth"
 	"github.com/project-ippl-dev/tanding-api/internal/db"
+	"github.com/project-ippl-dev/tanding-api/internal/document"
+	"github.com/project-ippl-dev/tanding-api/internal/file"
 	middlewareApp "github.com/project-ippl-dev/tanding-api/internal/middleware"
 	"github.com/project-ippl-dev/tanding-api/internal/sport"
 	"github.com/project-ippl-dev/tanding-api/internal/user"
@@ -55,6 +58,9 @@ func routing(dbConn *sql.DB, rdb *redis.Client, sess *session.Session, e *echo.E
 
 	middlewareArgs := middlewareApp.Params{Middleware: m}
 
+	//Init new group route
+	profileRoute := e.Group("/profile", middlewareArgs.JWTMiddleware())
+
 	//Declare Raw Repository
 	userRepository := user.NewRepository(dbConn)
 	sportRepository := sport.NewRepository(dbConn)
@@ -63,9 +69,13 @@ func routing(dbConn *sql.DB, rdb *redis.Client, sess *session.Session, e *echo.E
 	authUsecase := auth.NewUsecase(repository, dbConn, rdb)
 	userUsecase := user.NewUsecase(repository, userRepository)
 	sportUsecase := sport.NewUsecase(repository, sportRepository)
+	documentUsecase := document.NewUsecase(repository)
+	fileUsecase := file.NewUsecase(sess)
 
 	//Declare Handlers
 	auth.RegisterHandler(authUsecase, e)
 	user.RegisterHandler(userUsecase, middlewareArgs, e)
 	sport.RegisterHandler(sportUsecase, middlewareArgs, e)
+	document.RegisterHandler(documentUsecase, profileRoute)
+	file.RegisterHandler(fileUsecase, middlewareArgs, e)
 }
