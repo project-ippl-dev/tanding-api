@@ -151,6 +151,37 @@ type Account struct {
 	UpdatedAt sql.NullTime `json:"updated_at"`
 }
 
+type Club struct {
+	ID        uuid.UUID    `json:"id"`
+	Name      string       `json:"name"`
+	Logo      string       `json:"logo"`
+	Phone     string       `json:"phone"`
+	ShortName string       `json:"short_name"`
+	UserID    uuid.UUID    `json:"user_id"`
+	CreatedAt time.Time    `json:"created_at"`
+	UpdatedAt sql.NullTime `json:"updated_at"`
+	DeletedAt sql.NullTime `json:"deleted_at"`
+}
+
+type ClubParticipant struct {
+	ID           int64        `json:"id"`
+	ClubID       uuid.UUID    `json:"club_id"`
+	UserID       uuid.UUID    `json:"user_id"`
+	SportID      uuid.UUID    `json:"sport_id"`
+	ClubApproval sql.NullBool `json:"club_approval"`
+	UserApproval sql.NullBool `json:"user_approval"`
+	CreatedAt    time.Time    `json:"created_at"`
+	UpdatedAt    time.Time    `json:"updated_at"`
+}
+
+type ClubSport struct {
+	ID        int64        `json:"id"`
+	ClubID    uuid.UUID    `json:"club_id"`
+	SportID   uuid.UUID    `json:"sport_id"`
+	CreatedAt time.Time    `json:"created_at"`
+	UpdatedAt sql.NullTime `json:"updated_at"`
+}
+
 type Document struct {
 	ID                    int64        `json:"id"`
 	UserID                uuid.UUID    `json:"user_id"`
