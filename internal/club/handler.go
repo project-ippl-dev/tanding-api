@@ -1,9 +1,9 @@
 package club
 
 import (
-	"github.com/google/uuid"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
 	"github.com/project-ippl-dev/tanding-api/internal/middleware"
