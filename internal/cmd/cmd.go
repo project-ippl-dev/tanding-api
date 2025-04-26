@@ -3,7 +3,9 @@ package cmd
 import (
 	"database/sql"
 	"fmt"
+
 	"github.com/project-ippl-dev/tanding-api/internal/club"
+	"github.com/project-ippl-dev/tanding-api/internal/eventRegistration"
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/go-redis/redis/v8"
@@ -64,11 +66,13 @@ func routing(dbConn *sql.DB, rdb *redis.Client, sess *session.Session, e *echo.E
 
 	//Declare Raw Repository
 	userRepository := user.NewRepository(dbConn)
+	eventRegistrationRepository := eventRegistration.NewRepository(dbConn)
 	sportRepository := sport.NewRepository(dbConn)
 	clubRepository := club.NewRepository(dbConn)
 
 	//Declare Usecase
 	authUsecase := auth.NewUsecase(repository, dbConn, rdb)
+	eventRegistrationUsecase := eventRegistration.NewUsecase(repository, eventRegistrationRepository)
 	userUsecase := user.NewUsecase(repository, userRepository)
 	sportUsecase := sport.NewUsecase(repository, sportRepository)
 	documentUsecase := document.NewUsecase(repository)
@@ -80,6 +84,7 @@ func routing(dbConn *sql.DB, rdb *redis.Client, sess *session.Session, e *echo.E
 	user.RegisterHandler(userUsecase, middlewareArgs, e)
 	sport.RegisterHandler(sportUsecase, middlewareArgs, e)
 	document.RegisterHandler(documentUsecase, profileRoute)
+	eventRegistration.RegisterHandler(eventRegistrationUsecase, middlewareArgs, e)
 	file.RegisterHandler(fileUsecase, middlewareArgs, e)
 	club.RegisterHandler(clubUsecase, middlewareArgs, e)
 }
