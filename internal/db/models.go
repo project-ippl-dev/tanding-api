@@ -253,3 +253,13 @@ const (
 	SportTypeESport SportType = "e-sport"
 	SportTypeSport  SportType = "sport"
 )
+
+type AccomplishmentLevel string
+
+const (
+	AccomplishmentLevelRegion        AccomplishmentLevel = "region"
+	AccomplishmentLevelProvince      AccomplishmentLevel = "province"
+	AccomplishmentLevelNational      AccomplishmentLevel = "national"
+	AccomplishmentLevelInternational AccomplishmentLevel = "international"
+	AccomplishmentLevelOthers        AccomplishmentLevel = "others"
+)
