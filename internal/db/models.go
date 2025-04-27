@@ -253,3 +253,24 @@ const (
 	SportTypeESport SportType = "e-sport"
 	SportTypeSport  SportType = "sport"
 )
+
+type EventReceiptStatus string
+
+const (
+	EventReceiptStatusWaiting  EventReceiptStatus = "waiting"
+	EventReceiptStatusApproved EventReceiptStatus = "approved"
+	EventReceiptStatusRejected EventReceiptStatus = "rejected"
+	EventReceiptStatusRefund   EventReceiptStatus = "refund"
+)
+
+func (e *EventReceiptStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = EventReceiptStatus(s)
+	case string:
+		*e = EventReceiptStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for EventReceiptStatus: %T", src)
+	}
+	return nil
+}
