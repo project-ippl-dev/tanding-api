@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/project-ippl-dev/tanding-api/internal/club"
+	"net/http"
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/go-redis/redis/v8"
@@ -51,6 +52,10 @@ func routing(dbConn *sql.DB, rdb *redis.Client, sess *session.Session, e *echo.E
 
 	//Register Static Files
 	e.Static("/icon", "public/icon")
+
+	e.GET("/healthcheck", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, map[string]string{"status": "HEALTHY"})
+	})
 
 	repository := db.New(dbConn)
 

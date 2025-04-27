@@ -62,3 +62,31 @@ func (u Usecase) store(ctx context.Context, req request, userID string) (uuid.UU
 	}
 	return clubID, nil
 }
+
+func (u Usecase) update(ctx context.Context, req request, userID string, clubID uuid.UUID) error {
+	ID, err := u.repository.ClubCheckOne(ctx, db.ClubCheckOneParams{
+		ID:     clubID,
+		UserID: uuid.MustParse(userID),
+	})
+	if err != nil {
+		return fmt.Errorf("error in check club : %s", err.Error())
+	}
+	return u.repository.ClubUpdate(ctx, db.ClubUpdateParams{
+		Name:      req.Name,
+		Logo:      req.Logo,
+		Phone:     req.Phone,
+		ShortName: req.ShortName,
+		ID:        ID,
+	})
+}
+
+func (u Usecase) delete(ctx context.Context, userID string, clubID uuid.UUID) error {
+	ID, err := u.repository.ClubCheckOne(ctx, db.ClubCheckOneParams{
+		ID:     clubID,
+		UserID: uuid.MustParse(userID),
+	})
+	if err != nil {
+		return fmt.Errorf("error in check club : %s", err.Error())
+	}
+	return u.repository.ClubDelete(ctx, ID)
+}
