@@ -1,0 +1,54 @@
+name: "Run test on PR"
+
+on:
+  pull_request:
+    branches:
+      - master
+      - dev
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+jobs:
+  linter:
+    runs-on: ubuntu-24.04
+    if: always()
+    strategy:
+      matrix:
+        go-version: [ '1.16' ]
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash -euxo pipefail {0}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: linter
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.0
+  tests:
+    runs-on: ubuntu-24.04
+    if: always()
+    strategy:
+      matrix:
+        go-version: ['1.16']
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash -euxo pipefail {0}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: Run test
+        run: |
+          go test ./...
