@@ -1,9 +1,9 @@
 package class
 
 import (
-	"github.com/dytlan/tanding-api/internal/db"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"github.com/project-ippl-dev/tanding-api/internal/db"
 )
 
 type request struct {

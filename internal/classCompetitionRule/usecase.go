@@ -3,8 +3,9 @@ package classCompetitionRule
 import (
 	"context"
 	"fmt"
-	"github.com/dytlan/tanding-api/internal/db"
-	"github.com/dytlan/tanding-api/internal/tools"
+
+	"github.com/project-ippl-dev/tanding-api/internal/db"
+	"github.com/project-ippl-dev/tanding-api/internal/tools"
 )
 
 type Usecase struct {

@@ -1,8 +1,8 @@
 package classCompetitionRule
 
 import (
-	"github.com/dytlan/tanding-api/internal/middleware"
-	"github.com/dytlan/tanding-api/internal/tools"
+	"github.com/project-ippl-dev/tanding-api/internal/middleware"
+	"github.com/project-ippl-dev/tanding-api/internal/tools"
 	"github.com/labstack/echo/v4"
 	"net/http"
 	"strconv"

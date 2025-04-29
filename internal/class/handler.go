@@ -1,12 +1,13 @@
 package class
 
 import (
-	"github.com/dytlan/tanding-api/internal/db"
-	"github.com/dytlan/tanding-api/internal/middleware"
-	"github.com/dytlan/tanding-api/internal/tools"
+	"net/http"
+
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"net/http"
+	"github.com/project-ippl-dev/tanding-api/internal/db"
+	"github.com/project-ippl-dev/tanding-api/internal/middleware"
+	"github.com/project-ippl-dev/tanding-api/internal/tools"
 )
 
 type handler struct {
