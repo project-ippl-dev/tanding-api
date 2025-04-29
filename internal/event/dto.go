@@ -1,7 +1,7 @@
 package event
 
 import (
-	"github.com/dytlan/tanding-api/internal/db"
+	"github.com/project-ippl-dev/tanding-api/internal/db"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/google/uuid"
