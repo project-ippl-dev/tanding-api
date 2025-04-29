@@ -32,3 +32,63 @@ func (s sport) Validate() error {
 		validation.Field(&s.SportID, is.UUID),
 	)
 }
+
+type participantReq struct {
+	ClubID       string            `param:"club"`
+	Participants []participantData `json:"participants"`
+}
+
+func (p participantReq) Validate() error {
+	return validation.ValidateStruct(&p,
+		validation.Field(&p.Participants, validation.Required),
+		validation.Field(&p.ClubID, validation.Required, is.UUID),
+	)
+}
+
+type participantData struct {
+	UserID  string `json:"user_id"`
+	SportID string `json:"sport_id"`
+}
+
+func (p participantData) Validate() error {
+	return validation.ValidateStruct(&p,
+		validation.Field(&p.UserID, validation.Required, is.UUID),
+		validation.Field(&p.SportID, validation.Required, is.UUID),
+	)
+}
+
+type updateJoinApprovalArgs struct {
+	ClubID     string `param:"club"`
+	Status     *bool  `json:"status"`
+	ApprovalID int64  `param:"approval"`
+}
+
+func (u updateJoinApprovalArgs) Validate() error {
+	return validation.ValidateStruct(&u,
+		validation.Field(&u.ClubID, validation.Required, is.UUID),
+		validation.Field(&u.ApprovalID, validation.Required),
+	)
+}
+
+type updateInviteApprovalArgs struct {
+	Status     *bool `json:"status"`
+	ApprovalID int64 `param:"approval"`
+}
+
+func (u updateInviteApprovalArgs) Validate() error {
+	return validation.ValidateStruct(&u,
+		validation.Field(&u.ApprovalID, validation.Required),
+	)
+}
+
+type joinParam struct {
+	ClubID  string `param:"club"`
+	SportID string `json:"sport_id"`
+}
+
+func (j joinParam) Validate() error {
+	return validation.ValidateStruct(&j,
+		validation.Field(&j.SportID, is.UUID),
+		validation.Field(&j.ClubID, validation.Required, is.UUID),
+	)
+}
