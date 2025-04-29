@@ -3,6 +3,7 @@ package cmd
 import (
 	"database/sql"
 	"fmt"
+
 	"github.com/project-ippl-dev/tanding-api/internal/club"
 	"net/http"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 
 	"github.com/project-ippl-dev/tanding-api/config"
+	"github.com/project-ippl-dev/tanding-api/internal/accomplishment"
 	"github.com/project-ippl-dev/tanding-api/internal/auth"
 	"github.com/project-ippl-dev/tanding-api/internal/db"
 	"github.com/project-ippl-dev/tanding-api/internal/document"
@@ -74,6 +76,7 @@ func routing(dbConn *sql.DB, rdb *redis.Client, sess *session.Session, e *echo.E
 
 	//Declare Usecase
 	authUsecase := auth.NewUsecase(repository, dbConn, rdb)
+	accomplishmentUsecase := accomplishment.NewUsecase(repository)
 	userUsecase := user.NewUsecase(repository, userRepository)
 	sportUsecase := sport.NewUsecase(repository, sportRepository)
 	documentUsecase := document.NewUsecase(repository)
@@ -82,6 +85,7 @@ func routing(dbConn *sql.DB, rdb *redis.Client, sess *session.Session, e *echo.E
 
 	//Declare Handlers
 	auth.RegisterHandler(authUsecase, e)
+	accomplishment.RegisterHandler(accomplishmentUsecase, profileRoute)
 	user.RegisterHandler(userUsecase, middlewareArgs, e)
 	sport.RegisterHandler(sportUsecase, middlewareArgs, e)
 	document.RegisterHandler(documentUsecase, profileRoute)
