@@ -36,14 +36,14 @@ func (u Usecase) fetchAll(ctx context.Context, page int32, pageSize int32, queri
 		Category: string(queries.Category),
 	})
 	if err != nil {
-		return tools.Pagination{}, fmt.Errorf("error in fetch all sports : " + err.Error())
+		return tools.Pagination{}, fmt.Errorf("error in fetch all sports : %s", err.Error())
 	}
 	count, err := u.rawRepository.SportCountAll(ctx, countAllParams{
 		Name:     "%" + queries.Keyword + "%",
 		Category: string(queries.Category),
 	})
 	if err != nil {
-		return tools.Pagination{}, fmt.Errorf("error in count all sports : " + err.Error())
+		return tools.Pagination{}, fmt.Errorf("error in count all sports : %s", err.Error())
 	}
 	return tools.Pagination{
 		TotalItem: count,
@@ -56,10 +56,10 @@ func (u Usecase) fetchAll(ctx context.Context, page int32, pageSize int32, queri
 func (u Usecase) update(ctx context.Context, req request, sportID string) error {
 	sportUUID, err := uuid.Parse(sportID)
 	if err != nil {
-		return fmt.Errorf("error parsing sport id : " + err.Error())
+		return fmt.Errorf("error parsing sport id : %s", err.Error())
 	}
-	if _, err := u.repository.SportCheckOne(ctx, sportUUID); err != nil {
-		return fmt.Errorf("error in check sport : " + err.Error())
+	if _, err = u.repository.SportCheckOne(ctx, sportUUID); err != nil {
+		return fmt.Errorf("error in check sport : %s", err.Error())
 	}
 	return u.repository.SportUpdate(ctx, db.SportUpdateParams{
 		Name:        req.Name,
@@ -73,10 +73,10 @@ func (u Usecase) update(ctx context.Context, req request, sportID string) error 
 func (u Usecase) delete(ctx context.Context, sportID string) error {
 	sportUUID, err := uuid.Parse(sportID)
 	if err != nil {
-		return fmt.Errorf("error parsing sport id : " + err.Error())
+		return fmt.Errorf("error parsing sport id : %s", err.Error())
 	}
-	if _, err := u.repository.SportCheckOne(ctx, sportUUID); err != nil {
-		return fmt.Errorf("error in check sport : " + err.Error())
+	if _, err = u.repository.SportCheckOne(ctx, sportUUID); err != nil {
+		return fmt.Errorf("error in check sport : %s", err.Error())
 	}
 	return u.repository.SportDelete(ctx, sportUUID)
 }
