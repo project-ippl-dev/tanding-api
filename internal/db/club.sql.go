@@ -11,6 +11,38 @@ import (
 	"github.com/google/uuid"
 )
 
+const clubCheckOne = `-- name: ClubCheckOne :one
+SELECT id FROM clubs WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL LIMIT 1
+`
+
+type ClubCheckOneParams struct {
+	ID     uuid.UUID `json:"id"`
+	UserID uuid.UUID `json:"user_id"`
+}
+
+func (q *Queries) ClubCheckOne(ctx context.Context, arg ClubCheckOneParams) (uuid.UUID, error) {
+	row := q.db.QueryRowContext(ctx, clubCheckOne, arg.ID, arg.UserID)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
+const clubCheckOneWithoutUserID = `-- name: ClubCheckOneWithoutUserID :one
+SELECT id, name FROM clubs WHERE id = $1 AND deleted_at IS NULL LIMIT 1
+`
+
+type ClubCheckOneWithoutUserIDRow struct {
+	ID   uuid.UUID `json:"id"`
+	Name string    `json:"name"`
+}
+
+func (q *Queries) ClubCheckOneWithoutUserID(ctx context.Context, id uuid.UUID) (ClubCheckOneWithoutUserIDRow, error) {
+	row := q.db.QueryRowContext(ctx, clubCheckOneWithoutUserID, id)
+	var i ClubCheckOneWithoutUserIDRow
+	err := row.Scan(&i.ID, &i.Name)
+	return i, err
+}
+
 const clubCreate = `-- name: ClubCreate :one
 INSERT INTO clubs(name, logo, phone, short_name, user_id, updated_at) VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING id
 `
@@ -34,4 +66,41 @@ func (q *Queries) ClubCreate(ctx context.Context, arg ClubCreateParams) (uuid.UU
 	var id uuid.UUID
 	err := row.Scan(&id)
 	return id, err
+}
+
+const clubDelete = `-- name: ClubDelete :exec
+UPDATE clubs SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) ClubDelete(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, clubDelete, id)
+	return err
+}
+
+const clubUpdate = `-- name: ClubUpdate :exec
+UPDATE clubs SET name = $1,
+                 logo = $2,
+                 phone = $3,
+                 short_name = $4,
+                 updated_at = NOW()
+WHERE id = $5 AND deleted_at IS NULL
+`
+
+type ClubUpdateParams struct {
+	Name      string    `json:"name"`
+	Logo      string    `json:"logo"`
+	Phone     string    `json:"phone"`
+	ShortName string    `json:"short_name"`
+	ID        uuid.UUID `json:"id"`
+}
+
+func (q *Queries) ClubUpdate(ctx context.Context, arg ClubUpdateParams) error {
+	_, err := q.db.ExecContext(ctx, clubUpdate,
+		arg.Name,
+		arg.Logo,
+		arg.Phone,
+		arg.ShortName,
+		arg.ID,
+	)
+	return err
 }
