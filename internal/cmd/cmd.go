@@ -3,8 +3,9 @@ package cmd
 import (
 	"database/sql"
 	"fmt"
-	"github.com/project-ippl-dev/tanding-api/internal/club"
 	"net/http"
+
+	"github.com/project-ippl-dev/tanding-api/internal/club"
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/go-redis/redis/v8"
@@ -17,6 +18,7 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/document"
 	"github.com/project-ippl-dev/tanding-api/internal/file"
 	middlewareApp "github.com/project-ippl-dev/tanding-api/internal/middleware"
+	"github.com/project-ippl-dev/tanding-api/internal/rank"
 	"github.com/project-ippl-dev/tanding-api/internal/sport"
 	"github.com/project-ippl-dev/tanding-api/internal/user"
 )
@@ -68,9 +70,10 @@ func routing(dbConn *sql.DB, rdb *redis.Client, sess *session.Session, e *echo.E
 	profileRoute := e.Group("/profile", middlewareArgs.JWTMiddleware())
 
 	//Declare Raw Repository
-	userRepository := user.NewRepository(dbConn)
-	sportRepository := sport.NewRepository(dbConn)
 	clubRepository := club.NewRepository(dbConn)
+	rankRepository := rank.NewRepository(dbConn)
+	sportRepository := sport.NewRepository(dbConn)
+	userRepository := user.NewRepository(dbConn)
 
 	//Declare Usecase
 	authUsecase := auth.NewUsecase(repository, dbConn, rdb)
@@ -79,6 +82,7 @@ func routing(dbConn *sql.DB, rdb *redis.Client, sess *session.Session, e *echo.E
 	documentUsecase := document.NewUsecase(repository)
 	fileUsecase := file.NewUsecase(sess)
 	clubUsecase := club.NewUsecase(repository, clubRepository)
+	rankUsecase := rank.NewUsecase(repository, rankRepository)
 
 	//Declare Handlers
 	auth.RegisterHandler(authUsecase, e)
@@ -87,4 +91,5 @@ func routing(dbConn *sql.DB, rdb *redis.Client, sess *session.Session, e *echo.E
 	document.RegisterHandler(documentUsecase, profileRoute)
 	file.RegisterHandler(fileUsecase, middlewareArgs, e)
 	club.RegisterHandler(clubUsecase, middlewareArgs, e)
+	rank.RegisterHandler(rankUsecase, middlewareArgs, e)
 }
