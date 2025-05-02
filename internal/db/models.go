@@ -140,6 +140,48 @@ func (ns NullRole) Value() (driver.Value, error) {
 	return string(ns.Role), nil
 }
 
+type SportType string
+
+const (
+	SportTypeESport SportType = "e-sport"
+	SportTypeSport  SportType = "sport"
+)
+
+func (e *SportType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = SportType(s)
+	case string:
+		*e = SportType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for SportType: %T", src)
+	}
+	return nil
+}
+
+type NullSportType struct {
+	SportType SportType `json:"sport_type"`
+	Valid     bool      `json:"valid"` // Valid is true if SportType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullSportType) Scan(value interface{}) error {
+	if value == nil {
+		ns.SportType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.SportType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullSportType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.SportType), nil
+}
+
 type Account struct {
 	ID        int64        `json:"id"`
 	Type      AccountType  `json:"type"`
@@ -222,6 +264,17 @@ type PrivilegeUser struct {
 	UpdatedAt   sql.NullTime `json:"updated_at"`
 }
 
+type Sport struct {
+	ID          uuid.UUID    `json:"id"`
+	Name        string       `json:"name"`
+	Description string       `json:"description"`
+	Type        SportType    `json:"type"`
+	Thumbnail   string       `json:"thumbnail"`
+	CreatedAt   time.Time    `json:"created_at"`
+	UpdatedAt   sql.NullTime `json:"updated_at"`
+	DeletedAt   sql.NullTime `json:"deleted_at"`
+}
+
 type Test struct {
 	ID        int32        `json:"id"`
 	Uuid      uuid.UUID    `json:"uuid"`
@@ -247,11 +300,14 @@ type User struct {
 	UpdatedAt      sql.NullTime `json:"updated_at"`
 }
 
-type SportType string
+type AccomplishmentLevel string
 
 const (
-	SportTypeESport SportType = "e-sport"
-	SportTypeSport  SportType = "sport"
+	AccomplishmentLevelRegion        AccomplishmentLevel = "region"
+	AccomplishmentLevelProvince      AccomplishmentLevel = "province"
+	AccomplishmentLevelNational      AccomplishmentLevel = "national"
+	AccomplishmentLevelInternational AccomplishmentLevel = "international"
+	AccomplishmentLevelOthers        AccomplishmentLevel = "others"
 )
 
 
