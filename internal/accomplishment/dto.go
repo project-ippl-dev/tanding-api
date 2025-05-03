@@ -14,7 +14,7 @@ type request struct {
 	Sport       string                 `json:"sport"`
 	Description string                 `json:"description"`
 	FileURL     string                 `json:"file_url"`
-	Month       int16                  `json:"month`
+	Month       int16                  `json:"month"`
 	Year        int16                  `json:"year"`
 }
 
@@ -38,5 +38,5 @@ type response struct {
 	Sport       string                 `json:"sport"`
 	Description string                 `json:"description"`
 	FileURL     string                 `json:"file_url"`
-	Date        string                 `json:"date`
+	Date        string                 `json:"date"`
 }

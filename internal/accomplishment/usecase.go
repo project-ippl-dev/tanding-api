@@ -2,11 +2,12 @@ package accomplishment
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
+	"database/sql"
 	"github.com/google/uuid"
+
 	"github.com/project-ippl-dev/tanding-api/internal/db"
 	"github.com/project-ippl-dev/tanding-api/internal/tools"
 )
@@ -45,7 +46,7 @@ func (u Usecase) fetchAll(ctx context.Context, page int32, pageSize int32, userI
 		Offset: skip,
 	})
 	if err != nil {
-		return tools.Pagination{}, fmt.Errorf("error in fetch accomplishment : " + err.Error())
+		return tools.Pagination{}, fmt.Errorf("error in fetch accomplishment : %s", err.Error())
 	}
 
 	result := []response{}
@@ -73,7 +74,7 @@ func (u Usecase) fetchAll(ctx context.Context, page int32, pageSize int32, userI
 
 	count, err := u.repository.AccomplishmentCountAll(ctx, uuid.MustParse(userID))
 	if err != nil {
-		return tools.Pagination{}, fmt.Errorf("error in count accomplishment : " + err.Error())
+		return tools.Pagination{}, fmt.Errorf("error in count accomplishment : %s", err.Error())
 	}
 	return tools.Pagination{
 		TotalItem: count,
@@ -89,7 +90,7 @@ func (u Usecase) update(ctx context.Context, req request, userID string, accompl
 		UserID: uuid.MustParse(userID),
 	})
 	if err != nil {
-		return fmt.Errorf("error in check one accomplishment : " + err.Error())
+		return fmt.Errorf("error in check one accomplishment : %s", err.Error())
 	}
 	return u.repository.AccomplishmentUpdate(ctx, db.AccomplishmentUpdateParams{
 		Title:    req.Title,
@@ -114,7 +115,7 @@ func (u Usecase) delete(ctx context.Context, userID string, accomplishmentID int
 		UserID: uuid.MustParse(userID),
 	})
 	if err != nil {
-		return fmt.Errorf("error in check one accomplishment : " + err.Error())
+		return fmt.Errorf("error in check one accomplishment : %s", err.Error())
 	}
 	return u.repository.AccomplishmentDelete(ctx, accomplishID)
 }
