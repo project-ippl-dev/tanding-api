@@ -1,0 +1,71 @@
+version: '3.8'
+services:
+  adminer:
+    container_name: tanding-adminer
+    image: adminer:4.8.1
+    networks:
+      - tanding-network
+    ports:
+      - 9002:8080
+  postgres:
+    container_name: tanding-postgres
+    image: postgres:14
+    restart: always
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root-is-not-used
+    networks:
+      - tanding-network
+    ports:
+      - '5434:5432'
+    volumes: 
+      - db:/var/lib/postgresql/data
+  minio:
+    container_name: tanding-storage
+    image: quay.io/minio/minio:RELEASE.2025-03-12T18-04-18Z
+    ports:
+      - '9010:9010'
+      - '9011:9011'
+    networks:
+      - tanding-network
+    environment:
+      MINIO_ADDRESS: ':9010'
+      MINIO_CONSOLE_ADDRESS: ':9011'
+    command: minio server /data
+    volumes:
+      - ./temp:/data
+  redis:
+    container_name: tanding-redis
+    image: redis:7.4.2
+    restart: always
+    entrypoint: redis-server
+    networks:
+      - tanding-network
+    ports:
+      - "6379:6379"
+    volumes:
+      - /var/lib/redis/data:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+  tanding-api:
+    container_name: tanding-api
+    depends_on:
+      - postgres
+      - redis
+      - minio
+    build: .
+    restart: always
+    networks:
+      - tanding-network
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./config_local.yaml:/app/config.yaml
+
+volumes:
+  db:
+    driver: local
+networks:
+  tanding-network:
+    driver: bridge
+    name: tanding-network
