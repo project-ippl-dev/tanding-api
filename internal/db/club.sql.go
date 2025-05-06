@@ -27,6 +27,22 @@ func (q *Queries) ClubCheckOne(ctx context.Context, arg ClubCheckOneParams) (uui
 	return id, err
 }
 
+const clubCheckOneWithoutUserID = `-- name: ClubCheckOneWithoutUserID :one
+SELECT id, name FROM clubs WHERE id = $1 AND deleted_at IS NULL LIMIT 1
+`
+
+type ClubCheckOneWithoutUserIDRow struct {
+	ID   uuid.UUID `json:"id"`
+	Name string    `json:"name"`
+}
+
+func (q *Queries) ClubCheckOneWithoutUserID(ctx context.Context, id uuid.UUID) (ClubCheckOneWithoutUserIDRow, error) {
+	row := q.db.QueryRowContext(ctx, clubCheckOneWithoutUserID, id)
+	var i ClubCheckOneWithoutUserIDRow
+	err := row.Scan(&i.ID, &i.Name)
+	return i, err
+}
+
 const clubCreate = `-- name: ClubCreate :one
 INSERT INTO clubs(name, logo, phone, short_name, user_id, updated_at) VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING id
 `

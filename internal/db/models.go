@@ -299,3 +299,13 @@ type User struct {
 	CreatedAt      time.Time    `json:"created_at"`
 	UpdatedAt      sql.NullTime `json:"updated_at"`
 }
+
+type AccomplishmentLevel string
+
+const (
+	AccomplishmentLevelRegion        AccomplishmentLevel = "region"
+	AccomplishmentLevelProvince      AccomplishmentLevel = "province"
+	AccomplishmentLevelNational      AccomplishmentLevel = "national"
+	AccomplishmentLevelInternational AccomplishmentLevel = "international"
+	AccomplishmentLevelOthers        AccomplishmentLevel = "others"
+)

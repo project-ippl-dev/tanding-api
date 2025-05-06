@@ -7,9 +7,60 @@ package db
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/google/uuid"
 )
+
+const clubParticipantCheckInviteApproval = `-- name: ClubParticipantCheckInviteApproval :one
+SELECT cp.id FROM club_participants as cp
+INNER JOIN clubs as c ON c.id = cp.club_id
+WHERE cp.id = $1 AND c.user_id = $2 AND user_approval = TRUE AND club_approval IS NULL LIMIT 1
+`
+
+type ClubParticipantCheckInviteApprovalParams struct {
+	ID     int64     `json:"id"`
+	UserID uuid.UUID `json:"user_id"`
+}
+
+func (q *Queries) ClubParticipantCheckInviteApproval(ctx context.Context, arg ClubParticipantCheckInviteApprovalParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, clubParticipantCheckInviteApproval, arg.ID, arg.UserID)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
+const clubParticipantCheckJoinApproval = `-- name: ClubParticipantCheckJoinApproval :one
+SELECT id FROM club_participants WHERE id = $1 AND user_id = $2 AND user_approval IS NULL AND club_approval = TRUE LIMIT 1
+`
+
+type ClubParticipantCheckJoinApprovalParams struct {
+	ID     int64     `json:"id"`
+	UserID uuid.UUID `json:"user_id"`
+}
+
+func (q *Queries) ClubParticipantCheckJoinApproval(ctx context.Context, arg ClubParticipantCheckJoinApprovalParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, clubParticipantCheckJoinApproval, arg.ID, arg.UserID)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
+const clubParticipantCheckParticipant = `-- name: ClubParticipantCheckParticipant :one
+SELECT id FROM club_participants WHERE club_id = $1 AND user_id = $2 AND club_approval = true AND user_approval = true LIMIT 1
+`
+
+type ClubParticipantCheckParticipantParams struct {
+	ClubID uuid.UUID `json:"club_id"`
+	UserID uuid.UUID `json:"user_id"`
+}
+
+func (q *Queries) ClubParticipantCheckParticipant(ctx context.Context, arg ClubParticipantCheckParticipantParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, clubParticipantCheckParticipant, arg.ClubID, arg.UserID)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
 
 const clubParticipantCreate = `-- name: ClubParticipantCreate :exec
 INSERT INTO club_participants(club_id, user_id, club_approval, user_approval, updated_at) VALUES ($1, $2, TRUE, TRUE, NOW())
@@ -22,5 +73,189 @@ type ClubParticipantCreateParams struct {
 
 func (q *Queries) ClubParticipantCreate(ctx context.Context, arg ClubParticipantCreateParams) error {
 	_, err := q.db.ExecContext(ctx, clubParticipantCreate, arg.ClubID, arg.UserID)
+	return err
+}
+
+const clubParticipantFetchInviteApproval = `-- name: ClubParticipantFetchInviteApproval :many
+SELECT cp.id, cp.club_id, s.id as sport_id, s.name as sport_name, c.name FROM club_participants as cp
+INNER JOIN clubs as c ON cp.club_id = c.id
+INNER JOIN sports as s ON cp.sport_id = s.id
+WHERE cp.user_id = $1  AND cp.id < $2 AND cp.user_approval IS NULL AND cp.club_approval = TRUE ORDER BY cp.id DESC LIMIT $3
+`
+
+type ClubParticipantFetchInviteApprovalParams struct {
+	UserID uuid.UUID `json:"user_id"`
+	ID     int64     `json:"id"`
+	Limit  int32     `json:"limit"`
+}
+
+type ClubParticipantFetchInviteApprovalRow struct {
+	ID        int64     `json:"id"`
+	ClubID    uuid.UUID `json:"club_id"`
+	SportID   uuid.UUID `json:"sport_id"`
+	SportName string    `json:"sport_name"`
+	Name      string    `json:"name"`
+}
+
+func (q *Queries) ClubParticipantFetchInviteApproval(ctx context.Context, arg ClubParticipantFetchInviteApprovalParams) ([]ClubParticipantFetchInviteApprovalRow, error) {
+	rows, err := q.db.QueryContext(ctx, clubParticipantFetchInviteApproval, arg.UserID, arg.ID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ClubParticipantFetchInviteApprovalRow{}
+	for rows.Next() {
+		var i ClubParticipantFetchInviteApprovalRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ClubID,
+			&i.SportID,
+			&i.SportName,
+			&i.Name,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const clubParticipantFetchJoinApproval = `-- name: ClubParticipantFetchJoinApproval :many
+SELECT cp.id, s.id as sport_id, s.name as sport_name, u.name FROM club_participants as cp
+INNER JOIN users as u ON cp.user_id = u.id
+INNER JOIN sports as s ON cp.sport_id = s.id
+WHERE club_id = $1  AND cp.id < $2 AND cp.user_approval = TRUE AND cp.club_approval IS NULL ORDER BY cp.id DESC LIMIT $3
+`
+
+type ClubParticipantFetchJoinApprovalParams struct {
+	ClubID uuid.UUID `json:"club_id"`
+	ID     int64     `json:"id"`
+	Limit  int32     `json:"limit"`
+}
+
+type ClubParticipantFetchJoinApprovalRow struct {
+	ID        int64     `json:"id"`
+	SportID   uuid.UUID `json:"sport_id"`
+	SportName string    `json:"sport_name"`
+	Name      string    `json:"name"`
+}
+
+func (q *Queries) ClubParticipantFetchJoinApproval(ctx context.Context, arg ClubParticipantFetchJoinApprovalParams) ([]ClubParticipantFetchJoinApprovalRow, error) {
+	rows, err := q.db.QueryContext(ctx, clubParticipantFetchJoinApproval, arg.ClubID, arg.ID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ClubParticipantFetchJoinApprovalRow{}
+	for rows.Next() {
+		var i ClubParticipantFetchJoinApprovalRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.SportID,
+			&i.SportName,
+			&i.Name,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const clubParticipantFetchLatestIDInviteApproval = `-- name: ClubParticipantFetchLatestIDInviteApproval :one
+SELECT id FROM club_participants WHERE user_id = $1 AND user_approval IS NULL AND club_approval = TRUE ORDER BY id DESC
+`
+
+func (q *Queries) ClubParticipantFetchLatestIDInviteApproval(ctx context.Context, userID uuid.UUID) (int64, error) {
+	row := q.db.QueryRowContext(ctx, clubParticipantFetchLatestIDInviteApproval, userID)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
+const clubParticipantFetchLatestIDJoinApproval = `-- name: ClubParticipantFetchLatestIDJoinApproval :one
+SELECT id FROM club_participants WHERE club_id = $1 AND user_approval = TRUE AND club_approval IS NULL ORDER BY id DESC
+`
+
+func (q *Queries) ClubParticipantFetchLatestIDJoinApproval(ctx context.Context, clubID uuid.UUID) (int64, error) {
+	row := q.db.QueryRowContext(ctx, clubParticipantFetchLatestIDJoinApproval, clubID)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
+const clubParticipantInvite = `-- name: ClubParticipantInvite :exec
+INSERT INTO club_participants(club_id, user_id, sport_id, club_approval, updated_at) VALUES ($1, $2, $3, TRUE, NOW())
+`
+
+type ClubParticipantInviteParams struct {
+	ClubID  uuid.UUID `json:"club_id"`
+	UserID  uuid.UUID `json:"user_id"`
+	SportID uuid.UUID `json:"sport_id"`
+}
+
+func (q *Queries) ClubParticipantInvite(ctx context.Context, arg ClubParticipantInviteParams) error {
+	_, err := q.db.ExecContext(ctx, clubParticipantInvite, arg.ClubID, arg.UserID, arg.SportID)
+	return err
+}
+
+const clubParticipantJoin = `-- name: ClubParticipantJoin :exec
+INSERT INTO club_participants(club_id, user_id, sport_id, user_approval, updated_at) VALUES($1, $2, $3, TRUE, NOW())
+`
+
+type ClubParticipantJoinParams struct {
+	ClubID  uuid.UUID `json:"club_id"`
+	UserID  uuid.UUID `json:"user_id"`
+	SportID uuid.UUID `json:"sport_id"`
+}
+
+func (q *Queries) ClubParticipantJoin(ctx context.Context, arg ClubParticipantJoinParams) error {
+	_, err := q.db.ExecContext(ctx, clubParticipantJoin, arg.ClubID, arg.UserID, arg.SportID)
+	return err
+}
+
+const clubParticipantUpdateInviteApproval = `-- name: ClubParticipantUpdateInviteApproval :exec
+UPDATE club_participants SET user_approval = $1,
+    updated_at = NOW()
+WHERE id = $2 AND user_id = $3
+`
+
+type ClubParticipantUpdateInviteApprovalParams struct {
+	UserApproval sql.NullBool `json:"user_approval"`
+	ID           int64        `json:"id"`
+	UserID       uuid.UUID    `json:"user_id"`
+}
+
+func (q *Queries) ClubParticipantUpdateInviteApproval(ctx context.Context, arg ClubParticipantUpdateInviteApprovalParams) error {
+	_, err := q.db.ExecContext(ctx, clubParticipantUpdateInviteApproval, arg.UserApproval, arg.ID, arg.UserID)
+	return err
+}
+
+const clubParticipantUpdateJoinApproval = `-- name: ClubParticipantUpdateJoinApproval :exec
+UPDATE club_participants SET club_approval = $1,
+    updated_at = NOW()
+WHERE id = $2 AND club_id = $3
+`
+
+type ClubParticipantUpdateJoinApprovalParams struct {
+	ClubApproval sql.NullBool `json:"club_approval"`
+	ID           int64        `json:"id"`
+	ClubID       uuid.UUID    `json:"club_id"`
+}
+
+func (q *Queries) ClubParticipantUpdateJoinApproval(ctx context.Context, arg ClubParticipantUpdateJoinApprovalParams) error {
+	_, err := q.db.ExecContext(ctx, clubParticipantUpdateJoinApproval, arg.ClubApproval, arg.ID, arg.ClubID)
 	return err
 }
