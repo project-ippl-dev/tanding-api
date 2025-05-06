@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 
+	"net/http"
+
 	"github.com/project-ippl-dev/tanding-api/internal/club"
 
 	"github.com/aws/aws-sdk-go/aws/session"
