@@ -210,7 +210,7 @@ func (m Middleware) IsEventTurnLocked(next echo.HandlerFunc) echo.HandlerFunc {
 		if err != nil {
 			return c.JSON(http.StatusNotFound, tools.Response{Message: err.Error()})
 		}
-		if event.IsGenerate != true {
+		if !event.IsGenerate {
 			return c.JSON(http.StatusUnprocessableEntity, tools.Response{Message: "lock and generate event turn first"})
 		}
 		return next(c)

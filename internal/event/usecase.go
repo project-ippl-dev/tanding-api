@@ -209,7 +209,7 @@ func (u Usecase) update(ctx context.Context, req request, eventID uuid.UUID) (st
 	}
 
 	now := time.Now()
-	if open.Before(now) && event.Status.Bool == true && event.Remark == "soon" {
+	if open.Before(now) && event.Status.Bool && event.Remark == "soon" {
 		if err := txQuery.EventUpdateRemark(ctx, db.EventUpdateRemarkParams{
 			Remark: "open",
 			ID:     eventID,
@@ -445,7 +445,7 @@ func (u Usecase) updateStatus(ctx context.Context, req statusReq, eventID uuid.U
 	}
 
 	var remark db.RemarkType
-	if event.Status.Bool != true {
+	if !event.Status.Bool {
 		if event.Open.Before(time.Now()) {
 			remark = db.RemarkTypeOpen
 		} else {
@@ -454,7 +454,7 @@ func (u Usecase) updateStatus(ctx context.Context, req statusReq, eventID uuid.U
 	} else {
 		remark = event.Remark
 	}
-	if *req.Status == true {
+	if *req.Status {
 		if err := u.repository.EventUpdateStatus(ctx, db.EventUpdateStatusParams{
 			Status: sql.NullBool{
 				Bool:  *req.Status,
