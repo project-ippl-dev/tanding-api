@@ -32,11 +32,11 @@ func (u Usecase) fetchAll(ctx context.Context, page int32, pageSize int32) (tool
 		Offset: skip,
 	})
 	if err != nil {
-		return tools.Pagination{}, fmt.Errorf("error in fetch all competition rules : " + err.Error())
+		return tools.Pagination{}, fmt.Errorf("error in fetch all competition rules : %s", err.Error())
 	}
 	count, err := u.repository.ClassRuleCountAll(ctx)
 	if err != nil {
-		return tools.Pagination{}, fmt.Errorf("error in count all competition rules : " + err.Error())
+		return tools.Pagination{}, fmt.Errorf("error in count all competition rules : %s", err.Error())
 	}
 	return tools.Pagination{
 		TotalItem: count,
@@ -52,7 +52,7 @@ func (u Usecase) fetchOne(ctx context.Context, ruleID int64) (db.ClassRuleFetchO
 
 func (u Usecase) update(ctx context.Context, req request, ruleID int64) error {
 	if _, err := u.repository.ClassRuleFetchOne(ctx, ruleID); err != nil {
-		return fmt.Errorf("error in check class rules : " + err.Error())
+		return fmt.Errorf("error in check class rules : %s", err.Error())
 	}
 	return u.repository.ClassRuleUpdate(ctx, db.ClassRuleUpdateParams{
 		Name:   req.Name,
@@ -65,7 +65,7 @@ func (u Usecase) update(ctx context.Context, req request, ruleID int64) error {
 
 func (u Usecase) delete(ctx context.Context, ruleID int64) error {
 	if _, err := u.repository.ClassRuleFetchOne(ctx, ruleID); err != nil {
-		return fmt.Errorf("error in check class rules : " + err.Error())
+		return fmt.Errorf("error in check class rules : %s", err.Error())
 	}
 	return u.repository.ClassRuleDelete(ctx, ruleID)
 }

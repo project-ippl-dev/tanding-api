@@ -10,7 +10,7 @@ CREATE TABLE accomplishments(
     sport VARCHAR(255) NOT NULL,
     description TEXT NULL,
     file_url VARCHAR(255) NOT NULL,
-    month SMALLINT NULL,
+    month SMALLINT NOT NULL,
     year SMALLINT NOT NULL,
     created_at TIMESTAMP NULL DEFAULT NOW(),
     updated_at TIMESTAMP NULL

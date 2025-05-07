@@ -35,11 +35,11 @@ func (u Usecase) fetchAll(ctx context.Context, page int32, pageSize int32) (tool
 		Offset: skip,
 	})
 	if err != nil {
-		return tools.Pagination{}, fmt.Errorf("error in fetch class : " + err.Error())
+		return tools.Pagination{}, fmt.Errorf("error in fetch class : %s", err.Error())
 	}
 	count, err := u.repository.ClassCountAll(ctx)
 	if err != nil {
-		return tools.Pagination{}, fmt.Errorf("error in count class : " + err.Error())
+		return tools.Pagination{}, fmt.Errorf("error in count class : %s", err.Error())
 	}
 	return tools.Pagination{
 		TotalItem: count,
@@ -57,11 +57,11 @@ func (u Usecase) fetchBySportID(ctx context.Context, page int32, pageSize int32,
 		Offset:  skip,
 	})
 	if err != nil {
-		return tools.Pagination{}, fmt.Errorf("error in fetch class : " + err.Error())
+		return tools.Pagination{}, fmt.Errorf("error in fetch class : %s", err.Error())
 	}
 	count, err := u.repository.ClassCountBySportID(ctx, sportID)
 	if err != nil {
-		return tools.Pagination{}, fmt.Errorf("error in fetch class : " + err.Error())
+		return tools.Pagination{}, fmt.Errorf("error in fetch class : %s", err.Error())
 	}
 	return tools.Pagination{
 		TotalItem: count,
@@ -73,7 +73,7 @@ func (u Usecase) fetchBySportID(ctx context.Context, page int32, pageSize int32,
 
 func (u Usecase) update(ctx context.Context, req request, classID uuid.UUID) error {
 	if _, err := u.repository.ClassCheckOne(ctx, classID); err != nil {
-		return fmt.Errorf("error in check class : " + err.Error())
+		return fmt.Errorf("error in check class : %s", err.Error())
 	}
 	return u.repository.ClassUpdate(ctx, db.ClassUpdateParams{
 		SportID:                uuid.MustParse(req.SportID),
@@ -88,13 +88,13 @@ func (u Usecase) update(ctx context.Context, req request, classID uuid.UUID) err
 func (u Usecase) delete(ctx context.Context, decoded tools.JWT, classID uuid.UUID) (statusCode int, err error) {
 	class, err := u.repository.ClassCheckOne(ctx, classID)
 	if err != nil {
-		return http.StatusNotFound, fmt.Errorf("error in check class : " + err.Error())
+		return http.StatusNotFound, fmt.Errorf("error in check class : %s", err.Error())
 	}
 	if decoded.RoleName == "user" && class.Type != db.ClassTypeCustom {
 		return http.StatusForbidden, fmt.Errorf("forbidden access")
 	}
-	if err := u.repository.ClassDelete(ctx, classID); err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in delete class : " + err.Error())
+	if err = u.repository.ClassDelete(ctx, classID); err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("error in delete class : %s", err.Error())
 	}
 	return http.StatusOK, nil
 }
