@@ -25,19 +25,23 @@ func (u Usecase) store(ctx context.Context, req request, decoded tools.JWT) (sta
 	startDate, err := time.Parse("2006-01-02", req.StartDate)
 	errorPrefix := "error in parsing time : "
 	if err != nil {
-		return http.StatusBadRequest, uuid.UUID{}, fmt.Errorf(errorPrefix + err.Error())
+		errorPrefix += err.Error()
+		return http.StatusBadRequest, uuid.UUID{}, fmt.Errorf(errorPrefix)
 	}
 	endDate, err := time.Parse("2006-01-02", req.EndDate)
 	if err != nil {
-		return http.StatusBadRequest, uuid.UUID{}, fmt.Errorf(errorPrefix + err.Error())
+		errorPrefix += err.Error()
+		return http.StatusBadRequest, uuid.UUID{}, fmt.Errorf(errorPrefix)
 	}
 	deadline, err := time.Parse("2006-01-02T15:04:05", req.Deadline)
 	if err != nil {
-		return http.StatusBadRequest, uuid.UUID{}, fmt.Errorf(errorPrefix + err.Error())
+		errorPrefix += err.Error()
+		return http.StatusBadRequest, uuid.UUID{}, fmt.Errorf(errorPrefix)
 	}
 	open, err := time.Parse("2006-01-02T15:04:05", req.Open)
 	if err != nil {
-		return http.StatusBadRequest, uuid.UUID{}, fmt.Errorf(errorPrefix + err.Error())
+		errorPrefix += err.Error()
+		return http.StatusBadRequest, uuid.UUID{}, fmt.Errorf(errorPrefix)
 	}
 
 	if deadline.Before(open) {

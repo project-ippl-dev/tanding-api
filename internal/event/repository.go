@@ -253,35 +253,30 @@ func (r *RawRepository) EventFetchInfinite(ctx context.Context, args fetchInfini
 			return nil, err
 		}
 		rows = result
-		break
 	case "sport-category":
 		result, err := r.db.QueryContext(ctx, fetchInfiniteBySportIDAndCategory, args.OrderNumber, args.Name, args.SportID, args.Category, args.Limit)
 		if err != nil {
 			return nil, err
 		}
 		rows = result
-		break
 	case "sport-remark":
 		result, err := r.db.QueryContext(ctx, fetchInfiniteBySportIDAndRemark, args.OrderNumber, args.Name, args.SportID, args.Remark, args.Limit)
 		if err != nil {
 			return nil, err
 		}
 		rows = result
-		break
 	case "category-remark":
 		result, err := r.db.QueryContext(ctx, fetchInfiniteByCategoryAndRemark, args.OrderNumber, args.Name, args.Category, args.Remark, args.Limit)
 		if err != nil {
 			return nil, err
 		}
 		rows = result
-		break
 	case "sport-category-remark":
 		result, err := r.db.QueryContext(ctx, fetchInfiniteByFilterall, args.OrderNumber, args.Name, args.SportID, args.Category, args.Remark, args.Limit)
 		if err != nil {
 			return nil, err
 		}
 		rows = result
-		break
 	}
 	defer rows.Close()
 	items := []fetchInfiniteRow{}
