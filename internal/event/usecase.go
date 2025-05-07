@@ -45,7 +45,7 @@ func (u Usecase) store(ctx context.Context, req request, decoded tools.JWT) (sta
 
 	tx, err := u.rawRepository.db.Begin()
 	if err != nil {
-		return http.StatusInternalServerError, uuid.UUID{}, fmt.Errorf("error in start transaction : " + err.Error())
+		return http.StatusInternalServerError, uuid.UUID{}, fmt.Errorf("error in start transaction : %s", err.Error())
 	}
 	txQuery := u.repository.WithTx(tx)
 	eventID, err = txQuery.EventCreate(ctx, db.EventCreateParams{
@@ -69,9 +69,9 @@ func (u Usecase) store(ctx context.Context, req request, decoded tools.JWT) (sta
 	})
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
-			return http.StatusInternalServerError, uuid.UUID{}, fmt.Errorf("error in rollback tx : " + err.Error())
+			return http.StatusInternalServerError, uuid.UUID{}, fmt.Errorf("error in rollback tx : %s", err.Error())
 		}
-		return http.StatusInternalServerError, uuid.UUID{}, fmt.Errorf("error in create event : " + err.Error())
+		return http.StatusInternalServerError, uuid.UUID{}, fmt.Errorf("error in create event : %s", err.Error())
 	}
 
 	if err := txQuery.EventPrivilegeCreate(ctx, db.EventPrivilegeCreateParams{
@@ -80,13 +80,13 @@ func (u Usecase) store(ctx context.Context, req request, decoded tools.JWT) (sta
 		Role:    db.EventRoleOwner,
 	}); err != nil {
 		if err := tx.Rollback(); err != nil {
-			return http.StatusInternalServerError, uuid.UUID{}, fmt.Errorf("error in rollback tx : " + err.Error())
+			return http.StatusInternalServerError, uuid.UUID{}, fmt.Errorf("error in rollback tx : %s", err.Error())
 		}
-		return http.StatusInternalServerError, uuid.UUID{}, fmt.Errorf("error in create event privilege : " + err.Error())
+		return http.StatusInternalServerError, uuid.UUID{}, fmt.Errorf("error in create event privilege : %s", err.Error())
 	}
 
 	if err := tx.Commit(); err != nil {
-		return http.StatusInternalServerError, uuid.UUID{}, fmt.Errorf("error in commit tx : " + err.Error())
+		return http.StatusInternalServerError, uuid.UUID{}, fmt.Errorf("error in commit tx : %s", err.Error())
 	}
 
 	return http.StatusCreated, eventID, nil
@@ -99,18 +99,18 @@ func (u Usecase) fetchAll(ctx context.Context, page int32, pageSize int32) (tool
 		Offset: skip,
 	})
 	if err != nil {
-		return tools.Pagination{}, fmt.Errorf("error in fetch all event : " + err.Error())
+		return tools.Pagination{}, fmt.Errorf("error in fetch all event : %s", err.Error())
 	}
 	count, err := u.repository.EventCountAll(ctx)
 	if err != nil {
-		return tools.Pagination{}, fmt.Errorf("error in count all event : " + err.Error())
+		return tools.Pagination{}, fmt.Errorf("error in count all event : %s", err.Error())
 	}
 
 	data := []response{}
 	for _, event := range events {
 		classEvents, err := u.repository.ClassEventFetchByEventID(ctx, event.ID)
 		if err != nil {
-			return tools.Pagination{}, fmt.Errorf("error in fetch class event : " + err.Error())
+			return tools.Pagination{}, fmt.Errorf("error in fetch class event : %s", err.Error())
 		}
 		data = append(data, response{
 			ID:           event.ID,
@@ -151,26 +151,26 @@ func (u Usecase) fetchAll(ctx context.Context, page int32, pageSize int32) (tool
 func (u Usecase) update(ctx context.Context, req request, eventID uuid.UUID) (statusCode int, err error) {
 	event, err := u.repository.EventFetchOne(ctx, eventID)
 	if err != nil {
-		return http.StatusNotFound, fmt.Errorf("error in check event : " + err.Error())
+		return http.StatusNotFound, fmt.Errorf("error in check event : %s", err.Error())
 	}
 	if event.Remark == db.RemarkTypeDone {
 		return http.StatusForbidden, fmt.Errorf("can't update event when remark status is done")
 	}
 	startDate, err := time.Parse("2006-01-02", req.StartDate)
 	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("error in parsing time : " + err.Error())
+		return http.StatusBadRequest, fmt.Errorf("error in parsing time : %s", err.Error())
 	}
 	endDate, err := time.Parse("2006-01-02", req.EndDate)
 	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("error in parsing time : " + err.Error())
+		return http.StatusBadRequest, fmt.Errorf("error in parsing time : %s", err.Error())
 	}
 	deadline, err := time.Parse("2006-01-02T15:04:05", req.Deadline)
 	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("error in parsing time : " + err.Error())
+		return http.StatusBadRequest, fmt.Errorf("error in parsing time : %s", err.Error())
 	}
 	open, err := time.Parse("2006-01-02T15:04:05", req.Open)
 	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("error in parsing time : " + err.Error())
+		return http.StatusBadRequest, fmt.Errorf("error in parsing time : %s", err.Error())
 	}
 
 	if deadline.Before(open) {
@@ -179,7 +179,7 @@ func (u Usecase) update(ctx context.Context, req request, eventID uuid.UUID) (st
 
 	tx, err := u.rawRepository.db.Begin()
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in start transaction : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in start transaction : %s", err.Error())
 	}
 
 	txQuery := u.repository.WithTx(tx)
@@ -203,9 +203,9 @@ func (u Usecase) update(ctx context.Context, req request, eventID uuid.UUID) (st
 		ID:           eventID,
 	}); err != nil {
 		if err := tx.Rollback(); err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx : %s", err.Error())
 		}
-		return http.StatusInternalServerError, fmt.Errorf("error in update event : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in update event : %s", err.Error())
 	}
 
 	now := time.Now()
@@ -215,14 +215,14 @@ func (u Usecase) update(ctx context.Context, req request, eventID uuid.UUID) (st
 			ID:     eventID,
 		}); err != nil {
 			if err := tx.Rollback(); err != nil {
-				return http.StatusInternalServerError, fmt.Errorf("error in rollback tx : " + err.Error())
+				return http.StatusInternalServerError, fmt.Errorf("error in rollback tx : %s", err.Error())
 			}
-			return http.StatusInternalServerError, fmt.Errorf("error in update remark event : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in update remark event : %s", err.Error())
 		}
 	}
 
 	if err := tx.Commit(); err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in commit tx : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in commit tx : %s", err.Error())
 	}
 
 	return http.StatusOK, nil
@@ -230,7 +230,7 @@ func (u Usecase) update(ctx context.Context, req request, eventID uuid.UUID) (st
 
 func (u Usecase) delete(ctx context.Context, eventID uuid.UUID) error {
 	if _, err := u.repository.EventCheckOne(ctx, eventID); err != nil {
-		return fmt.Errorf("error in check event : " + err.Error())
+		return fmt.Errorf("error in check event : %s", err.Error())
 	}
 	return u.repository.EventDelete(ctx, eventID)
 }
@@ -243,18 +243,18 @@ func (u Usecase) fetchByUser(ctx context.Context, page int32, pageSize int32, us
 		Offset: skip,
 	})
 	if err != nil {
-		return tools.Pagination{}, fmt.Errorf("error in fetch event by user id : " + err.Error())
+		return tools.Pagination{}, fmt.Errorf("error in fetch event by user id : %s", err.Error())
 	}
 	count, err := u.repository.EventCountByUserID(ctx, uuid.MustParse(userID))
 	if err != nil {
-		return tools.Pagination{}, fmt.Errorf("error in count event by user id : " + err.Error())
+		return tools.Pagination{}, fmt.Errorf("error in count event by user id : %s", err.Error())
 	}
 
 	data := []response{}
 	for _, event := range events {
 		// totalParticipants, err := u.repository.EventRegistrationCountAllByStatusApproved(ctx, event.ID)  // temporary comment
 		// if err != nil {
-		// 	return tools.Pagination{}, fmt.Errorf("error in count all participants : " + err.Error())
+		// 	return tools.Pagination{}, fmt.Errorf("error in count all participants : %s", err.Error())
 		// }
 		data = append(data, response{
 			ID:           event.ID,
@@ -296,19 +296,19 @@ func (u Usecase) fetchByUser(ctx context.Context, page int32, pageSize int32, us
 func (u Usecase) fetchOne(ctx context.Context, eventID uuid.UUID, userID string) (responseFetchOne, error) {
 	event, err := u.repository.EventFetchOne(ctx, eventID)
 	if err != nil {
-		return responseFetchOne{}, fmt.Errorf("error in fetch one : " + err.Error())
+		return responseFetchOne{}, fmt.Errorf("error in fetch one : %s", err.Error())
 	}
 
 	classes, err := u.repository.ClassEventFetchByEventID(ctx, event.ID)
 	if err != nil {
-		return responseFetchOne{}, fmt.Errorf("error in fetch class events : " + err.Error())
+		return responseFetchOne{}, fmt.Errorf("error in fetch class events : %s", err.Error())
 	}
 
 	classEvents := []classEventSummaryRow{}
 	for _, class := range classes {
 		//ranks, err := u.rawRepository.RankFetchByClassEventID(ctx, class.ID) // temporary comment
 		// if err != nil {
-		// 	return responseFetchOne{}, fmt.Errorf("error in fetch ranks : " + err.Error())
+		// 	return responseFetchOne{}, fmt.Errorf("error in fetch ranks : %s", err.Error())
 		// }
 		classEvents = append(classEvents, classEventSummaryRow{
 			ClassEventFetchByEventIDRow: class,
@@ -318,7 +318,7 @@ func (u Usecase) fetchOne(ctx context.Context, eventID uuid.UUID, userID string)
 
 	// clubRanks, err := u.repository.RankClubFetchByEventID(ctx, eventID)
 	// if err != nil {
-	// 	return responseFetchOne{}, fmt.Errorf("error fetch in club ranks : " + err.Error())
+	// 	return responseFetchOne{}, fmt.Errorf("error fetch in club ranks : %s", err.Error())
 	// } // temporary comment
 
 	// generalChampions := []db.RankClubFetchByEventIDRow{}
@@ -331,7 +331,7 @@ func (u Usecase) fetchOne(ctx context.Context, eventID uuid.UUID, userID string)
 
 	// totalParticipants, err := u.repository.EventRegistrationCountAllByStatusApproved(ctx, event.ID)
 	// if err != nil {
-	// 	return responseFetchOne{}, fmt.Errorf("error in count all participants : " + err.Error())
+	// 	return responseFetchOne{}, fmt.Errorf("error in count all participants : %s", err.Error())
 	// } // temporary comment
 
 	privilege, _ := u.repository.EventPrivilegeFetchOne(ctx, db.EventPrivilegeFetchOneParams{
@@ -392,19 +392,19 @@ func (u Usecase) fetchInfinite(ctx context.Context, limit int32, args fetchInfin
 		},
 	})
 	if err != nil {
-		return responseInfinite{}, fmt.Errorf("error in fetch events : " + err.Error())
+		return responseInfinite{}, fmt.Errorf("error in fetch events : %s", err.Error())
 	}
 
 	total, err := u.repository.EventCountInfinite(ctx)
 	if err != nil {
-		return responseInfinite{}, fmt.Errorf("error in count infinite : " + err.Error())
+		return responseInfinite{}, fmt.Errorf("error in count infinite : %s", err.Error())
 	}
 
 	data := []responseInfiniteRow{}
 	for _, event := range events {
 		// totalParticipants, err := u.repository.EventRegistrationCountAllByStatusApproved(ctx, event.ID) // temporary comment
 		// if err != nil {
-		// 	return responseInfinite{}, fmt.Errorf("error in count all participants : " + err.Error())
+		// 	return responseInfinite{}, fmt.Errorf("error in count all participants : %s", err.Error())
 		// }
 		data = append(data, responseInfiniteRow{
 			ID:          event.ID,
@@ -483,7 +483,7 @@ func (u Usecase) updateStatus(ctx context.Context, req statusReq, eventID uuid.U
 func (u Usecase) assign(ctx context.Context, req assignRequest) error {
 	tx, err := u.rawRepository.db.Begin()
 	if err != nil {
-		return fmt.Errorf("error in start tx : " + err.Error())
+		return fmt.Errorf("error in start tx : %s", err.Error())
 	}
 	txQuery := u.repository.WithTx(tx)
 	for _, data := range req.Data {
@@ -493,13 +493,13 @@ func (u Usecase) assign(ctx context.Context, req assignRequest) error {
 			Role:    data.Role,
 		}); err != nil {
 			if err := tx.Rollback(); err != nil {
-				return fmt.Errorf("error in rollback tx : " + err.Error())
+				return fmt.Errorf("error in rollback tx : %s", err.Error())
 			}
-			return fmt.Errorf("error in store event privilege : " + err.Error())
+			return fmt.Errorf("error in store event privilege : %s", err.Error())
 		}
 	}
 	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("error in commit tx : " + err.Error())
+		return fmt.Errorf("error in commit tx : %s", err.Error())
 	}
 	return nil
 }
@@ -517,7 +517,7 @@ func (u Usecase) committeeUpdate(ctx context.Context, arg updateCommitteeParams,
 		EventID: arg.EventID,
 		UserID:  arg.CommitteeID,
 	}); err != nil {
-		return http.StatusNotFound, fmt.Errorf("privilege not found : " + err.Error())
+		return http.StatusNotFound, fmt.Errorf("privilege not found : %s", err.Error())
 	}
 
 	switch authPrivilege.Role {
@@ -525,7 +525,6 @@ func (u Usecase) committeeUpdate(ctx context.Context, arg updateCommitteeParams,
 		if arg.Role == db.EventRoleAdmin || arg.Role == db.EventRoleOwner {
 			return http.StatusForbidden, fmt.Errorf("role admin only can update privilege to contributor and reviewer")
 		}
-		break
 	}
 
 	if err := u.repository.EventPrivilegeUpdate(ctx, db.EventPrivilegeUpdateParams{
@@ -533,7 +532,7 @@ func (u Usecase) committeeUpdate(ctx context.Context, arg updateCommitteeParams,
 		UserID:  arg.CommitteeID,
 		EventID: arg.EventID,
 	}); err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in update event privilege : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in update event privilege : %s", err.Error())
 	}
 
 	return http.StatusOK, nil
@@ -549,7 +548,7 @@ func (u Usecase) committeeDelete(ctx context.Context, arg deleteCommitteeParams,
 		UserID:  arg.CommitteeID,
 	})
 	if err != nil {
-		return http.StatusNotFound, fmt.Errorf("privilege not found : " + err.Error())
+		return http.StatusNotFound, fmt.Errorf("privilege not found : %s", err.Error())
 	}
 
 	switch authPrivilege.Role {
@@ -557,14 +556,13 @@ func (u Usecase) committeeDelete(ctx context.Context, arg deleteCommitteeParams,
 		if privilege.Role == db.EventRoleAdmin || privilege.Role == db.EventRoleOwner {
 			return http.StatusForbidden, fmt.Errorf("role admin only can delete privilege to contributor and reviewer")
 		}
-		break
 	}
 
 	if err := u.repository.EventPrivilegeDelete(ctx, db.EventPrivilegeDeleteParams{
 		UserID:  arg.CommitteeID,
 		EventID: arg.EventID,
 	}); err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in delete event privilege : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in delete event privilege : %s", err.Error())
 	}
 
 	return http.StatusOK, nil
@@ -573,13 +571,13 @@ func (u Usecase) committeeDelete(ctx context.Context, arg deleteCommitteeParams,
 func (u Usecase) updateRemark(ctx context.Context, arg updateRemarkParams) error {
 	event, err := u.repository.EventCheckOne(ctx, arg.EventID)
 	if err != nil {
-		return fmt.Errorf("event not found : " + err.Error())
+		return fmt.Errorf("event not found : %s", err.Error())
 	}
 	if err := u.repository.EventUpdateRemark(ctx, db.EventUpdateRemarkParams{
 		Remark: arg.Remark,
 		ID:     event.ID,
 	}); err != nil {
-		return fmt.Errorf("error in update remark event : " + err.Error())
+		return fmt.Errorf("error in update remark event : %s", err.Error())
 	}
 	return nil
 }
