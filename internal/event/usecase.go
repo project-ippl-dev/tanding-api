@@ -23,20 +23,21 @@ func NewUsecase(repository *db.Queries, rawRepository RawRepository) Usecase {
 
 func (u Usecase) store(ctx context.Context, req request, decoded tools.JWT) (statusCode int, eventID uuid.UUID, err error) {
 	startDate, err := time.Parse("2006-01-02", req.StartDate)
+	errorPrefix := "error in parsing time : "
 	if err != nil {
-		return http.StatusBadRequest, uuid.UUID{}, fmt.Errorf("error in parsing time : " + err.Error())
+		return http.StatusBadRequest, uuid.UUID{}, fmt.Errorf(errorPrefix + err.Error())
 	}
 	endDate, err := time.Parse("2006-01-02", req.EndDate)
 	if err != nil {
-		return http.StatusBadRequest, uuid.UUID{}, fmt.Errorf("error in parsing time : " + err.Error())
+		return http.StatusBadRequest, uuid.UUID{}, fmt.Errorf(errorPrefix + err.Error())
 	}
 	deadline, err := time.Parse("2006-01-02T15:04:05", req.Deadline)
 	if err != nil {
-		return http.StatusBadRequest, uuid.UUID{}, fmt.Errorf("error in parsing time : " + err.Error())
+		return http.StatusBadRequest, uuid.UUID{}, fmt.Errorf(errorPrefix + err.Error())
 	}
 	open, err := time.Parse("2006-01-02T15:04:05", req.Open)
 	if err != nil {
-		return http.StatusBadRequest, uuid.UUID{}, fmt.Errorf("error in parsing time : " + err.Error())
+		return http.StatusBadRequest, uuid.UUID{}, fmt.Errorf(errorPrefix + err.Error())
 	}
 
 	if deadline.Before(open) {
@@ -509,7 +510,7 @@ func (u Usecase) committeeFetchAll(ctx context.Context, eventID uuid.UUID) ([]db
 }
 
 func (u Usecase) committeeUpdate(ctx context.Context, arg updateCommitteeParams, userID string) (statusCode int, err error) {
-	authPrivilege, err := u.repository.EventPrivilegeFetchOne(ctx, db.EventPrivilegeFetchOneParams{
+	authPrivilege, _ := u.repository.EventPrivilegeFetchOne(ctx, db.EventPrivilegeFetchOneParams{
 		EventID: arg.EventID,
 		UserID:  uuid.MustParse(userID),
 	})
@@ -540,7 +541,7 @@ func (u Usecase) committeeUpdate(ctx context.Context, arg updateCommitteeParams,
 }
 
 func (u Usecase) committeeDelete(ctx context.Context, arg deleteCommitteeParams, userID string) (statusCode int, err error) {
-	authPrivilege, err := u.repository.EventPrivilegeFetchOne(ctx, db.EventPrivilegeFetchOneParams{
+	authPrivilege, _ := u.repository.EventPrivilegeFetchOne(ctx, db.EventPrivilegeFetchOneParams{
 		EventID: arg.EventID,
 		UserID:  uuid.MustParse(userID),
 	})

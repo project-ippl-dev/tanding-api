@@ -3,11 +3,12 @@ package event
 import (
 	"context"
 	"database/sql"
-	"github.com/project-ippl-dev/tanding-api/internal/db"
-	"github.com/google/uuid"
-	"github.com/lib/pq"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/lib/pq"
+	"github.com/project-ippl-dev/tanding-api/internal/db"
 )
 
 type RawRepository struct {
@@ -234,21 +235,18 @@ func (r *RawRepository) EventFetchInfinite(ctx context.Context, args fetchInfini
 			return nil, err
 		}
 		rows = result
-		break
 	case "sport":
 		result, err := r.db.QueryContext(ctx, fetchInfiniteBySportID, args.OrderNumber, args.Name, args.SportID, args.Limit)
 		if err != nil {
 			return nil, err
 		}
 		rows = result
-		break
 	case "category":
 		result, err := r.db.QueryContext(ctx, fetchInfiniteByCategory, args.OrderNumber, args.Name, args.Category, args.Limit)
 		if err != nil {
 			return nil, err
 		}
 		rows = result
-		break
 	case "remark":
 		result, err := r.db.QueryContext(ctx, fetchInfiniteByRemark, args.OrderNumber, args.Name, args.Remark, args.Limit)
 		if err != nil {
