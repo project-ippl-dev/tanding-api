@@ -404,21 +404,3 @@ func (e *MatchType) Scan(src interface{}) error {
 	return nil
 }
 
-type MatchType string
-
-const (
-	MatchTypeSingle MatchType = "single"
-	MatchTypeOrder  MatchType = "order"
-)
-
-func (e *MatchType) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = MatchType(s)
-	case string:
-		*e = MatchType(s)
-	default:
-		return fmt.Errorf("unsupported scan type for MatchType: %T", src)
-	}
-	return nil
-}
