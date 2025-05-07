@@ -441,7 +441,7 @@ func (u Usecase) fetchInfinite(ctx context.Context, limit int32, args fetchInfin
 func (u Usecase) updateStatus(ctx context.Context, req statusReq, eventID uuid.UUID) error {
 	event, err := u.repository.EventFetchOne(ctx, eventID)
 	if err != nil {
-		return fmt.Errorf("error in fetch one event :" + err.Error())
+		return fmt.Errorf("error in fetch one event : %s", err.Error())
 	}
 
 	var remark db.RemarkType
@@ -463,7 +463,7 @@ func (u Usecase) updateStatus(ctx context.Context, req statusReq, eventID uuid.U
 			Remark: remark,
 			ID:     eventID,
 		}); err != nil {
-			return fmt.Errorf("error in update status :" + err.Error())
+			return fmt.Errorf("error in update status : %s", err.Error())
 		}
 	} else {
 		if err := u.repository.EventUpdateStatus(ctx, db.EventUpdateStatusParams{
@@ -474,7 +474,7 @@ func (u Usecase) updateStatus(ctx context.Context, req statusReq, eventID uuid.U
 			Remark: db.RemarkTypeRejected,
 			ID:     eventID,
 		}); err != nil {
-			return fmt.Errorf("error in update status :" + err.Error())
+			return fmt.Errorf("error in update status : %s", err.Error())
 		}
 	}
 	return nil
