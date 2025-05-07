@@ -23,25 +23,20 @@ func NewUsecase(repository *db.Queries, rawRepository RawRepository) Usecase {
 
 func (u Usecase) store(ctx context.Context, req request, decoded tools.JWT) (statusCode int, eventID uuid.UUID, err error) {
 	startDate, err := time.Parse("2006-01-02", req.StartDate)
-	errorPrefix := "error in parsing time : "
 	if err != nil {
-		errorPrefix += err.Error()
-		return http.StatusBadRequest, uuid.UUID{}, fmt.Errorf(errorPrefix)
+		return http.StatusBadRequest, uuid.UUID{}, fmt.Errorf("error in parsing time : %s", err.Error())
 	}
 	endDate, err := time.Parse("2006-01-02", req.EndDate)
 	if err != nil {
-		errorPrefix += err.Error()
-		return http.StatusBadRequest, uuid.UUID{}, fmt.Errorf(errorPrefix)
+		return http.StatusBadRequest, uuid.UUID{}, fmt.Errorf("error in parsing time : %s", err.Error())
 	}
 	deadline, err := time.Parse("2006-01-02T15:04:05", req.Deadline)
 	if err != nil {
-		errorPrefix += err.Error()
-		return http.StatusBadRequest, uuid.UUID{}, fmt.Errorf(errorPrefix)
+		return http.StatusBadRequest, uuid.UUID{}, fmt.Errorf("error in parsing time : %s", err.Error())
 	}
 	open, err := time.Parse("2006-01-02T15:04:05", req.Open)
 	if err != nil {
-		errorPrefix += err.Error()
-		return http.StatusBadRequest, uuid.UUID{}, fmt.Errorf(errorPrefix)
+		return http.StatusBadRequest, uuid.UUID{}, fmt.Errorf("error in parsing time : %s", err.Error())
 	}
 
 	if deadline.Before(open) {
