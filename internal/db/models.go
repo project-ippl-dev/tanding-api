@@ -143,24 +143,6 @@ func (ns NullClassType) Value() (driver.Value, error) {
 	return string(ns.ClassType), nil
 }
 
-type MatchType string
-
-const (
-	MatchTypeSingle MatchType = "single"
-	MatchTypeOrder  MatchType = "order"
-)
-
-func (e *MatchType) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = MatchType(s)
-	case string:
-		*e = MatchType(s)
-	default:
-		return fmt.Errorf("unsupported scan type for MatchType: %T", src)
-	}
-	return nil
-}
 
 type NullMatchType struct {
 	MatchType MatchType `json:"match_type"`
@@ -465,3 +447,98 @@ type User struct {
 	CreatedAt      time.Time    `json:"created_at"`
 	UpdatedAt      sql.NullTime `json:"updated_at"`
 }
+
+type EventPrivilege struct {
+	ID        int64        `json:"id"`
+	EventID   uuid.UUID    `json:"event_id"`
+	UserID    uuid.UUID    `json:"user_id"`
+	Role      EventRole    `json:"role"`
+	CreatedAt time.Time    `json:"created_at"`
+	UpdatedAt sql.NullTime `json:"updated_at"`
+}
+
+
+
+type EventRole string
+
+const (
+	EventRoleOwner       EventRole = "owner"
+	EventRoleReviewer    EventRole = "reviewer"
+	EventRoleContributor EventRole = "contributor"
+	EventRoleAdmin       EventRole = "admin"
+)
+
+func (e *EventRole) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = EventRole(s)
+	case string:
+		*e = EventRole(s)
+	default:
+		return fmt.Errorf("unsupported scan type for EventRole: %T", src)
+	}
+	return nil
+}
+
+type EventType string
+
+const (
+	EventTypeCompetition EventType = "competition"
+	EventTypeEvent       EventType = "event"
+)
+
+func (e *EventType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = EventType(s)
+	case string:
+		*e = EventType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for EventType: %T", src)
+	}
+	return nil
+}
+
+type RemarkType string
+
+const (
+	RemarkTypeUnconfirmed RemarkType = "unconfirmed"
+	RemarkTypeSoon        RemarkType = "soon"
+	RemarkTypeOpen        RemarkType = "open"
+	RemarkTypeClosed      RemarkType = "closed"
+	RemarkTypeOngoing     RemarkType = "ongoing"
+	RemarkTypeDone        RemarkType = "done"
+	RemarkTypeRejected    RemarkType = "rejected"
+)
+
+func (e *RemarkType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = RemarkType(s)
+	case string:
+		*e = RemarkType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for RemarkType: %T", src)
+	}
+	return nil
+}
+
+type MatchType string
+
+const (
+	MatchTypeSingle MatchType = "single"
+	MatchTypeOrder  MatchType = "order"
+)
+
+func (e *MatchType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = MatchType(s)
+	case string:
+		*e = MatchType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for MatchType: %T", src)
+	}
+	return nil
+}
+
