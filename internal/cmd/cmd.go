@@ -2,11 +2,25 @@ package cmd
 
 import (
 	"database/sql"
-	"github.com/dytlan/tanding-api/config"
-	"github.com/dytlan/tanding-api/internal/db"
-	"github.com/dytlan/tanding-api/internal/test"
+	"fmt"
+
+	"github.com/project-ippl-dev/tanding-api/internal/club"
+	"net/http"
+
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/go-redis/redis/v8"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+
+	"github.com/project-ippl-dev/tanding-api/config"
+	"github.com/project-ippl-dev/tanding-api/internal/accomplishment"
+	"github.com/project-ippl-dev/tanding-api/internal/auth"
+	"github.com/project-ippl-dev/tanding-api/internal/db"
+	"github.com/project-ippl-dev/tanding-api/internal/document"
+	"github.com/project-ippl-dev/tanding-api/internal/file"
+	middlewareApp "github.com/project-ippl-dev/tanding-api/internal/middleware"
+	"github.com/project-ippl-dev/tanding-api/internal/sport"
+	"github.com/project-ippl-dev/tanding-api/internal/user"
 )
 
 func Run() error {
@@ -15,14 +29,20 @@ func Run() error {
 		return err
 	}
 	defer dbConn.Close()
+	rdb, err := config.RedisConnection()
+	if err != nil {
+		return err
+	}
+	defer rdb.Close()
+	sess := config.S3Connection()
 	e := echo.New()
 
-	routing(dbConn, e)
+	routing(dbConn, rdb, sess, e)
 
-	return e.Start(config.Configuration().Server.Port)
+	return e.Start(fmt.Sprintf("%s:%s", config.Configuration().Server.Host, config.Configuration().Server.Port))
 }
 
-func routing(dbConn *sql.DB, e *echo.Echo) {
+func routing(dbConn *sql.DB, rdb *redis.Client, sess *session.Session, e *echo.Echo) {
 	//Setup Cors
 	e.Use(middleware.CORS())
 
@@ -32,11 +52,43 @@ func routing(dbConn *sql.DB, e *echo.Echo) {
 	//Set Logger for every http request
 	e.Use(middleware.Logger())
 
+	//Register Static Files
+	e.Static("/icon", "public/icon")
+
+	e.GET("/healthcheck", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, map[string]string{"status": "HEALTHY"})
+	})
+
 	repository := db.New(dbConn)
 
+	//Init Middleware
+	m := middlewareApp.InitMiddleware(repository)
+
+	middlewareArgs := middlewareApp.Params{Middleware: m}
+
+	//Init new group route
+	profileRoute := e.Group("/profile", middlewareArgs.JWTMiddleware())
+
+	//Declare Raw Repository
+	userRepository := user.NewRepository(dbConn)
+	sportRepository := sport.NewRepository(dbConn)
+	clubRepository := club.NewRepository(dbConn)
+
 	//Declare Usecase
-	testUsecase := test.NewUsecase(repository)
+	authUsecase := auth.NewUsecase(repository, dbConn, rdb)
+	accomplishmentUsecase := accomplishment.NewUsecase(repository)
+	userUsecase := user.NewUsecase(repository, userRepository)
+	sportUsecase := sport.NewUsecase(repository, sportRepository)
+	documentUsecase := document.NewUsecase(repository)
+	fileUsecase := file.NewUsecase(sess)
+	clubUsecase := club.NewUsecase(repository, clubRepository)
 
 	//Declare Handlers
-	test.RegisterHandler(testUsecase, e)
+	auth.RegisterHandler(authUsecase, e)
+	accomplishment.RegisterHandler(accomplishmentUsecase, profileRoute)
+	user.RegisterHandler(userUsecase, middlewareArgs, e)
+	sport.RegisterHandler(sportUsecase, middlewareArgs, e)
+	document.RegisterHandler(documentUsecase, profileRoute)
+	file.RegisterHandler(fileUsecase, middlewareArgs, e)
+	club.RegisterHandler(clubUsecase, middlewareArgs, e)
 }
