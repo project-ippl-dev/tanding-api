@@ -4,8 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/project-ippl-dev/tanding-api/internal/club"
 	"net/http"
+
+	"github.com/project-ippl-dev/tanding-api/internal/club"
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/go-redis/redis/v8"
@@ -17,6 +18,7 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/auth"
 	"github.com/project-ippl-dev/tanding-api/internal/db"
 	"github.com/project-ippl-dev/tanding-api/internal/document"
+	"github.com/project-ippl-dev/tanding-api/internal/event"
 	"github.com/project-ippl-dev/tanding-api/internal/file"
 	middlewareApp "github.com/project-ippl-dev/tanding-api/internal/middleware"
 	"github.com/project-ippl-dev/tanding-api/internal/sport"
@@ -73,6 +75,7 @@ func routing(dbConn *sql.DB, rdb *redis.Client, sess *session.Session, e *echo.E
 	userRepository := user.NewRepository(dbConn)
 	sportRepository := sport.NewRepository(dbConn)
 	clubRepository := club.NewRepository(dbConn)
+	eventRepository := event.NewRepository(dbConn)
 
 	//Declare Usecase
 	authUsecase := auth.NewUsecase(repository, dbConn, rdb)
@@ -82,6 +85,7 @@ func routing(dbConn *sql.DB, rdb *redis.Client, sess *session.Session, e *echo.E
 	documentUsecase := document.NewUsecase(repository)
 	fileUsecase := file.NewUsecase(sess)
 	clubUsecase := club.NewUsecase(repository, clubRepository)
+	eventUsecase := event.NewUsecase(repository, eventRepository)
 
 	//Declare Handlers
 	auth.RegisterHandler(authUsecase, e)
@@ -91,4 +95,5 @@ func routing(dbConn *sql.DB, rdb *redis.Client, sess *session.Session, e *echo.E
 	document.RegisterHandler(documentUsecase, profileRoute)
 	file.RegisterHandler(fileUsecase, middlewareArgs, e)
 	club.RegisterHandler(clubUsecase, middlewareArgs, e)
+	event.RegisterHandler(eventUsecase, middlewareArgs, e)
 }
