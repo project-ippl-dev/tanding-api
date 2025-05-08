@@ -172,13 +172,10 @@ func (u Usecase) update(ctx context.Context, arg updateParams, userID string) (s
 	switch arg.Status {
 	case db.EventReceiptStatusApproved:
 		status = db.EventRegistrationStatusApproved
-		break
 	case db.EventReceiptStatusRejected:
 		status = db.EventRegistrationStatusRejected
-		break
 	case db.EventReceiptStatusRefund:
 		status = db.EventRegistrationStatusCanceled
-		break
 	default:
 		return http.StatusBadRequest, fmt.Errorf("bad request")
 	}
