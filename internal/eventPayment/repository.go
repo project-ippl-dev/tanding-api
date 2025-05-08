@@ -3,11 +3,12 @@ package eventPayment
 import (
 	"context"
 	"database/sql"
-	"github.com/dytlan/tanding-api/internal/db"
-	"github.com/google/uuid"
-	"github.com/lib/pq"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/lib/pq"
+	"github.com/project-ippl-dev/tanding-api/internal/db"
 )
 
 type RawRepository struct {
