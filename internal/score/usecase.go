@@ -3,8 +3,9 @@ package score
 import (
 	"context"
 	"fmt"
-	"github.com/dytlan/tanding-api/internal/db"
 	"net/http"
+
+	"github.com/project-ippl-dev/tanding-api/internal/db"
 )
 
 type Usecase struct {
