@@ -542,3 +542,27 @@ func (e *MatchType) Scan(src interface{}) error {
 	return nil
 }
 
+
+
+type EventRegistrationStatus string
+
+const (
+	EventRegistrationStatusPending  EventRegistrationStatus = "pending"
+	EventRegistrationStatusCanceled EventRegistrationStatus = "canceled"
+	EventRegistrationStatusWaiting  EventRegistrationStatus = "waiting"
+	EventRegistrationStatusApproved EventRegistrationStatus = "approved"
+	EventRegistrationStatusRejected EventRegistrationStatus = "rejected"
+)
+
+func (e *EventRegistrationStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = EventRegistrationStatus(s)
+	case string:
+		*e = EventRegistrationStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for EventRegistrationStatus: %T", src)
+	}
+	return nil
+}
+
