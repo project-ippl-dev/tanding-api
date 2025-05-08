@@ -174,7 +174,7 @@ type fetchAllDBParams struct {
 
 type fetchAllRow struct {
 	ID           uuid.UUID                  `json:"id"`
-	ClassEventID uuid.UUID                  `json:"class_event_id""`
+	ClassEventID uuid.UUID                  `json:"class_event_id"`
 	ClassName    string                     `json:"class_name"`
 	ClubID       uuid.UUID                  `json:"club_id"`
 	ClubName     string                     `json:"club_name"`
@@ -212,7 +212,6 @@ func (r *RawRepository) EventRegistrationFetchAll(ctx context.Context, arg fetch
 			return nil, err
 		}
 		rows = result
-		break
 	case "club_id":
 		result, err := r.db.QueryContext(ctx, eventRegistrationFetchByClubID,
 			arg.EventID, arg.ClubID,
@@ -221,7 +220,6 @@ func (r *RawRepository) EventRegistrationFetchAll(ctx context.Context, arg fetch
 			return nil, err
 		}
 		rows = result
-		break
 	case "class_event_id":
 		result, err := r.db.QueryContext(ctx, eventRegistrationFetchByClassEventID,
 			arg.EventID, arg.ClassEventID,
@@ -230,7 +228,6 @@ func (r *RawRepository) EventRegistrationFetchAll(ctx context.Context, arg fetch
 			return nil, err
 		}
 		rows = result
-		break
 	case "status":
 		result, err := r.db.QueryContext(ctx, eventRegistrationFetchByStatus,
 			arg.EventID, arg.Status,
@@ -239,7 +236,6 @@ func (r *RawRepository) EventRegistrationFetchAll(ctx context.Context, arg fetch
 			return nil, err
 		}
 		rows = result
-		break
 	case "user_id":
 		result, err := r.db.QueryContext(ctx, eventRegistrationFetchByUserID,
 			arg.EventID, arg.UserID,
@@ -248,7 +244,6 @@ func (r *RawRepository) EventRegistrationFetchAll(ctx context.Context, arg fetch
 			return nil, err
 		}
 		rows = result
-		break
 	case "club_id-class_event_id":
 		result, err := r.db.QueryContext(ctx, eventRegistrationFetchByClubIDAndClassEventID,
 			arg.EventID, arg.ClubID, arg.ClassEventID,
@@ -257,7 +252,6 @@ func (r *RawRepository) EventRegistrationFetchAll(ctx context.Context, arg fetch
 			return nil, err
 		}
 		rows = result
-		break
 	case "club_id-status":
 		result, err := r.db.QueryContext(ctx, eventRegistrationFetchByClubIDAndStatus,
 			arg.EventID, arg.ClubID, arg.Status,
@@ -266,7 +260,6 @@ func (r *RawRepository) EventRegistrationFetchAll(ctx context.Context, arg fetch
 			return nil, err
 		}
 		rows = result
-		break
 	case "club_id-user_id":
 		result, err := r.db.QueryContext(ctx, eventRegistrationFetchByClubIDAndUserID,
 			arg.EventID, arg.ClubID, arg.UserID,
@@ -275,7 +268,6 @@ func (r *RawRepository) EventRegistrationFetchAll(ctx context.Context, arg fetch
 			return nil, err
 		}
 		rows = result
-		break
 	case "class_event_id-status":
 		result, err := r.db.QueryContext(ctx, eventRegistrationFetchByClassEventIDAndStatus,
 			arg.EventID, arg.ClassEventID, arg.Status,
@@ -284,7 +276,6 @@ func (r *RawRepository) EventRegistrationFetchAll(ctx context.Context, arg fetch
 			return nil, err
 		}
 		rows = result
-		break
 	case "class_event_id-user_id":
 		result, err := r.db.QueryContext(ctx, eventRegistrationFetchByClassEventIDAndUserID,
 			arg.EventID, arg.ClassEventID, arg.UserID,
@@ -293,7 +284,6 @@ func (r *RawRepository) EventRegistrationFetchAll(ctx context.Context, arg fetch
 			return nil, err
 		}
 		rows = result
-		break
 	case "status-user_id":
 		result, err := r.db.QueryContext(ctx, eventRegistrationFetchByStatusAndUserID,
 			arg.EventID, arg.Status, arg.UserID,
@@ -302,7 +292,6 @@ func (r *RawRepository) EventRegistrationFetchAll(ctx context.Context, arg fetch
 			return nil, err
 		}
 		rows = result
-		break
 	case "club_id-class_event_id-status":
 		result, err := r.db.QueryContext(ctx, eventRegistrationFetchByClubIDClassEventIDAndStatus,
 			arg.EventID, arg.ClubID, arg.ClassEventID, arg.Status,
@@ -311,7 +300,6 @@ func (r *RawRepository) EventRegistrationFetchAll(ctx context.Context, arg fetch
 			return nil, err
 		}
 		rows = result
-		break
 	case "club_id-class_event_id-user_id":
 		result, err := r.db.QueryContext(ctx, eventRegistrationFetchByClubIDClassEventIDAndUserID,
 			arg.EventID, arg.ClubID, arg.ClassEventID, arg.UserID,
@@ -320,7 +308,6 @@ func (r *RawRepository) EventRegistrationFetchAll(ctx context.Context, arg fetch
 			return nil, err
 		}
 		rows = result
-		break
 	case "club_id-status-user_id":
 		result, err := r.db.QueryContext(ctx, eventRegistrationFetchByClubIDStatusAndUserID,
 			arg.EventID, arg.ClubID, arg.Status, arg.UserID,
@@ -329,7 +316,6 @@ func (r *RawRepository) EventRegistrationFetchAll(ctx context.Context, arg fetch
 			return nil, err
 		}
 		rows = result
-		break
 	case "class_event_id-status-user_id":
 		result, err := r.db.QueryContext(ctx, eventRegistrationFetchByClassEventIDStatusAndUserID,
 			arg.EventID, arg.ClassEventID, arg.Status, arg.UserID,
@@ -338,7 +324,6 @@ func (r *RawRepository) EventRegistrationFetchAll(ctx context.Context, arg fetch
 			return nil, err
 		}
 		rows = result
-		break
 	case "club_id-class_event_id-status-user_id":
 		result, err := r.db.QueryContext(ctx, eventRegistrationFetchByFilterAll,
 			arg.EventID, arg.ClubID, arg.ClassEventID, arg.Status, arg.UserID,
@@ -347,7 +332,6 @@ func (r *RawRepository) EventRegistrationFetchAll(ctx context.Context, arg fetch
 			return nil, err
 		}
 		rows = result
-		break
 	}
 
 	defer rows.Close()
@@ -510,52 +494,36 @@ func (r *RawRepository) EventRegistrationCountAll(ctx context.Context, arg fetch
 	switch status {
 	default:
 		row = r.db.QueryRowContext(ctx, eventRegistrationCountAll, arg.EventID)
-		break
 	case "club_id":
 		row = r.db.QueryRowContext(ctx, eventRegistrationCountByClubID, arg.EventID, arg.ClubID)
-		break
 	case "class_event_id":
 		row = r.db.QueryRowContext(ctx, eventRegistrationCountByClassEventID, arg.EventID, arg.ClassEventID)
-		break
 	case "status":
 		row = r.db.QueryRowContext(ctx, eventRegistrationCountByStatus, arg.EventID, arg.Status)
-		break
 	case "user_id":
 		row = r.db.QueryRowContext(ctx, eventRegistrationCountByUserID, arg.EventID, arg.UserID)
-		break
 	case "club_id-class_event_id":
 		row = r.db.QueryRowContext(ctx, eventRegistrationCountByClubIDAndClassEventID, arg.EventID, arg.ClubID, arg.ClassEventID)
-		break
 	case "club_id-status":
 		row = r.db.QueryRowContext(ctx, eventRegistrationCountByClubIDAndStatus, arg.EventID, arg.ClubID, arg.Status)
-		break
 	case "club_id-user_id":
 		row = r.db.QueryRowContext(ctx, eventRegistrationCountByClubIDAndUserID, arg.EventID, arg.ClubID, arg.UserID)
-		break
 	case "class_event_id-status":
 		row = r.db.QueryRowContext(ctx, eventRegistrationCountByClassEventIDAndStatus, arg.EventID, arg.ClassEventID, arg.Status)
-		break
 	case "class_event_id-user_id":
 		row = r.db.QueryRowContext(ctx, eventRegistrationCountByClassEventIDAndUserID, arg.EventID, arg.ClassEventID, arg.UserID)
-		break
 	case "status-user_id":
 		row = r.db.QueryRowContext(ctx, eventRegistrationCountByStatusAndUserID, arg.EventID, arg.Status, arg.UserID)
-		break
 	case "club_id-class_event_id-status":
 		row = r.db.QueryRowContext(ctx, eventRegistrationCountByClubIDClassEventIDAndStatus, arg.EventID, arg.ClubID, arg.ClassEventID, arg.Status)
-		break
 	case "club_id-class_event_id-user_id":
 		row = r.db.QueryRowContext(ctx, eventRegistrationCountByClubIDClassEventIDAndUserID, arg.EventID, arg.ClubID, arg.ClassEventID, arg.UserID)
-		break
 	case "club_id-status-user_id":
 		row = r.db.QueryRowContext(ctx, eventRegistrationCountByClubIDStatusAndUserID, arg.EventID, arg.ClubID, arg.Status, arg.UserID)
-		break
 	case "class_event_id-status-user_id":
 		row = r.db.QueryRowContext(ctx, eventRegistrationCountByClassEventIDStatusAndUserID, arg.EventID, arg.ClassEventID, arg.Status, arg.UserID)
-		break
 	case "club_id-class_event_id-status-user_id":
 		row = r.db.QueryRowContext(ctx, eventRegistrationCountByFilterAll, arg.EventID, arg.ClubID, arg.ClassEventID, arg.Status, arg.UserID)
-		break
 	}
 
 	var count int64

@@ -13,6 +13,51 @@ import (
 	"github.com/google/uuid"
 )
 
+type AccomplishmentLevel string
+
+const (
+	AccomplishmentLevelRegion        AccomplishmentLevel = "region"
+	AccomplishmentLevelProvince      AccomplishmentLevel = "province"
+	AccomplishmentLevelNational      AccomplishmentLevel = "national"
+	AccomplishmentLevelInternational AccomplishmentLevel = "international"
+	AccomplishmentLevelOthers        AccomplishmentLevel = "others"
+)
+
+func (e *AccomplishmentLevel) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = AccomplishmentLevel(s)
+	case string:
+		*e = AccomplishmentLevel(s)
+	default:
+		return fmt.Errorf("unsupported scan type for AccomplishmentLevel: %T", src)
+	}
+	return nil
+}
+
+type NullAccomplishmentLevel struct {
+	AccomplishmentLevel AccomplishmentLevel `json:"accomplishment_level"`
+	Valid               bool                `json:"valid"` // Valid is true if AccomplishmentLevel is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullAccomplishmentLevel) Scan(value interface{}) error {
+	if value == nil {
+		ns.AccomplishmentLevel, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.AccomplishmentLevel.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullAccomplishmentLevel) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.AccomplishmentLevel), nil
+}
+
 type AccountType string
 
 const (
@@ -54,6 +99,72 @@ func (ns NullAccountType) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.AccountType), nil
+}
+
+type ClassType string
+
+const (
+	ClassTypeDefault ClassType = "default"
+	ClassTypeCustom  ClassType = "custom"
+)
+
+func (e *ClassType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = ClassType(s)
+	case string:
+		*e = ClassType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for ClassType: %T", src)
+	}
+	return nil
+}
+
+type NullClassType struct {
+	ClassType ClassType `json:"class_type"`
+	Valid     bool      `json:"valid"` // Valid is true if ClassType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullClassType) Scan(value interface{}) error {
+	if value == nil {
+		ns.ClassType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.ClassType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullClassType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.ClassType), nil
+}
+
+
+type NullMatchType struct {
+	MatchType MatchType `json:"match_type"`
+	Valid     bool      `json:"valid"` // Valid is true if MatchType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullMatchType) Scan(value interface{}) error {
+	if value == nil {
+		ns.MatchType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.MatchType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullMatchType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.MatchType), nil
 }
 
 type PrivilegeType string
@@ -182,6 +293,22 @@ func (ns NullSportType) Value() (driver.Value, error) {
 	return string(ns.SportType), nil
 }
 
+type Accomplishment struct {
+	ID          int64               `json:"id"`
+	UserID      uuid.UUID           `json:"user_id"`
+	Title       string              `json:"title"`
+	Level       AccomplishmentLevel `json:"level"`
+	Ranking     string              `json:"ranking"`
+	Category    string              `json:"category"`
+	Sport       string              `json:"sport"`
+	Description sql.NullString      `json:"description"`
+	FileUrl     string              `json:"file_url"`
+	Month       int16               `json:"month"`
+	Year        int16               `json:"year"`
+	CreatedAt   sql.NullTime        `json:"created_at"`
+	UpdatedAt   sql.NullTime        `json:"updated_at"`
+}
+
 type Account struct {
 	ID        int64        `json:"id"`
 	Type      AccountType  `json:"type"`
@@ -189,6 +316,27 @@ type Account struct {
 	Password  string       `json:"password"`
 	UserID    uuid.UUID    `json:"user_id"`
 	Status    bool         `json:"status"`
+	CreatedAt time.Time    `json:"created_at"`
+	UpdatedAt sql.NullTime `json:"updated_at"`
+}
+
+type Class struct {
+	ID                     uuid.UUID    `json:"id"`
+	SportID                uuid.UUID    `json:"sport_id"`
+	Name                   string       `json:"name"`
+	ClassCompetitionRuleID int64        `json:"class_competition_rule_id"`
+	MatchType              MatchType    `json:"match_type"`
+	Type                   ClassType    `json:"type"`
+	CreatedAt              time.Time    `json:"created_at"`
+	UpdatedAt              sql.NullTime `json:"updated_at"`
+}
+
+type ClassCompetitionRule struct {
+	ID        int64        `json:"id"`
+	Name      string       `json:"name"`
+	Male      int16        `json:"male"`
+	Female    int16        `json:"female"`
+	Total     int16        `json:"total"`
 	CreatedAt time.Time    `json:"created_at"`
 	UpdatedAt sql.NullTime `json:"updated_at"`
 }
@@ -300,15 +448,100 @@ type User struct {
 	UpdatedAt      sql.NullTime `json:"updated_at"`
 }
 
-type AccomplishmentLevel string
+type EventPrivilege struct {
+	ID        int64        `json:"id"`
+	EventID   uuid.UUID    `json:"event_id"`
+	UserID    uuid.UUID    `json:"user_id"`
+	Role      EventRole    `json:"role"`
+	CreatedAt time.Time    `json:"created_at"`
+	UpdatedAt sql.NullTime `json:"updated_at"`
+}
+
+
+
+type EventRole string
 
 const (
-	AccomplishmentLevelRegion        AccomplishmentLevel = "region"
-	AccomplishmentLevelProvince      AccomplishmentLevel = "province"
-	AccomplishmentLevelNational      AccomplishmentLevel = "national"
-	AccomplishmentLevelInternational AccomplishmentLevel = "international"
-	AccomplishmentLevelOthers        AccomplishmentLevel = "others"
+	EventRoleOwner       EventRole = "owner"
+	EventRoleReviewer    EventRole = "reviewer"
+	EventRoleContributor EventRole = "contributor"
+	EventRoleAdmin       EventRole = "admin"
 )
+
+func (e *EventRole) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = EventRole(s)
+	case string:
+		*e = EventRole(s)
+	default:
+		return fmt.Errorf("unsupported scan type for EventRole: %T", src)
+	}
+	return nil
+}
+
+type EventType string
+
+const (
+	EventTypeCompetition EventType = "competition"
+	EventTypeEvent       EventType = "event"
+)
+
+func (e *EventType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = EventType(s)
+	case string:
+		*e = EventType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for EventType: %T", src)
+	}
+	return nil
+}
+
+type RemarkType string
+
+const (
+	RemarkTypeUnconfirmed RemarkType = "unconfirmed"
+	RemarkTypeSoon        RemarkType = "soon"
+	RemarkTypeOpen        RemarkType = "open"
+	RemarkTypeClosed      RemarkType = "closed"
+	RemarkTypeOngoing     RemarkType = "ongoing"
+	RemarkTypeDone        RemarkType = "done"
+	RemarkTypeRejected    RemarkType = "rejected"
+)
+
+func (e *RemarkType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = RemarkType(s)
+	case string:
+		*e = RemarkType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for RemarkType: %T", src)
+	}
+	return nil
+}
+
+type MatchType string
+
+const (
+	MatchTypeSingle MatchType = "single"
+	MatchTypeOrder  MatchType = "order"
+)
+
+func (e *MatchType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = MatchType(s)
+	case string:
+		*e = MatchType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for MatchType: %T", src)
+	}
+	return nil
+}
+
 
 
 type EventRegistrationStatus string
