@@ -300,112 +300,96 @@ func (r *RawRepository) EventPaymentFetchAll(ctx context.Context, arg fetchByEve
 			return nil, err
 		}
 		rows = result
-		break
 	case "event":
 		result, err := r.db.QueryContext(ctx, eventPaymentFetchByEventID, arg.EventID, arg.Limit, arg.Offset)
 		if err != nil {
 			return nil, err
 		}
 		rows = result
-		break
 	case "status":
 		result, err := r.db.QueryContext(ctx, eventPaymentFetchByStatus, arg.Status, arg.Limit, arg.Offset)
 		if err != nil {
 			return nil, err
 		}
 		rows = result
-		break
 	case "club_id":
 		result, err := r.db.QueryContext(ctx, eventPaymentFetchByClubID, pq.Array(arg.ClubID), arg.Limit, arg.Offset)
 		if err != nil {
 			return nil, err
 		}
 		rows = result
-		break
 	case "date":
 		result, err := r.db.QueryContext(ctx, eventPaymentFetchByDate, arg.Start, arg.End, arg.Limit, arg.Offset)
 		if err != nil {
 			return nil, err
 		}
 		rows = result
-		break
 	case "event-status":
 		result, err := r.db.QueryContext(ctx, eventPaymentFetchByEventIDAndStatus, arg.EventID, arg.Status, arg.Limit, arg.Offset)
 		if err != nil {
 			return nil, err
 		}
 		rows = result
-		break
 	case "event-club":
 		result, err := r.db.QueryContext(ctx, eventPaymentFetchByEventIDAndClubID, arg.EventID, pq.Array(arg.ClubID), arg.Limit, arg.Offset)
 		if err != nil {
 			return nil, err
 		}
 		rows = result
-		break
 	case "event-date":
 		result, err := r.db.QueryContext(ctx, eventPaymentFetchByEventIDAndDate, arg.EventID, arg.Start, arg.End, arg.Limit, arg.Offset)
 		if err != nil {
 			return nil, err
 		}
 		rows = result
-		break
 	case "status-club_id":
 		result, err := r.db.QueryContext(ctx, eventPaymentFetchByStatusAndClubID, arg.Status, pq.Array(arg.ClubID), arg.Limit, arg.Offset)
 		if err != nil {
 			return nil, err
 		}
 		rows = result
-		break
 	case "status-date":
 		result, err := r.db.QueryContext(ctx, eventPaymentFetchByStatusAndDate, arg.Status, arg.Start, arg.End, arg.Limit, arg.Offset)
 		if err != nil {
 			return nil, err
 		}
 		rows = result
-		break
 	case "club_id-date":
 		result, err := r.db.QueryContext(ctx, eventPaymentFetchByClubIDAndDate, pq.Array(arg.ClubID), arg.Start, arg.End, arg.Limit, arg.Offset)
 		if err != nil {
 			return nil, err
 		}
 		rows = result
-		break
 	case "event-status-club":
 		result, err := r.db.QueryContext(ctx, eventPaymentFetchByEventIDStatusAndClubID, arg.EventID, arg.Status, pq.Array(arg.ClubID), arg.Limit, arg.Offset)
 		if err != nil {
 			return nil, err
 		}
 		rows = result
-		break
 	case "event-status-date":
 		result, err := r.db.QueryContext(ctx, eventPaymentFetchByEventIDStatusAndDate, arg.EventID, arg.Status, arg.Start, arg.End, arg.Limit, arg.Offset)
 		if err != nil {
 			return nil, err
 		}
 		rows = result
-		break
 	case "event-club-date":
 		result, err := r.db.QueryContext(ctx, eventPaymentFetchByEventIDClubIDAndDate, arg.EventID, arg.ClubID, arg.Start, arg.End, arg.Limit, arg.Offset)
 		if err != nil {
 			return nil, err
 		}
 		rows = result
-		break
 	case "status-club-date":
 		result, err := r.db.QueryContext(ctx, eventPaymentFetchByStatusClubIDAndDate, arg.Status, pq.Array(arg.ClubID), arg.Start, arg.End, arg.Limit, arg.Offset)
 		if err != nil {
 			return nil, err
 		}
 		rows = result
-		break
 	case "event-status-club_id-date":
 		result, err := r.db.QueryContext(ctx, eventPaymentFetchByEventIDFilterAll, arg.EventID, arg.Status, pq.Array(arg.ClubID), arg.Start, arg.End, arg.Limit, arg.Offset)
 		if err != nil {
 			return nil, err
 		}
 		rows = result
-		break
 	}
 
 	defer rows.Close()
@@ -557,52 +541,36 @@ func (r *RawRepository) EventPaymentCountByEventID(ctx context.Context, arg quer
 	switch status {
 	default:
 		row = r.db.QueryRowContext(ctx, eventPaymentCountByAll)
-		break
 	case "event":
 		row = r.db.QueryRowContext(ctx, eventPaymentCountByEventID, arg.EventID)
-		break
 	case "status":
 		row = r.db.QueryRowContext(ctx, eventPaymentCountByStatus, arg.Status)
-		break
 	case "club_id":
 		row = r.db.QueryRowContext(ctx, eventPaymentCountByClubID, pq.Array(arg.ClubID))
-		break
 	case "date":
 		row = r.db.QueryRowContext(ctx, eventPaymentCountByDate, arg.Start, arg.End)
-		break
 	case "event-status":
 		row = r.db.QueryRowContext(ctx, eventPaymentCountByEventIDAndStatus, arg.EventID, arg.Status)
-		break
 	case "event-club":
 		row = r.db.QueryRowContext(ctx, eventPaymentCountByEventIDAndClubID, arg.EventID, pq.Array(arg.ClubID))
-		break
 	case "event-date":
 		row = r.db.QueryRowContext(ctx, eventPaymentCountByEventIDAndDate, arg.EventID, arg.Start, arg.End)
-		break
 	case "status-club_id":
 		row = r.db.QueryRowContext(ctx, eventPaymentCountByStatusAndClubID, arg.Status, pq.Array(arg.ClubID))
-		break
 	case "status-date":
 		row = r.db.QueryRowContext(ctx, eventPaymentCountByStatusAndDate, arg.Status, arg.Start, arg.End)
-		break
 	case "club_id-date":
 		row = r.db.QueryRowContext(ctx, eventPaymentCountByClubIDAndDate, pq.Array(arg.ClubID), arg.Start, arg.End)
-		break
 	case "event-status-club":
 		row = r.db.QueryRowContext(ctx, eventPaymentCountByEventIDStatusAndClubID, arg.EventID, arg.Status, pq.Array(arg.ClubID))
-		break
 	case "event-status-date":
 		row = r.db.QueryRowContext(ctx, eventPaymentCountByEventIDStatusAndDate, arg.EventID, arg.Status, arg.Start, arg.End)
-		break
 	case "event-club-date":
 		row = r.db.QueryRowContext(ctx, eventPaymentCountByEventIDClubIDAndDate, arg.EventID, pq.Array(arg.ClubID), arg.Start, arg.End)
-		break
 	case "status-club_id-date":
 		row = r.db.QueryRowContext(ctx, eventPaymentCountByStatusClubIDAndDate, arg.Status, pq.Array(arg.ClubID), arg.Start, arg.End)
-		break
 	case "event-status-club_id-date":
 		row = r.db.QueryRowContext(ctx, eventPaymentCountByEventIDFilterAll, arg.EventID, arg.Status, pq.Array(arg.ClubID), arg.Start, arg.End)
-		break
 	}
 	var count int64
 	err := row.Scan(&count)
@@ -737,16 +705,12 @@ func (r *RawRepository) EventPaymentSumAll(ctx context.Context, arg sumAllParams
 	switch status {
 	default:
 		row = r.db.QueryRowContext(ctx, eventPaymentSumAll)
-		break
 	case "event":
 		row = r.db.QueryRowContext(ctx, eventPaymentSumByEventID, arg.EventID)
-		break
 	case "status":
 		row = r.db.QueryRowContext(ctx, eventPaymentSumByStatus, arg.Status)
-		break
 	case "event-status":
 		row = r.db.QueryRowContext(ctx, eventPaymentSumByFilterAll, arg.EventID, arg.Status)
-		break
 	}
 	var sum int64
 	err := row.Scan(&sum)

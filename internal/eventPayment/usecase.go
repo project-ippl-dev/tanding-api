@@ -26,14 +26,14 @@ func NewUsecase(repository *db.Queries, rawRepository RawRepository, rdb *redis.
 func (u Usecase) store(ctx context.Context, req request, userID string) (statusCode int, err error) {
 	event, err := u.repository.EventFetchOne(ctx, req.EventID)
 	if err != nil {
-		return http.StatusNotFound, fmt.Errorf("event not found : " + err.Error())
+		return http.StatusNotFound, fmt.Errorf("event not found : %s", err.Error())
 	}
 	if event.Deadline.Before(time.Now()) {
 		return http.StatusForbidden, fmt.Errorf("register already passed. You can't continue the payment")
 	}
 	tx, err := u.rawRepository.db.Begin()
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in start tx : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in start tx : %s", err.Error())
 	}
 	txQuery := u.repository.WithTx(tx)
 	paymentID, err := txQuery.EventPaymentCreate(ctx, db.EventPaymentCreateParams{
@@ -46,9 +46,9 @@ func (u Usecase) store(ctx context.Context, req request, userID string) (statusC
 	})
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx create payment : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx create payment : %s", err.Error())
 		}
-		return http.StatusInternalServerError, fmt.Errorf("error in store payment : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in store payment : %s", err.Error())
 	}
 
 	var total int32 = 0
@@ -56,7 +56,7 @@ func (u Usecase) store(ctx context.Context, req request, userID string) (statusC
 	for _, registrationID := range req.Registrations {
 		registration, err := txQuery.EventRegistrationFetchOne(ctx, registrationID)
 		if err != nil {
-			return http.StatusNotFound, fmt.Errorf("registration record not found : " + err.Error())
+			return http.StatusNotFound, fmt.Errorf("registration record not found : %s", err.Error())
 		}
 
 		if registration.Status != db.EventRegistrationStatusPending {
@@ -68,14 +68,14 @@ func (u Usecase) store(ctx context.Context, req request, userID string) (statusC
 			ID:                    registrationID,
 		}); err != nil {
 			if err := tx.Rollback(); err != nil {
-				return http.StatusInternalServerError, fmt.Errorf("error in rollback tx store payment id in specific registration : " + err.Error())
+				return http.StatusInternalServerError, fmt.Errorf("error in rollback tx store payment id in specific registration : %s", err.Error())
 			}
-			return http.StatusInternalServerError, fmt.Errorf("error in update registration : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in update registration : %s", err.Error())
 		}
 
 		classEvent, err := u.repository.ClassEventFetchOne(ctx, registration.ClassEventID)
 		if err != nil {
-			return http.StatusNotFound, fmt.Errorf("error in fetch class event : " + err.Error())
+			return http.StatusNotFound, fmt.Errorf("error in fetch class event : %s", err.Error())
 		}
 
 		total += classEvent.Price
@@ -83,13 +83,13 @@ func (u Usecase) store(ctx context.Context, req request, userID string) (statusC
 
 	if total != req.Total {
 		if err := tx.Rollback(); err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx when total is different calculation" + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx when total is different calculation%s", err.Error())
 		}
 		return http.StatusBadRequest, fmt.Errorf("total balance is difference between input and calculation")
 	}
 
 	if err := tx.Commit(); err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in commit tx : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in commit tx : %s", err.Error())
 	}
 
 	return http.StatusOK, nil
@@ -114,19 +114,19 @@ func (u Usecase) fetchAll(ctx context.Context, page int32, pageSize int32, arg f
 		Offset:             skip,
 	})
 	if err != nil {
-		return tools.Pagination{}, fmt.Errorf("error in fetch payment : " + err.Error())
+		return tools.Pagination{}, fmt.Errorf("error in fetch payment : %s", err.Error())
 	}
 
 	count, err := u.rawRepository.EventPaymentCountByEventID(ctx, queryParam)
 	if err != nil {
-		return tools.Pagination{}, fmt.Errorf("error in count payment : " + err.Error())
+		return tools.Pagination{}, fmt.Errorf("error in count payment : %s", err.Error())
 	}
 
 	results := []response{}
 	for _, payment := range payments {
 		classEvents, err := u.repository.ClassEventFetchByPaymentID(ctx, payment.ID)
 		if err != nil {
-			return tools.Pagination{}, fmt.Errorf("error in fetch class events : " + err.Error())
+			return tools.Pagination{}, fmt.Errorf("error in fetch class events : %s", err.Error())
 		}
 		results = append(results, response{
 			fetchAllRow: payment,
@@ -149,12 +149,12 @@ func (u Usecase) update(ctx context.Context, arg updateParams, userID string) (s
 		ID:      arg.PaymentID,
 	})
 	if err != nil {
-		return http.StatusNotFound, fmt.Errorf("record not found in payment: " + err.Error())
+		return http.StatusNotFound, fmt.Errorf("record not found in payment: %s", err.Error())
 	}
 
 	tx, err := u.rawRepository.db.Begin()
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in start tx : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in start tx : %s", err.Error())
 	}
 	txQuery := u.repository.WithTx(tx)
 	if err := txQuery.EventPaymentUpdate(ctx, db.EventPaymentUpdateParams{
@@ -163,9 +163,9 @@ func (u Usecase) update(ctx context.Context, arg updateParams, userID string) (s
 		AdminID: uuid.MustParse(userID),
 	}); err != nil {
 		if err := tx.Rollback(); err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update payment : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update payment : %s", err.Error())
 		}
-		return http.StatusInternalServerError, fmt.Errorf("error in update payment receipt : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in update payment receipt : %s", err.Error())
 	}
 
 	var status db.EventRegistrationStatus
@@ -188,13 +188,13 @@ func (u Usecase) update(ctx context.Context, arg updateParams, userID string) (s
 		Status:                status,
 	}); err != nil {
 		if err := tx.Rollback(); err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update status registration : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update status registration : %s", err.Error())
 		}
-		return http.StatusInternalServerError, fmt.Errorf("error in update status registration : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in update status registration : %s", err.Error())
 	}
 
 	if err := tx.Commit(); err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in commit tx : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in commit tx : %s", err.Error())
 	}
 
 	return http.StatusOK, nil
@@ -211,7 +211,7 @@ func (u Usecase) fetchByUserID(ctx context.Context, page, pageSize int32, arg fe
 		UserID:  uuid.MustParse(userID),
 	})
 	if err != nil {
-		return http.StatusBadRequest, tools.Pagination{}, fmt.Errorf("only club owner participate in event can access : " + err.Error())
+		return http.StatusBadRequest, tools.Pagination{}, fmt.Errorf("only club owner participate in event can access : %s", err.Error())
 	}
 
 	var clubsStr []string
@@ -233,19 +233,19 @@ func (u Usecase) fetchByUserID(ctx context.Context, page, pageSize int32, arg fe
 	})
 
 	if err != nil {
-		return http.StatusInternalServerError, tools.Pagination{}, fmt.Errorf("error in fetch payment : " + err.Error())
+		return http.StatusInternalServerError, tools.Pagination{}, fmt.Errorf("error in fetch payment : %s", err.Error())
 	}
 
 	count, err := u.rawRepository.EventPaymentCountByEventID(ctx, queryParam)
 	if err != nil {
-		return http.StatusInternalServerError, tools.Pagination{}, fmt.Errorf("error in count payment : " + err.Error())
+		return http.StatusInternalServerError, tools.Pagination{}, fmt.Errorf("error in count payment : %s", err.Error())
 	}
 
 	results := []response{}
 	for _, payment := range payments {
 		classEvents, err := u.repository.ClassEventFetchByPaymentID(ctx, payment.ID)
 		if err != nil {
-			return http.StatusNotFound, tools.Pagination{}, fmt.Errorf("error in fetch class events : " + err.Error())
+			return http.StatusNotFound, tools.Pagination{}, fmt.Errorf("error in fetch class events : %s", err.Error())
 		}
 		results = append(results, response{
 			fetchAllRow: payment,
@@ -270,12 +270,12 @@ func (u Usecase) cart(ctx context.Context, page, pageSize int32, userID string) 
 		Offset: skip,
 	})
 	if err != nil {
-		return tools.Pagination{}, fmt.Errorf("error in fetch cart : " + err.Error())
+		return tools.Pagination{}, fmt.Errorf("error in fetch cart : %s", err.Error())
 	}
 
 	count, err := u.repository.EventRegistrationCountCart(ctx, uuid.MustParse(userID))
 	if err != nil {
-		return tools.Pagination{}, fmt.Errorf("error in count cart : " + err.Error())
+		return tools.Pagination{}, fmt.Errorf("error in count cart : %s", err.Error())
 	}
 
 	return tools.Pagination{
@@ -292,11 +292,11 @@ func (u Usecase) cartDetail(ctx context.Context, eventID uuid.UUID, userID strin
 		EventID: eventID,
 	})
 	if err != nil {
-		return cartDetailResponse{}, fmt.Errorf("error in fetch cart details : " + err.Error())
+		return cartDetailResponse{}, fmt.Errorf("error in fetch cart details : %s", err.Error())
 	}
 	event, err := u.repository.EventFetchForCart(ctx, eventID)
 	if err != nil {
-		return cartDetailResponse{}, fmt.Errorf("error in fetch event : " + err.Error())
+		return cartDetailResponse{}, fmt.Errorf("error in fetch event : %s", err.Error())
 	}
 	uniqueNumber, err := u.rdb.Get(ctx, "unique-"+userID).Result()
 	if err != nil {
@@ -304,14 +304,14 @@ func (u Usecase) cartDetail(ctx context.Context, eventID uuid.UUID, userID strin
 		min, max := 100, 999
 		uniqueNumber = fmt.Sprintf("%d", rand.Intn(max-min+1)+min)
 		if err := u.rdb.Set(ctx, "unique-"+userID, uniqueNumber, 8*time.Hour).Err(); err != nil {
-			return cartDetailResponse{}, fmt.Errorf("error in set rdb unique key : " + err.Error())
+			return cartDetailResponse{}, fmt.Errorf("error in set rdb unique key : %s", err.Error())
 		}
 	}
 	timestamp, err := u.rdb.Get(ctx, "timestamp-"+userID).Result()
 	if err != nil {
 		now := time.Now().Format("2006-01-02T15:04:05-07")
 		if err := u.rdb.Set(ctx, "timestamp-"+userID, now, 8*time.Hour).Err(); err != nil {
-			return cartDetailResponse{}, fmt.Errorf("error in set rdb timestamp key : " + err.Error())
+			return cartDetailResponse{}, fmt.Errorf("error in set rdb timestamp key : %s", err.Error())
 		}
 		timestamp = now
 	}
@@ -329,14 +329,14 @@ func (u Usecase) cartDetail(ctx context.Context, eventID uuid.UUID, userID strin
 func (u Usecase) detail(ctx context.Context, paymentID uuid.UUID) (detailPaymentResponse, error) {
 	payment, err := u.repository.EventPaymentFetchOneForAdmin(ctx, paymentID)
 	if err != nil {
-		return detailPaymentResponse{}, fmt.Errorf("payment not found : " + err.Error())
+		return detailPaymentResponse{}, fmt.Errorf("payment not found : %s", err.Error())
 	}
 	details, err := u.rawRepository.EventRegistrationFetchCartDetails(ctx, EventRegistrationFetchCartDetailsParams{
 		UserID:  uuid.UUID{},
 		EventID: payment.EventID,
 	})
 	if err != nil {
-		return detailPaymentResponse{}, fmt.Errorf("detail not found : " + err.Error())
+		return detailPaymentResponse{}, fmt.Errorf("detail not found : %s", err.Error())
 	}
 	return detailPaymentResponse{
 		Detail:      payment,
