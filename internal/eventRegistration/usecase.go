@@ -165,7 +165,7 @@ func (u Usecase) update(ctx context.Context, req updateRegistrationRequest, user
 		return http.StatusNotFound, fmt.Errorf("error in fetch one registration : %s", err.Error())
 	}
 
-	if event.Deadline.Before(time.Now()); err != nil {
+	if event.Deadline.Before(time.Now()) {
 		return http.StatusForbidden, fmt.Errorf("can't update a registration after deadline")
 	}
 
