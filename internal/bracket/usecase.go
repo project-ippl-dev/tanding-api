@@ -25,21 +25,21 @@ func NewUsecase(repository *db.Queries, rawRepository RawRepository) Usecase {
 func (u Usecase) store(ctx context.Context, arg generateParams) (statusCode int, err error) {
 	classEvent, err := u.repository.ClassEventFetchOne(ctx, arg.ClassEventID)
 	if err != nil {
-		return http.StatusNotFound, fmt.Errorf("class event not found : " + err.Error())
+		return http.StatusNotFound, fmt.Errorf("class event not found : %s", err.Error())
 	}
 
-	if classEvent.BracketGenerate == true {
+	if classEvent.BracketGenerate {
 		return http.StatusForbidden, fmt.Errorf("bracket for specific class event already generated")
 	}
 
 	registrations, err := u.repository.EventRegistrationFetchByClassEventID(ctx, classEvent.ID)
 	if err != nil {
-		return http.StatusNotFound, fmt.Errorf("registration not found : " + err.Error())
+		return http.StatusNotFound, fmt.Errorf("registration not found : %s", err.Error())
 	}
 
 	tx, err := u.rawRepository.db.Begin()
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in start tx : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in start tx : %s", err.Error())
 	}
 	txQuery := u.repository.WithTx(tx)
 
@@ -51,9 +51,9 @@ func (u Usecase) store(ctx context.Context, arg generateParams) (statusCode int,
 		ID:              classEvent.ID,
 	}); err != nil {
 		if err := tx.Rollback(); err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update class event : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update class event : %s", err.Error())
 		}
-		return http.StatusInternalServerError, fmt.Errorf("error in update class event : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in update class event : %s", err.Error())
 	}
 	switch classEvent.MatchType {
 	case "order":
@@ -65,12 +65,11 @@ func (u Usecase) store(ctx context.Context, arg generateParams) (statusCode int,
 				ClubID:              registration.ClubID,
 			}); err != nil {
 				if err := tx.Rollback(); err != nil {
-					return http.StatusInternalServerError, fmt.Errorf("error in rollback tx generate bracket order : " + err.Error())
+					return http.StatusInternalServerError, fmt.Errorf("error in rollback tx generate bracket order : %s", err.Error())
 				}
-				return http.StatusInternalServerError, fmt.Errorf("error in generate bracket order : " + err.Error())
+				return http.StatusInternalServerError, fmt.Errorf("error in generate bracket order : %s", err.Error())
 			}
 		}
-		break
 	case "single":
 		count := len(registrations)
 		arg := storeBracketParams{
@@ -101,9 +100,9 @@ func (u Usecase) store(ctx context.Context, arg generateParams) (statusCode int,
 			})
 			if err != nil {
 				if err := tx.Rollback(); err != nil {
-					return http.StatusInternalServerError, fmt.Errorf("error in rollback tx fetch event brackets : " + err.Error())
+					return http.StatusInternalServerError, fmt.Errorf("error in rollback tx fetch event brackets : %s", err.Error())
 				}
-				return http.StatusInternalServerError, fmt.Errorf("error in fetch event brackets : " + err.Error())
+				return http.StatusInternalServerError, fmt.Errorf("error in fetch event brackets : %s", err.Error())
 			}
 			for _, eventBracket := range nextEventBrackets {
 				nextMatchOrder := eventBracket.MatchOrder * 2
@@ -114,9 +113,9 @@ func (u Usecase) store(ctx context.Context, arg generateParams) (statusCode int,
 					MatchOrder:   nextMatchOrder,
 				}); err != nil {
 					if err := tx.Rollback(); err != nil {
-						return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update event next match : " + err.Error())
+						return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update event next match : %s", err.Error())
 					}
-					return http.StatusInternalServerError, fmt.Errorf("error in update event next match : " + err.Error())
+					return http.StatusInternalServerError, fmt.Errorf("error in update event next match : %s", err.Error())
 				}
 				if err := txQuery.EventBracketUpdateNextMatch(ctx, db.EventBracketUpdateNextMatchParams{
 					NextMatchID:  eventBracket.ID,
@@ -125,16 +124,15 @@ func (u Usecase) store(ctx context.Context, arg generateParams) (statusCode int,
 					MatchOrder:   nextMatchOrder - 1,
 				}); err != nil {
 					if err := tx.Rollback(); err != nil {
-						return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update event next match : " + err.Error())
+						return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update event next match : %s", err.Error())
 					}
-					return http.StatusInternalServerError, fmt.Errorf("error in update event next match : " + err.Error())
+					return http.StatusInternalServerError, fmt.Errorf("error in update event next match : %s", err.Error())
 				}
 			}
 		}
-		break
 	}
 	if err := tx.Commit(); err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in commit tx : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in commit tx : %s", err.Error())
 	}
 
 	return http.StatusCreated, nil
@@ -153,9 +151,9 @@ func (u Usecase) storeBracketDirectWinner(arg storeBracketParams) (statusCode in
 	})
 	if err != nil {
 		if err := arg.Tx.Rollback(); err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx create event bracket : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx create event bracket : %s", err.Error())
 		}
-		return http.StatusInternalServerError, fmt.Errorf("error in create event bracket : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in create event bracket : %s", err.Error())
 	}
 	if err := arg.TxQuery.BracketParticipantCreate(arg.Ctx, db.BracketParticipantCreateParams{
 		EventRegistrationID: uuid.UUID{},
@@ -164,9 +162,9 @@ func (u Usecase) storeBracketDirectWinner(arg storeBracketParams) (statusCode in
 		IsBye:               false,
 	}); err != nil {
 		if err := arg.Tx.Rollback(); err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx create bracket participant : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx create bracket participant : %s", err.Error())
 		}
-		return http.StatusInternalServerError, fmt.Errorf("error in create bracket participant : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in create bracket participant : %s", err.Error())
 	}
 	if err := arg.TxQuery.BracketParticipantCreate(arg.Ctx, db.BracketParticipantCreateParams{
 		EventRegistrationID: uuid.UUID{},
@@ -175,9 +173,9 @@ func (u Usecase) storeBracketDirectWinner(arg storeBracketParams) (statusCode in
 		IsBye:               false,
 	}); err != nil {
 		if err := arg.Tx.Rollback(); err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx create bracket participant : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx create bracket participant : %s", err.Error())
 		}
-		return http.StatusInternalServerError, fmt.Errorf("error in create bracket participant : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in create bracket participant : %s", err.Error())
 	}
 	return http.StatusCreated, nil
 }
@@ -210,9 +208,9 @@ func (u Usecase) storeBracket(arg storeBracketParams) (statusCode int, err error
 			})
 			if err != nil {
 				if err := arg.Tx.Rollback(); err != nil {
-					return http.StatusInternalServerError, fmt.Errorf("error in rollback tx create event bracket : " + err.Error())
+					return http.StatusInternalServerError, fmt.Errorf("error in rollback tx create event bracket : %s", err.Error())
 				}
-				return http.StatusInternalServerError, fmt.Errorf("error in create event bracket : " + err.Error())
+				return http.StatusInternalServerError, fmt.Errorf("error in create event bracket : %s", err.Error())
 			}
 			var home, away bool
 			if matches[i-1][0] == 0 {
@@ -222,16 +220,16 @@ func (u Usecase) storeBracket(arg storeBracketParams) (statusCode int, err error
 				away = true
 			}
 
-			if home == true || away == true {
+			if home || away {
 				if err := arg.TxQuery.EventBracketUpdateStatus(arg.Ctx, db.EventBracketUpdateStatusParams{
 					Status:   db.BracketTypeBye,
 					IsActive: 0,
 					ID:       bracketID,
 				}); err != nil {
 					if err := arg.Tx.Rollback(); err != nil {
-						return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update event bracket status : " + err.Error())
+						return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update event bracket status : %s", err.Error())
 					}
-					return http.StatusInternalServerError, fmt.Errorf("error in update event bracket status : " + err.Error())
+					return http.StatusInternalServerError, fmt.Errorf("error in update event bracket status : %s", err.Error())
 				}
 			}
 
@@ -242,9 +240,9 @@ func (u Usecase) storeBracket(arg storeBracketParams) (statusCode int, err error
 				IsBye:               home,
 			}); err != nil {
 				if err := arg.Tx.Rollback(); err != nil {
-					return http.StatusInternalServerError, fmt.Errorf("error in rollback tx create bracket participant : " + err.Error())
+					return http.StatusInternalServerError, fmt.Errorf("error in rollback tx create bracket participant : %s", err.Error())
 				}
-				return http.StatusInternalServerError, fmt.Errorf("error in create bracket participant : " + err.Error())
+				return http.StatusInternalServerError, fmt.Errorf("error in create bracket participant : %s", err.Error())
 			}
 			if err := arg.TxQuery.BracketParticipantCreate(arg.Ctx, db.BracketParticipantCreateParams{
 				EventRegistrationID: uuid.UUID{},
@@ -253,9 +251,9 @@ func (u Usecase) storeBracket(arg storeBracketParams) (statusCode int, err error
 				IsBye:               away,
 			}); err != nil {
 				if err := arg.Tx.Rollback(); err != nil {
-					return http.StatusInternalServerError, fmt.Errorf("error in rollback tx create bracket participant : " + err.Error())
+					return http.StatusInternalServerError, fmt.Errorf("error in rollback tx create bracket participant : %s", err.Error())
 				}
-				return http.StatusInternalServerError, fmt.Errorf("error in create bracket participant : " + err.Error())
+				return http.StatusInternalServerError, fmt.Errorf("error in create bracket participant : %s", err.Error())
 			}
 		}
 	}
@@ -296,14 +294,14 @@ func (u Usecase) changeIntoBye(seed int, participantCount int) int {
 func (u Usecase) fetchOne(ctx context.Context, arg generateParams) (fetchOneResponse, error) {
 	classEvent, err := u.repository.ClassEventFetchOne(ctx, arg.ClassEventID)
 	if err != nil {
-		return fetchOneResponse{}, fmt.Errorf("class event not found : " + err.Error())
+		return fetchOneResponse{}, fmt.Errorf("class event not found : %s", err.Error())
 	}
 	var result interface{}
 	switch classEvent.MatchType {
 	case db.MatchTypeOrder:
 		brackets, err := u.rawRepository.OrderBracketFetchByClassEventID(ctx, arg.ClassEventID)
 		if err != nil {
-			return fetchOneResponse{}, fmt.Errorf("brackets with specific classs event not found : " + err.Error())
+			return fetchOneResponse{}, fmt.Errorf("brackets with specific classs event not found : %s", err.Error())
 		}
 		results := []fetchOneOrderResponse{}
 		for _, bracket := range brackets {
@@ -314,7 +312,6 @@ func (u Usecase) fetchOne(ctx context.Context, arg generateParams) (fetchOneResp
 			})
 		}
 		result = results
-		break
 	case db.MatchTypeSingle:
 		response := []matchIndexData{}
 		for index := classEvent.MatchIndex; index >= 1; index-- {
@@ -328,7 +325,7 @@ func (u Usecase) fetchOne(ctx context.Context, arg generateParams) (fetchOneResp
 				MatchIndex:   index,
 			})
 			if err != nil {
-				return fetchOneResponse{}, fmt.Errorf("error in fetch brackets : " + err.Error())
+				return fetchOneResponse{}, fmt.Errorf("error in fetch brackets : %s", err.Error())
 			}
 			for _, bracket := range brackets {
 				var isScore bool
@@ -337,7 +334,7 @@ func (u Usecase) fetchOne(ctx context.Context, arg generateParams) (fetchOneResp
 				}
 				teams, err := u.rawRepository.BracketParticipantFetchByEventBracketID(ctx, bracket.ID)
 				if err != nil {
-					return fetchOneResponse{}, fmt.Errorf("error in fetch bracket participants : " + err.Error())
+					return fetchOneResponse{}, fmt.Errorf("error in fetch bracket participants : %s", err.Error())
 				}
 				var participants []bracketParticipantResponse
 				for _, team := range teams {
@@ -356,7 +353,6 @@ func (u Usecase) fetchOne(ctx context.Context, arg generateParams) (fetchOneResp
 							Total:  score.HomeTotal,
 						}
 						participants = append(participants, participant)
-						break
 					case db.ParticipantTypeAway:
 						score, _ := u.repository.EventScoreFetchAwayByBracketID(ctx, bracket.ID)
 						participant.Score = bracketParticipantScoreParams{
@@ -367,7 +363,6 @@ func (u Usecase) fetchOne(ctx context.Context, arg generateParams) (fetchOneResp
 							Total:  score.AwayTotal,
 						}
 						participants = append(participants, participant)
-						break
 					}
 				}
 				matchIndexResult.Seeds = append(matchIndexResult.Seeds, seedData{
@@ -403,25 +398,18 @@ func (u Usecase) setIndexTitle(matchIndex int16) string {
 	switch matchIndex {
 	case 1:
 		indexTitle = "Final"
-		break
 	case 2:
 		indexTitle = "Semifinals"
-		break
 	case 3:
 		indexTitle = "Quarterfinals"
-		break
 	case 4:
 		indexTitle = "Round of 16"
-		break
 	case 5:
 		indexTitle = "Round of 32"
-		break
 	case 6:
 		indexTitle = "Round of 64"
-		break
 	case 7:
 		indexTitle = "Round of 128"
-		break
 	}
 	return indexTitle
 }
@@ -429,9 +417,9 @@ func (u Usecase) setIndexTitle(matchIndex int16) string {
 func (u Usecase) roundDown(ctx context.Context, arg generateParams) (statusCode int, response roundDownResponse, err error) {
 	classEvent, err := u.repository.ClassEventFetchOne(ctx, arg.ClassEventID)
 	if err != nil {
-		return http.StatusNotFound, roundDownResponse{}, fmt.Errorf("class event not found : " + err.Error())
+		return http.StatusNotFound, roundDownResponse{}, fmt.Errorf("class event not found : %s", err.Error())
 	}
-	if classEvent.BracketLock == true {
+	if classEvent.BracketLock {
 		return http.StatusForbidden, roundDownResponse{}, fmt.Errorf("bracket already been round down")
 	}
 
@@ -439,7 +427,7 @@ func (u Usecase) roundDown(ctx context.Context, arg generateParams) (statusCode 
 	case db.MatchTypeOrder:
 		brackets, err := u.rawRepository.OrderBracketFetchByClassEventID(ctx, arg.ClassEventID)
 		if err != nil {
-			return http.StatusNotFound, roundDownResponse{}, fmt.Errorf("bracket not found : " + err.Error())
+			return http.StatusNotFound, roundDownResponse{}, fmt.Errorf("bracket not found : %s", err.Error())
 		}
 		rand.Seed(time.Now().UnixNano())
 		rand.Shuffle(len(brackets), func(i, j int) {
@@ -453,14 +441,12 @@ func (u Usecase) roundDown(ctx context.Context, arg generateParams) (statusCode 
 			})
 		}
 		response.Data = result
-		break
 	case db.MatchTypeSingle:
 		statusCode, result, err := u.roundDownBracketSingle(ctx, classEvent)
 		if err != nil {
 			return statusCode, roundDownResponse{}, err
 		}
 		response.Data = result
-		break
 	}
 	return http.StatusOK, roundDownResponse{
 		Message:   "round down bracket success",
@@ -472,7 +458,7 @@ func (u Usecase) roundDown(ctx context.Context, arg generateParams) (statusCode 
 func (u Usecase) roundDownBracketSingle(ctx context.Context, classEvent db.ClassEventFetchOneRow) (statusCode int, result []matchIndexData, err error) {
 	registrations, err := u.repository.EventRegistrationFetchByClassEventID(ctx, classEvent.ID)
 	if err != nil {
-		return http.StatusNotFound, nil, fmt.Errorf("registration data not found : " + err.Error())
+		return http.StatusNotFound, nil, fmt.Errorf("registration data not found : %s", err.Error())
 	}
 	matches := u.generateBracket(len(registrations), int(classEvent.MatchIndex))
 	rand.Seed(time.Now().UnixNano())
@@ -500,7 +486,7 @@ func (u Usecase) roundDownBracketSingle(ctx context.Context, classEvent db.Class
 			registration := registrations[index]
 			eventParticipants, err := u.repository.EventParticipantFetchNameByRegistrationID(ctx, registration.ID)
 			if err != nil {
-				return http.StatusNotFound, nil, fmt.Errorf("event participants not found : " + err.Error())
+				return http.StatusNotFound, nil, fmt.Errorf("event participants not found : %s", err.Error())
 			}
 			randomTeams = append(randomTeams, bracketParticipantFetchByEventBracketIDRow{
 				ID:     0,
@@ -540,7 +526,7 @@ func (u Usecase) roundDownBracketSingle(ctx context.Context, classEvent db.Class
 			registration := registrations[index]
 			eventParticipants, err := u.repository.EventParticipantFetchNameByRegistrationID(ctx, registration.ID)
 			if err != nil {
-				return http.StatusNotFound, nil, fmt.Errorf("event participants not found : " + err.Error())
+				return http.StatusNotFound, nil, fmt.Errorf("event participants not found : %s", err.Error())
 			}
 			randomTeams = append(randomTeams, bracketParticipantFetchByEventBracketIDRow{
 				ID:     0,
@@ -582,7 +568,7 @@ func (u Usecase) roundDownBracketSingle(ctx context.Context, classEvent db.Class
 			MatchIndex:   index,
 		})
 		if err != nil {
-			return http.StatusInternalServerError, nil, fmt.Errorf("error in fetch brackets : " + err.Error())
+			return http.StatusInternalServerError, nil, fmt.Errorf("error in fetch brackets : %s", err.Error())
 		}
 		for _, bracket := range brackets {
 			var teams []bracketParticipantResponse
@@ -594,18 +580,16 @@ func (u Usecase) roundDownBracketSingle(ctx context.Context, classEvent db.Class
 						teams = append(teams, bracketParticipantResponse{
 							bracketParticipantFetchByEventBracketIDRow: randomTeams[teamIndex],
 						})
-						break
 					case 2:
 						teams = append(teams, bracketParticipantResponse{
 							bracketParticipantFetchByEventBracketIDRow: randomTeams[teamIndex+1],
 						})
-						break
 					}
 				}
 			} else {
 				result, err := u.rawRepository.BracketParticipantFetchByEventBracketID(ctx, bracket.ID)
 				if err != nil {
-					return http.StatusInternalServerError, nil, fmt.Errorf("error inf etch bracket participants : " + err.Error())
+					return http.StatusInternalServerError, nil, fmt.Errorf("error inf etch bracket participants : %s", err.Error())
 				}
 				for _, r := range result {
 					teams = append(teams, bracketParticipantResponse{
@@ -629,7 +613,7 @@ func (u Usecase) roundDownBracketSingle(ctx context.Context, classEvent db.Class
 func (u Usecase) orderLock(ctx context.Context, arg updateLockParams) (statusCode int, err error) {
 	classEvent, err := u.repository.ClassEventFetchOne(ctx, arg.ClassEventID)
 	if err != nil {
-		return http.StatusNotFound, fmt.Errorf("class event not found : " + err.Error())
+		return http.StatusNotFound, fmt.Errorf("class event not found : %s", err.Error())
 	}
 	if classEvent.BracketLock == *arg.Status {
 		return http.StatusBadRequest, fmt.Errorf("class event is already with lock status : %t", *arg.Status)
@@ -639,7 +623,7 @@ func (u Usecase) orderLock(ctx context.Context, arg updateLockParams) (statusCod
 	}
 	tx, err := u.rawRepository.db.Begin()
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in start tx : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in start tx : %s", err.Error())
 	}
 	txQuery := u.repository.WithTx(tx)
 	if err := txQuery.ClassEventUpdateBracketLock(ctx, db.ClassEventUpdateBracketLockParams{
@@ -647,26 +631,26 @@ func (u Usecase) orderLock(ctx context.Context, arg updateLockParams) (statusCod
 		ID:          classEvent.ID,
 	}); err != nil {
 		if err := tx.Rollback(); err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update bracket lock status : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update bracket lock status : %s", err.Error())
 		}
-		return http.StatusInternalServerError, fmt.Errorf("error in update bracket lock status : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in update bracket lock status : %s", err.Error())
 	}
-	if *arg.Status == true {
+	if *arg.Status {
 		for _, participant := range arg.Participants {
 			if err := u.repository.OrderBracketUpdateOrderBy(ctx, db.OrderBracketUpdateOrderByParams{
 				OrderBy:             participant.Iteration,
 				EventRegistrationID: uuid.MustParse(participant.EventRegistrationID),
 			}); err != nil {
 				if err := tx.Rollback(); err != nil {
-					return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update bracket lock status : " + err.Error())
+					return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update bracket lock status : %s", err.Error())
 				}
-				return http.StatusInternalServerError, fmt.Errorf("error in update bracket lock status : " + err.Error())
+				return http.StatusInternalServerError, fmt.Errorf("error in update bracket lock status : %s", err.Error())
 			}
 		}
 	}
 
 	if err := tx.Commit(); err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in commit tx : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in commit tx : %s", err.Error())
 	}
 
 	return http.StatusOK, nil
@@ -675,14 +659,14 @@ func (u Usecase) orderLock(ctx context.Context, arg updateLockParams) (statusCod
 func (u Usecase) cancelBracket(ctx context.Context, arg updateGenerateParams) (statusCode int, err error) {
 	classEvent, err := u.repository.ClassEventFetchOne(ctx, arg.ClassEventID)
 	if err != nil {
-		return http.StatusNotFound, fmt.Errorf("class event not found : " + err.Error())
+		return http.StatusNotFound, fmt.Errorf("class event not found : %s", err.Error())
 	}
-	if classEvent.BracketGenerate == false {
+	if !classEvent.BracketGenerate {
 		return http.StatusBadRequest, fmt.Errorf("bracket already canceled")
 	}
 	tx, err := u.rawRepository.db.Begin()
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in start tx : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in start tx : %s", err.Error())
 	}
 	txQuery := u.repository.WithTx(tx)
 	if err := txQuery.ClassEventUpdateBracketGenerate(ctx, db.ClassEventUpdateBracketGenerateParams{
@@ -690,19 +674,19 @@ func (u Usecase) cancelBracket(ctx context.Context, arg updateGenerateParams) (s
 		ID:              classEvent.ID,
 	}); err != nil {
 		if err := tx.Rollback(); err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update class event : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update class event : %s", err.Error())
 		}
-		return http.StatusInternalServerError, fmt.Errorf("error in update class event : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in update class event : %s", err.Error())
 	}
 	if err := txQuery.OrderBracketDeleteByClassEventID(ctx, classEvent.ID); err != nil {
 		if err := tx.Rollback(); err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx delete order bracket : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx delete order bracket : %s", err.Error())
 		}
-		return http.StatusInternalServerError, fmt.Errorf("error in delete order bracket : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in delete order bracket : %s", err.Error())
 	}
 
 	if err := tx.Commit(); err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in commit tx : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in commit tx : %s", err.Error())
 	}
 	return http.StatusOK, nil
 }
@@ -710,7 +694,7 @@ func (u Usecase) cancelBracket(ctx context.Context, arg updateGenerateParams) (s
 func (u Usecase) updateSingleLock(ctx context.Context, arg updateSingleLockParams) (statusCode int, err error) {
 	classEvent, err := u.repository.ClassEventFetchOne(ctx, arg.ClassEventID)
 	if err != nil {
-		return http.StatusNotFound, fmt.Errorf("class event not found : " + err.Error())
+		return http.StatusNotFound, fmt.Errorf("class event not found : %s", err.Error())
 	}
 	if classEvent.BracketLock == *arg.Status {
 		return http.StatusBadRequest, fmt.Errorf("class event is already with lock status : %t", *arg.Status)
@@ -726,7 +710,7 @@ func (u Usecase) updateSingleLock(ctx context.Context, arg updateSingleLockParam
 
 	tx, err := u.rawRepository.db.Begin()
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in start tx : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in start tx : %s", err.Error())
 	}
 	txQuery := u.repository.WithTx(tx)
 
@@ -735,16 +719,16 @@ func (u Usecase) updateSingleLock(ctx context.Context, arg updateSingleLockParam
 		ID:          classEvent.ID,
 	}); err != nil {
 		if err := tx.Rollback(); err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update bracket lock status : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update bracket lock status : %s", err.Error())
 		}
-		return http.StatusInternalServerError, fmt.Errorf("error in update bracket lock status : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in update bracket lock status : %s", err.Error())
 	}
 
 	if arg.Status == nil {
 		*arg.Status = false
 	}
 
-	if *arg.Status == true {
+	if *arg.Status {
 		for _, seed := range arg.Data.Seeds {
 			for _, team := range seed.Teams {
 				bracketParticipantID, err := txQuery.BracketParticipantCheckOneByEventBracketIDAndType(ctx, db.BracketParticipantCheckOneByEventBracketIDAndTypeParams{
@@ -752,16 +736,16 @@ func (u Usecase) updateSingleLock(ctx context.Context, arg updateSingleLockParam
 					Type:           team.Type,
 				})
 				if err != nil {
-					return http.StatusNotFound, fmt.Errorf("bracket participant not found : " + err.Error())
+					return http.StatusNotFound, fmt.Errorf("bracket participant not found : %s", err.Error())
 				}
 				if err := txQuery.BracketParticipantUpdate(ctx, db.BracketParticipantUpdateParams{
 					EventRegistrationID: team.EventRegistrationID,
 					ID:                  bracketParticipantID,
 				}); err != nil {
 					if err := tx.Rollback(); err != nil {
-						return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update bracket participant : " + err.Error())
+						return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update bracket participant : %s", err.Error())
 					}
-					return http.StatusInternalServerError, fmt.Errorf("error in update bracket participant : " + err.Error())
+					return http.StatusInternalServerError, fmt.Errorf("error in update bracket participant : %s", err.Error())
 				}
 			}
 		}
@@ -777,9 +761,9 @@ func (u Usecase) updateSingleLock(ctx context.Context, arg updateSingleLockParam
 			participants, err := txQuery.BracketParticipantFetchByEventBracketID(ctx, bracket.ID)
 			if err != nil {
 				if err := tx.Rollback(); err != nil {
-					return http.StatusInternalServerError, fmt.Errorf("error in rollback tx bracket participants not found : " + err.Error())
+					return http.StatusInternalServerError, fmt.Errorf("error in rollback tx bracket participants not found : %s", err.Error())
 				}
-				return http.StatusInternalServerError, fmt.Errorf("bracket participants not found : " + err.Error())
+				return http.StatusInternalServerError, fmt.Errorf("bracket participants not found : %s", err.Error())
 			}
 
 			for _, participant := range participants {
@@ -797,9 +781,9 @@ func (u Usecase) updateSingleLock(ctx context.Context, arg updateSingleLockParam
 						Type:                nextParticipantType,
 					}); err != nil {
 						if err := tx.Rollback(); err != nil {
-							return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update bracket participants update : " + err.Error())
+							return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update bracket participants update : %s", err.Error())
 						}
-						return http.StatusInternalServerError, fmt.Errorf("error in update bracket participants : " + err.Error())
+						return http.StatusInternalServerError, fmt.Errorf("error in update bracket participants : %s", err.Error())
 					}
 				}
 
@@ -810,16 +794,16 @@ func (u Usecase) updateSingleLock(ctx context.Context, arg updateSingleLockParam
 					ID:       bracket.NextMatchID,
 				}); err != nil {
 					if err := tx.Rollback(); err != nil {
-						return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update bracket status : " + err.Error())
+						return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update bracket status : %s", err.Error())
 					}
-					return http.StatusInternalServerError, fmt.Errorf("error in update bracket status : " + err.Error())
+					return http.StatusInternalServerError, fmt.Errorf("error in update bracket status : %s", err.Error())
 				}
 			}
 		}
 	}
 
 	if err := tx.Commit(); err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in commit tx : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in commit tx : %s", err.Error())
 	}
 	return http.StatusOK, nil
 }
@@ -827,33 +811,33 @@ func (u Usecase) updateSingleLock(ctx context.Context, arg updateSingleLockParam
 func (u Usecase) eventTurnLock(ctx context.Context, eventID uuid.UUID) (statusCode int, err error) {
 	event, err := u.repository.EventCheckOne(ctx, eventID)
 	if err != nil {
-		return http.StatusNotFound, fmt.Errorf("event not found : " + err.Error())
+		return http.StatusNotFound, fmt.Errorf("event not found : %s", err.Error())
 	}
 
-	if event.IsGenerate == true {
+	if event.IsGenerate {
 		return http.StatusBadRequest, fmt.Errorf("event already generate event turn")
 	}
 
 	classEvent, err := u.repository.ClassEventFetchSingleByEventIDAndLockStatus(ctx, eventID)
 	if err != nil {
-		return http.StatusNotFound, fmt.Errorf("error in fetch class event : " + err.Error())
+		return http.StatusNotFound, fmt.Errorf("error in fetch class event : %s", err.Error())
 	}
 	if len(classEvent) != 0 {
 		return http.StatusForbidden, fmt.Errorf("to generate event turn, must generate all bracket")
 	}
 	classEventSingles, err := u.repository.ClassEventFetchAndGroupByEventID(ctx, eventID)
 	if err != nil {
-		return http.StatusNotFound, fmt.Errorf("fetch class event error : " + err.Error())
+		return http.StatusNotFound, fmt.Errorf("fetch class event error : %s", err.Error())
 	}
 
 	lastMatchIndex, err := u.repository.ClassEventFetchLastMatchIndexByEventID(ctx, eventID)
 	if err != nil {
-		return http.StatusNotFound, fmt.Errorf("fetch last match index error : " + err.Error())
+		return http.StatusNotFound, fmt.Errorf("fetch last match index error : %s", err.Error())
 	}
 
 	tx, err := u.rawRepository.db.Begin()
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in start tx : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in start tx : %s", err.Error())
 	}
 	txQuery := u.repository.WithTx(tx)
 	var eventTurn int16
@@ -865,9 +849,9 @@ func (u Usecase) eventTurnLock(ctx context.Context, eventID uuid.UUID) (statusCo
 			})
 			if err != nil {
 				if err := tx.Rollback(); err != nil {
-					return http.StatusInternalServerError, fmt.Errorf("error in rollback tx fetch event bracket : " + err.Error())
+					return http.StatusInternalServerError, fmt.Errorf("error in rollback tx fetch event bracket : %s", err.Error())
 				}
-				return http.StatusInternalServerError, fmt.Errorf("error fetch event bracket : " + err.Error())
+				return http.StatusInternalServerError, fmt.Errorf("error fetch event bracket : %s", err.Error())
 			}
 			for _, bracket := range eventBrackets {
 				eventTurn += 1
@@ -876,9 +860,9 @@ func (u Usecase) eventTurnLock(ctx context.Context, eventID uuid.UUID) (statusCo
 					ID:        bracket.ID,
 				}); err != nil {
 					if err := tx.Rollback(); err != nil {
-						return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update event turn : " + err.Error())
+						return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update event turn : %s", err.Error())
 					}
-					return http.StatusInternalServerError, fmt.Errorf("error update event turn : " + err.Error())
+					return http.StatusInternalServerError, fmt.Errorf("error update event turn : %s", err.Error())
 				}
 			}
 		}
@@ -889,13 +873,13 @@ func (u Usecase) eventTurnLock(ctx context.Context, eventID uuid.UUID) (statusCo
 		ID:         event.ID,
 	}); err != nil {
 		if err := tx.Rollback(); err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update event : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update event : %s", err.Error())
 		}
-		return http.StatusInternalServerError, fmt.Errorf("error in update event : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in update event : %s", err.Error())
 	}
 
 	if err := tx.Commit(); err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in commit tx : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in commit tx : %s", err.Error())
 	}
 
 	return http.StatusOK, nil
