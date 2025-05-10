@@ -27,7 +27,7 @@ type updateLockParams struct {
 
 func (u updateLockParams) Validate() error {
 	return validation.ValidateStruct(&u,
-		validation.Field(&u.Participants, validation.When(*u.Status == true, validation.Required)),
+		validation.Field(&u.Participants, validation.When(*u.Status, validation.Required)),
 	)
 }
 
