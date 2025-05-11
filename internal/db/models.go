@@ -585,3 +585,41 @@ func (e *EventReceiptStatus) Scan(src interface{}) error {
 	}
 	return nil
 }
+
+type ParticipantType string
+
+const (
+	ParticipantTypeHome ParticipantType = "home"
+	ParticipantTypeAway ParticipantType = "away"
+)
+
+func (e *ParticipantType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = ParticipantType(s)
+	case string:
+		*e = ParticipantType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for ParticipantType: %T", src)
+	}
+	return nil
+}
+
+type BracketType string
+
+const (
+	BracketTypeBattle BracketType = "battle"
+	BracketTypeBye    BracketType = "bye"
+)
+
+func (e *BracketType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = BracketType(s)
+	case string:
+		*e = BracketType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for BracketType: %T", src)
+	}
+	return nil
+}
