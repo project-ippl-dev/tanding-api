@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/project-ippl-dev/tanding-api/internal/club"
+	"github.com/project-ippl-dev/tanding-api/internal/eventRegistration"
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/go-redis/redis/v8"
@@ -16,8 +17,10 @@ import (
 	"github.com/project-ippl-dev/tanding-api/config"
 	"github.com/project-ippl-dev/tanding-api/internal/accomplishment"
 	"github.com/project-ippl-dev/tanding-api/internal/auth"
+	"github.com/project-ippl-dev/tanding-api/internal/bracket"
 	"github.com/project-ippl-dev/tanding-api/internal/db"
 	"github.com/project-ippl-dev/tanding-api/internal/document"
+	"github.com/project-ippl-dev/tanding-api/internal/event"
 	"github.com/project-ippl-dev/tanding-api/internal/file"
 	middlewareApp "github.com/project-ippl-dev/tanding-api/internal/middleware"
 	"github.com/project-ippl-dev/tanding-api/internal/rank"
@@ -74,26 +77,35 @@ func routing(dbConn *sql.DB, rdb *redis.Client, sess *session.Session, e *echo.E
 	//Declare Raw Repository
 	clubRepository := club.NewRepository(dbConn)
 	rankRepository := rank.NewRepository(dbConn)
+	eventRegistrationRepository := eventRegistration.NewRepository(dbConn)
 	sportRepository := sport.NewRepository(dbConn)
 	userRepository := user.NewRepository(dbConn)
+	eventRepository := event.NewRepository(dbConn)
+	bracketRepository := bracket.NewRepository(dbConn)
 
 	//Declare Usecase
 	authUsecase := auth.NewUsecase(repository, dbConn, rdb)
 	accomplishmentUsecase := accomplishment.NewUsecase(repository)
+	eventRegistrationUsecase := eventRegistration.NewUsecase(repository, eventRegistrationRepository)
 	userUsecase := user.NewUsecase(repository, userRepository)
 	sportUsecase := sport.NewUsecase(repository, sportRepository)
 	documentUsecase := document.NewUsecase(repository)
 	fileUsecase := file.NewUsecase(sess)
 	clubUsecase := club.NewUsecase(repository, clubRepository)
 	rankUsecase := rank.NewUsecase(repository, rankRepository)
+	eventUsecase := event.NewUsecase(repository, eventRepository)
+	bracketUsecase := bracket.NewUsecase(repository, bracketRepository)
 
 	//Declare Handlers
 	auth.RegisterHandler(authUsecase, e)
 	accomplishment.RegisterHandler(accomplishmentUsecase, profileRoute)
+	bracket.RegisterHandler(bracketUsecase, middlewareArgs, e)
 	user.RegisterHandler(userUsecase, middlewareArgs, e)
 	sport.RegisterHandler(sportUsecase, middlewareArgs, e)
 	document.RegisterHandler(documentUsecase, profileRoute)
+	eventRegistration.RegisterHandler(eventRegistrationUsecase, middlewareArgs, e)
 	file.RegisterHandler(fileUsecase, middlewareArgs, e)
 	club.RegisterHandler(clubUsecase, middlewareArgs, e)
 	rank.RegisterHandler(rankUsecase, middlewareArgs, e)
+	event.RegisterHandler(eventUsecase, middlewareArgs, e)
 }

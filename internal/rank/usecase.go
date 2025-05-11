@@ -23,7 +23,7 @@ func NewUsecase(repository *db.Queries, rawRepository RawRepository) Usecase {
 func (u Usecase) summary(ctx context.Context, eventID uuid.UUID) (statusCode int, err error) {
 	event, err := u.repository.EventFetchOne(ctx, eventID)
 	if err != nil {
-		return http.StatusNotFound, fmt.Errorf("event not found : " + err.Error())
+		return http.StatusNotFound, fmt.Errorf("event not found : %s", err.Error())
 	}
 
 	if event.Remark != db.RemarkTypeOngoing {
@@ -32,12 +32,12 @@ func (u Usecase) summary(ctx context.Context, eventID uuid.UUID) (statusCode int
 
 	classEvents, err := u.repository.ClassEventFetchByEventIDAndScoreLockTrue(ctx, event.ID)
 	if err != nil {
-		return http.StatusNotFound, fmt.Errorf("class event not found : " + err.Error())
+		return http.StatusNotFound, fmt.Errorf("class event not found : %s", err.Error())
 	}
 
 	tx, err := u.rawRepository.db.Begin()
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in start tx : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in start tx : %s", err.Error())
 	}
 	txQuery := u.repository.WithTx(tx)
 	for _, classEvent := range classEvents {
@@ -47,9 +47,9 @@ func (u Usecase) summary(ctx context.Context, eventID uuid.UUID) (statusCode int
 			orderBrackets, err := txQuery.OrderBracketFetchByClassEventIDAndOrderByScore(ctx, classEvent.ID)
 			if err != nil {
 				if err := tx.Rollback(); err != nil {
-					return http.StatusInternalServerError, fmt.Errorf("error tx rollback order brackets not found : " + err.Error())
+					return http.StatusInternalServerError, fmt.Errorf("error tx rollback order brackets not found : %s", err.Error())
 				}
-				return http.StatusNotFound, fmt.Errorf("order brackets not found : " + err.Error())
+				return http.StatusNotFound, fmt.Errorf("order brackets not found : %s", err.Error())
 			}
 			for i := 0; i < 4; i++ {
 				if i >= len(orderBrackets) {
@@ -67,18 +67,18 @@ func (u Usecase) summary(ctx context.Context, eventID uuid.UUID) (statusCode int
 					Point:               point,
 				}); err != nil {
 					if err := tx.Rollback(); err != nil {
-						return http.StatusInternalServerError, fmt.Errorf("error in rollback tx rank create " + err.Error())
+						return http.StatusInternalServerError, fmt.Errorf("error in rollback tx rank create %s", err.Error())
 					}
-					return http.StatusInternalServerError, fmt.Errorf("error in rank create : " + err.Error())
+					return http.StatusInternalServerError, fmt.Errorf("error in rank create : %s", err.Error())
 				}
 				if err := txQuery.OrderBracketUpdateRank(ctx, db.OrderBracketUpdateRankParams{
 					Rank: rank,
 					ID:   orderBrackets[i].ID,
 				}); err != nil {
 					if err := tx.Rollback(); err != nil {
-						return http.StatusInternalServerError, fmt.Errorf("error in rollback tx order bracket update rank " + err.Error())
+						return http.StatusInternalServerError, fmt.Errorf("error in rollback tx order bracket update rank %s", err.Error())
 					}
-					return http.StatusInternalServerError, fmt.Errorf("error in order brakcet update rank : " + err.Error())
+					return http.StatusInternalServerError, fmt.Errorf("error in order brakcet update rank : %s", err.Error())
 				}
 				statusCode, err = u.storeCertificateByRegistrationID(ctx, tx, txQuery, storeCertificateByRegistrationIDParams{
 					EventRegistrationID: orderBrackets[i].EventRegistrationID,
@@ -102,7 +102,7 @@ func (u Usecase) summary(ctx context.Context, eventID uuid.UUID) (statusCode int
 					MatchIndex:   int16(i),
 				})
 				if err != nil {
-					return http.StatusNotFound, fmt.Errorf("brackets not found : " + err.Error())
+					return http.StatusNotFound, fmt.Errorf("brackets not found : %s", err.Error())
 				}
 				if int16(i) > classEvent.MatchIndex {
 					break
@@ -122,7 +122,7 @@ func (u Usecase) summary(ctx context.Context, eventID uuid.UUID) (statusCode int
 
 					bracketParticipants, err := txQuery.BracketParticipantFetchByEventBracketID(ctx, brackets[0].ID)
 					if err != nil {
-						return http.StatusNotFound, fmt.Errorf("bracket participant not found : " + err.Error())
+						return http.StatusNotFound, fmt.Errorf("bracket participant not found : %s", err.Error())
 					}
 					if bracketParticipants[0].EventRegistrationID.String() != "00000000-0000-0000-0000-000000000000" {
 						if err := txQuery.RankCreate(ctx, db.RankCreateParams{
@@ -135,9 +135,9 @@ func (u Usecase) summary(ctx context.Context, eventID uuid.UUID) (statusCode int
 							Point:               homePoint,
 						}); err != nil {
 							if err := tx.Rollback(); err != nil {
-								return http.StatusInternalServerError, fmt.Errorf("error in rollback tx rank index 1 home create single : " + err.Error())
+								return http.StatusInternalServerError, fmt.Errorf("error in rollback tx rank index 1 home create single : %s", err.Error())
 							}
-							return http.StatusInternalServerError, fmt.Errorf("error rank index 1 home create single : " + err.Error())
+							return http.StatusInternalServerError, fmt.Errorf("error rank index 1 home create single : %s", err.Error())
 						}
 						statusCode, err = u.storeCertificateByRegistrationID(ctx, tx, txQuery, storeCertificateByRegistrationIDParams{
 							EventRegistrationID: bracketParticipants[0].EventRegistrationID,
@@ -162,9 +162,9 @@ func (u Usecase) summary(ctx context.Context, eventID uuid.UUID) (statusCode int
 							Point:               awayPoint,
 						}); err != nil {
 							if err := tx.Rollback(); err != nil {
-								return http.StatusInternalServerError, fmt.Errorf("error in rollback tx rank index 1 away create single : " + err.Error())
+								return http.StatusInternalServerError, fmt.Errorf("error in rollback tx rank index 1 away create single : %s", err.Error())
 							}
-							return http.StatusInternalServerError, fmt.Errorf("error rank index 1 away create single : " + err.Error())
+							return http.StatusInternalServerError, fmt.Errorf("error rank index 1 away create single : %s", err.Error())
 						}
 						statusCode, err = u.storeCertificateByRegistrationID(ctx, tx, txQuery, storeCertificateByRegistrationIDParams{
 							EventRegistrationID: bracketParticipants[1].EventRegistrationID,
@@ -197,7 +197,7 @@ func (u Usecase) summary(ctx context.Context, eventID uuid.UUID) (statusCode int
 							Type:           participantType,
 						})
 						if err != nil {
-							return http.StatusNotFound, fmt.Errorf("bracket participant not found : " + err.Error())
+							return http.StatusNotFound, fmt.Errorf("bracket participant not found : %s", err.Error())
 						}
 						if bracketParticipant.EventRegistrationID.String() != "00000000-0000-0000-0000-000000000000" {
 							if err := txQuery.RankCreate(ctx, db.RankCreateParams{
@@ -210,7 +210,7 @@ func (u Usecase) summary(ctx context.Context, eventID uuid.UUID) (statusCode int
 								Point:               point,
 							}); err != nil {
 								if err := tx.Rollback(); err != nil {
-									return http.StatusInternalServerError, fmt.Errorf("error in rollback tx rank index 2 create single : " + err.Error())
+									return http.StatusInternalServerError, fmt.Errorf("error in rollback tx rank index 2 create single : %s", err.Error())
 								}
 							}
 							statusCode, err = u.storeCertificateByRegistrationID(ctx, tx, txQuery, storeCertificateByRegistrationIDParams{
@@ -251,12 +251,12 @@ func (u Usecase) summary(ctx context.Context, eventID uuid.UUID) (statusCode int
 	}
 
 	if err := tx.Commit(); err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in first commit tx : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in first commit tx : %s", err.Error())
 	}
 
 	tx2, err := u.rawRepository.db.Begin()
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in start 2nd tx : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in start 2nd tx : %s", err.Error())
 	}
 	txQuery2 := u.repository.WithTx(tx2)
 
@@ -270,13 +270,13 @@ func (u Usecase) summary(ctx context.Context, eventID uuid.UUID) (statusCode int
 		ID:     event.ID,
 	}); err != nil {
 		if err := tx2.Rollback(); err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update event remark : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update event remark : %s", err.Error())
 		}
 		return http.StatusInternalServerError, fmt.Errorf("error in update event remark")
 	}
 
 	if err := tx2.Commit(); err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in second commit tx : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in second commit tx : %s", err.Error())
 	}
 
 	return http.StatusCreated, nil
@@ -334,9 +334,9 @@ func (u *Usecase) storeCertificateByRegistrationID(ctx context.Context, tx *sql.
 	participants, err := txQuery.EventParticipantFetchByRegistrationID(ctx, arg.EventRegistrationID)
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx participants not found : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx participants not found : %s", err.Error())
 		}
-		return http.StatusNotFound, fmt.Errorf("participants not found : " + err.Error())
+		return http.StatusNotFound, fmt.Errorf("participants not found : %s", err.Error())
 	}
 	for _, participant := range participants {
 		rewardAs := u.setRewardCertificateName(arg.Rank, arg.ClassName)
@@ -349,9 +349,9 @@ func (u *Usecase) storeCertificateByRegistrationID(ctx context.Context, tx *sql.
 		}); err != nil {
 			if err := tx.Rollback(); err != nil {
 				if err := tx.Rollback(); err != nil {
-					return http.StatusInternalServerError, fmt.Errorf("error in rollback tx create certificate : " + err.Error())
+					return http.StatusInternalServerError, fmt.Errorf("error in rollback tx create certificate : %s", err.Error())
 				}
-				return http.StatusInternalServerError, fmt.Errorf("error create certificate : " + err.Error())
+				return http.StatusInternalServerError, fmt.Errorf("error create certificate : %s", err.Error())
 			}
 		}
 	}
@@ -364,7 +364,7 @@ func (u Usecase) storeCertificateExcludeRegistrationID(ctx context.Context, tx *
 		ClassEventID:        arg.ClassEventID,
 	})
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in fetch excluded participant : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in fetch excluded participant : %s", err.Error())
 	}
 	for _, participant := range participants {
 		rewardAs := u.setRewardCertificateName(arg.Rank, arg.ClassName)
@@ -377,9 +377,9 @@ func (u Usecase) storeCertificateExcludeRegistrationID(ctx context.Context, tx *
 		}); err != nil {
 			if err := tx.Rollback(); err != nil {
 				if err := tx.Rollback(); err != nil {
-					return http.StatusInternalServerError, fmt.Errorf("error in rollback tx create certificate : " + err.Error())
+					return http.StatusInternalServerError, fmt.Errorf("error in rollback tx create certificate : %s", err.Error())
 				}
-				return http.StatusInternalServerError, fmt.Errorf("error create certificate : " + err.Error())
+				return http.StatusInternalServerError, fmt.Errorf("error create certificate : %s", err.Error())
 			}
 		}
 	}
@@ -390,9 +390,9 @@ func (u Usecase) storeCertificateEventCommittee(ctx context.Context, tx *sql.Tx,
 	committees, err := txQuery.EventPrivilegeFetchByEventID(ctx, eventID)
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx event committee not found : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx event committee not found : %s", err.Error())
 		}
-		return http.StatusNotFound, fmt.Errorf("event committee not found : " + err.Error())
+		return http.StatusNotFound, fmt.Errorf("event committee not found : %s", err.Error())
 	}
 	for _, committee := range committees {
 		rewardAs := u.setRewardCertificateCommitteeName(committee.Role)
@@ -404,9 +404,9 @@ func (u Usecase) storeCertificateEventCommittee(ctx context.Context, tx *sql.Tx,
 		}); err != nil {
 			if err := tx.Rollback(); err != nil {
 				if err := tx.Rollback(); err != nil {
-					return http.StatusInternalServerError, fmt.Errorf("error in rollback tx create certificate : " + err.Error())
+					return http.StatusInternalServerError, fmt.Errorf("error in rollback tx create certificate : %s", err.Error())
 				}
-				return http.StatusInternalServerError, fmt.Errorf("error create certificate : " + err.Error())
+				return http.StatusInternalServerError, fmt.Errorf("error create certificate : %s", err.Error())
 			}
 		}
 	}
@@ -416,7 +416,7 @@ func (u Usecase) storeCertificateEventCommittee(ctx context.Context, tx *sql.Tx,
 func (u Usecase) storeCertificateClubs(ctx context.Context, tx *sql.Tx, txQuery *db.Queries, eventID uuid.UUID) (statusCode int, err error) {
 	clubs, err := txQuery.RankClubFetchByEventID(ctx, eventID)
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in fetch clubs : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in fetch clubs : %s", err.Error())
 	}
 
 	for i, club := range clubs {
@@ -432,9 +432,9 @@ func (u Usecase) storeCertificateClubs(ctx context.Context, tx *sql.Tx, txQuery 
 			RewardAs: rewardAs,
 		}); err != nil {
 			if err := tx.Rollback(); err != nil {
-				return http.StatusInternalServerError, fmt.Errorf("error in rollback tx create club certificate : " + err.Error())
+				return http.StatusInternalServerError, fmt.Errorf("error in rollback tx create club certificate : %s", err.Error())
 			}
-			return http.StatusInternalServerError, fmt.Errorf("error in create club certificate : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in create club certificate : %s", err.Error())
 		}
 	}
 
@@ -465,7 +465,7 @@ func (u Usecase) fetchByClubID(ctx context.Context, clubID uuid.UUID) (fetchByCl
 	total, _ := u.repository.RankFetchPointByClubID(ctx, clubID)
 	participants, err := u.repository.RankFetchAllPointByClubID(ctx, clubID)
 	if err != nil {
-		return fetchByClubIDResponse{}, fmt.Errorf("error in fetch all point by club : " + err.Error())
+		return fetchByClubIDResponse{}, fmt.Errorf("error in fetch all point by club : %s", err.Error())
 	}
 	return fetchByClubIDResponse{
 		TotalPoint:   total,
@@ -478,7 +478,7 @@ func (u Usecase) rank(ctx context.Context, page, pageSize int32, arg rankParams)
 
 	count, err := u.rawRepository.RankCountPowerList(ctx, arg.SportID)
 	if err != nil {
-		return tools.Pagination{}, fmt.Errorf("error in count rank power list : " + err.Error())
+		return tools.Pagination{}, fmt.Errorf("error in count rank power list : %s", err.Error())
 	}
 	ranks, err := u.rawRepository.RankFetchPowerList(ctx, fetchPowerListParams{
 		SportID: arg.SportID,
@@ -486,7 +486,7 @@ func (u Usecase) rank(ctx context.Context, page, pageSize int32, arg rankParams)
 		Offset:  skip,
 	})
 	if err != nil {
-		return tools.Pagination{}, fmt.Errorf("error in fetch rank power list : " + err.Error())
+		return tools.Pagination{}, fmt.Errorf("error in fetch rank power list : %s", err.Error())
 	}
 
 	return tools.Pagination{
@@ -502,7 +502,7 @@ func (u Usecase) userRank(ctx context.Context, page, pageSize int32, arg rankPar
 
 	count, err := u.rawRepository.RankCountAllPointUser(ctx, arg.SportID)
 	if err != nil {
-		return tools.Pagination{}, fmt.Errorf("error in count rank power list : " + err.Error())
+		return tools.Pagination{}, fmt.Errorf("error in count rank power list : %s", err.Error())
 	}
 	ranks, err := u.rawRepository.RankFetchAllPointUser(ctx, fetchAllPointUserParams{
 		SportID: arg.SportID,
@@ -510,7 +510,7 @@ func (u Usecase) userRank(ctx context.Context, page, pageSize int32, arg rankPar
 		Offset:  skip,
 	})
 	if err != nil {
-		return tools.Pagination{}, fmt.Errorf("error in fetch rank power list : " + err.Error())
+		return tools.Pagination{}, fmt.Errorf("error in fetch rank power list : %s", err.Error())
 	}
 
 	return tools.Pagination{
