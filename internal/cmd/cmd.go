@@ -17,6 +17,7 @@ import (
 	"github.com/project-ippl-dev/tanding-api/config"
 	"github.com/project-ippl-dev/tanding-api/internal/accomplishment"
 	"github.com/project-ippl-dev/tanding-api/internal/auth"
+	"github.com/project-ippl-dev/tanding-api/internal/bracket"
 	"github.com/project-ippl-dev/tanding-api/internal/db"
 	"github.com/project-ippl-dev/tanding-api/internal/document"
 	"github.com/project-ippl-dev/tanding-api/internal/event"
@@ -78,6 +79,7 @@ func routing(dbConn *sql.DB, rdb *redis.Client, sess *session.Session, e *echo.E
 	sportRepository := sport.NewRepository(dbConn)
 	clubRepository := club.NewRepository(dbConn)
 	eventRepository := event.NewRepository(dbConn)
+	bracketRepository := bracket.NewRepository(dbConn)
 
 	//Declare Usecase
 	authUsecase := auth.NewUsecase(repository, dbConn, rdb)
@@ -89,10 +91,12 @@ func routing(dbConn *sql.DB, rdb *redis.Client, sess *session.Session, e *echo.E
 	fileUsecase := file.NewUsecase(sess)
 	clubUsecase := club.NewUsecase(repository, clubRepository)
 	eventUsecase := event.NewUsecase(repository, eventRepository)
+	bracketUsecase := bracket.NewUsecase(repository, bracketRepository)
 
 	//Declare Handlers
 	auth.RegisterHandler(authUsecase, e)
 	accomplishment.RegisterHandler(accomplishmentUsecase, profileRoute)
+	bracket.RegisterHandler(bracketUsecase, middlewareArgs, e)
 	user.RegisterHandler(userUsecase, middlewareArgs, e)
 	sport.RegisterHandler(sportUsecase, middlewareArgs, e)
 	document.RegisterHandler(documentUsecase, profileRoute)
