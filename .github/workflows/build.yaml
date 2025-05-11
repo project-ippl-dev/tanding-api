@@ -43,3 +43,6 @@ jobs:
           push: true
           tags: ${{ vars.DOCKER_HUBNAME }}/${{ vars.DOCKER_REPOSITORY }}:${{ env.TAG }}
           labels: ${{ steps.meta.outputs.labels }}
+      - name: Summary Report
+        run: |
+          echo "Publish as docker image: ${{ vars.DOCKER_HUBNAME }}/${{ vars.DOCKER_REPOSITORY }}:${{ env.TAG }}"
