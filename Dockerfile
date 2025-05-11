@@ -9,6 +9,5 @@ FROM alpine:3.14
 WORKDIR /app
 RUN apk add --no-cache tzdata
 COPY --from=builder /app/tanding-api .
-COPY --from=builder /app/public public
 EXPOSE 9000
 CMD ["./tanding-api"]
