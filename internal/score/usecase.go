@@ -20,9 +20,9 @@ func NewUsecase(repository *db.Queries, rawRepository RawRepository) Usecase {
 func (u Usecase) storeOrUpdateOrder(ctx context.Context, arg orderStoreOrUpdateParams) (statusCode int, err error) {
 	orderBracket, err := u.repository.OrderBracketCheckOne(ctx, arg.OrderBracketID)
 	if err != nil {
-		return http.StatusNotFound, fmt.Errorf("order bracket not found : " + err.Error())
+		return http.StatusNotFound, fmt.Errorf("order bracket not found : %s", err.Error())
 	}
-	if orderBracket.ScoreLock == true {
+	if orderBracket.ScoreLock {
 		return http.StatusBadRequest, fmt.Errorf("can't update or store score if class event score is already lock")
 	}
 	if _, err := u.repository.OrderScoreCheckOneByBracketID(ctx, orderBracket.ID); err != nil {
@@ -34,7 +34,7 @@ func (u Usecase) storeOrUpdateOrder(ctx context.Context, arg orderStoreOrUpdateP
 			Extra:          arg.Extra,
 			Total:          arg.Total,
 		}); err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("error in store order score : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in store order score : %s", err.Error())
 		}
 	} else {
 		if err := u.repository.OrderScoreUpdate(ctx, db.OrderScoreUpdateParams{
@@ -45,7 +45,7 @@ func (u Usecase) storeOrUpdateOrder(ctx context.Context, arg orderStoreOrUpdateP
 			Total:          arg.Total,
 			OrderBracketID: arg.OrderBracketID,
 		}); err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("error in update order score : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in update order score : %s", err.Error())
 		}
 	}
 	return http.StatusOK, nil
@@ -58,7 +58,7 @@ func (u Usecase) fetchOneOrder(ctx context.Context, arg fetchOneParams) (db.Orde
 func (u Usecase) lock(ctx context.Context, arg lockParams) (statusCode int, err error) {
 	classEvent, err := u.repository.ClassEventFetchOne(ctx, arg.ClassEventID)
 	if err != nil {
-		return http.StatusNotFound, fmt.Errorf("class event not found : " + err.Error())
+		return http.StatusNotFound, fmt.Errorf("class event not found : %s", err.Error())
 	}
 	if arg.Status == nil {
 		*arg.Status = false
@@ -70,7 +70,7 @@ func (u Usecase) lock(ctx context.Context, arg lockParams) (statusCode int, err 
 		ScoreLock: *arg.Status,
 		ID:        classEvent.ID,
 	}); err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in update score lock : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in update score lock : %s", err.Error())
 	}
 	return http.StatusOK, nil
 }
@@ -78,9 +78,9 @@ func (u Usecase) lock(ctx context.Context, arg lockParams) (statusCode int, err 
 func (u Usecase) storeOrUpdateSingle(ctx context.Context, arg singleStoreOrUpdateParams) (statusCode int, err error) {
 	eventBracket, err := u.repository.EventBracketCheckOne(ctx, arg.EventBracketID)
 	if err != nil {
-		return http.StatusNotFound, fmt.Errorf("single bracket not found : " + err.Error())
+		return http.StatusNotFound, fmt.Errorf("single bracket not found : %s", err.Error())
 	}
-	if eventBracket.ScoreLock == true {
+	if eventBracket.ScoreLock {
 		return http.StatusBadRequest, fmt.Errorf("can't update or store score if class event score is already lock")
 	}
 
@@ -90,7 +90,7 @@ func (u Usecase) storeOrUpdateSingle(ctx context.Context, arg singleStoreOrUpdat
 
 	tx, err := u.rawRepository.db.Begin()
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in start tx : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in start tx : %s", err.Error())
 	}
 	txQuery := u.repository.WithTx(tx)
 	if _, err := txQuery.EventScoreCheckOneByBracketID(ctx, eventBracket.ID); err != nil {
@@ -108,9 +108,9 @@ func (u Usecase) storeOrUpdateSingle(ctx context.Context, arg singleStoreOrUpdat
 			AwayTotal:      arg.AwayTotal,
 		}); err != nil {
 			if err := tx.Rollback(); err != nil {
-				return http.StatusInternalServerError, fmt.Errorf("error in rollback tx store event score : " + err.Error())
+				return http.StatusInternalServerError, fmt.Errorf("error in rollback tx store event score : %s", err.Error())
 			}
-			return http.StatusInternalServerError, fmt.Errorf("error in store event score : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in store event score : %s", err.Error())
 		}
 	} else {
 		if err := txQuery.EventScoreUpdate(ctx, db.EventScoreUpdateParams{
@@ -127,9 +127,9 @@ func (u Usecase) storeOrUpdateSingle(ctx context.Context, arg singleStoreOrUpdat
 			EventBracketID: eventBracket.ID,
 		}); err != nil {
 			if err := tx.Rollback(); err != nil {
-				return http.StatusInternalServerError, fmt.Errorf("error in tx rollback update event score : " + err.Error())
+				return http.StatusInternalServerError, fmt.Errorf("error in tx rollback update event score : %s", err.Error())
 			}
-			return http.StatusInternalServerError, fmt.Errorf("error in update event score : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in update event score : %s", err.Error())
 		}
 	}
 
@@ -137,9 +137,9 @@ func (u Usecase) storeOrUpdateSingle(ctx context.Context, arg singleStoreOrUpdat
 		participants, err := txQuery.BracketParticipantFetchByEventBracketID(ctx, eventBracket.ID)
 		if err != nil {
 			if err := tx.Rollback(); err != nil {
-				return http.StatusInternalServerError, fmt.Errorf("error in rollback tx bracket participants not found : " + err.Error())
+				return http.StatusInternalServerError, fmt.Errorf("error in rollback tx bracket participants not found : %s", err.Error())
 			}
-			return http.StatusInternalServerError, fmt.Errorf("bracket participants not found : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("bracket participants not found : %s", err.Error())
 		}
 
 		var participantIndex int
@@ -162,9 +162,9 @@ func (u Usecase) storeOrUpdateSingle(ctx context.Context, arg singleStoreOrUpdat
 			Type:                nextParticipantType,
 		}); err != nil {
 			if err := tx.Rollback(); err != nil {
-				return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update bracket participants update : " + err.Error())
+				return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update bracket participants update : %s", err.Error())
 			}
-			return http.StatusInternalServerError, fmt.Errorf("error in update bracket participants : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in update bracket participants : %s", err.Error())
 		}
 
 		//Next Bracket
@@ -174,14 +174,14 @@ func (u Usecase) storeOrUpdateSingle(ctx context.Context, arg singleStoreOrUpdat
 			ID:       eventBracket.NextMatchID,
 		}); err != nil {
 			if err := tx.Rollback(); err != nil {
-				return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update bracket status : " + err.Error())
+				return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update bracket status : %s", err.Error())
 			}
-			return http.StatusInternalServerError, fmt.Errorf("error in update bracket status : " + err.Error())
+			return http.StatusInternalServerError, fmt.Errorf("error in update bracket status : %s", err.Error())
 		}
 	}
 
 	if err := tx.Commit(); err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("error in commit tx : " + err.Error())
+		return http.StatusInternalServerError, fmt.Errorf("error in commit tx : %s", err.Error())
 	}
 
 	return http.StatusOK, nil
