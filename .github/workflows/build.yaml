@@ -41,4 +41,5 @@ jobs:
         run: docker push asia-southeast2-docker.pkg.dev/${{ vars.PROJECT_ID }}/tanding-registry/tanding-api:${{ env.TAG }}
       - name: Summary Report
         run: |
-          echo "Docker Image Tag : ${{ env.TAG }}"
+          echo '## Deployment Summary' >> $GITHUB_STEP_SUMMARY
+          echo "### Deployed Tag: ${{ env.TAG }}" >> $GITHUB_STEP_SUMMARY
