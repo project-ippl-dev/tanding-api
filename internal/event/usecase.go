@@ -252,10 +252,10 @@ func (u Usecase) fetchByUser(ctx context.Context, page int32, pageSize int32, us
 
 	data := []response{}
 	for _, event := range events {
-		// totalParticipants, err := u.repository.EventRegistrationCountAllByStatusApproved(ctx, event.ID)  // temporary comment
-		// if err != nil {
-		// 	return tools.Pagination{}, fmt.Errorf("error in count all participants : %s", err.Error())
-		// }
+		totalParticipants, err := u.repository.EventRegistrationCountAllByStatusApproved(ctx, event.ID)
+		if err != nil {
+			return tools.Pagination{}, fmt.Errorf("error in count all participants : %s", err.Error())
+		}
 		data = append(data, response{
 			ID:           event.ID,
 			UserID:       event.UserID,
@@ -281,7 +281,7 @@ func (u Usecase) fetchByUser(ctx context.Context, page int32, pageSize int32, us
 			Open:         event.Open.Format("Monday, 02 January 2006, 15:04"),
 			Remark:       string(event.Remark),
 			ClassEvents:  nil,
-			// Participants: totalParticipants, // temporary comment
+			Participants: totalParticipants,
 		})
 	}
 
@@ -306,33 +306,33 @@ func (u Usecase) fetchOne(ctx context.Context, eventID uuid.UUID, userID string)
 
 	classEvents := []classEventSummaryRow{}
 	for _, class := range classes {
-		//ranks, err := u.rawRepository.RankFetchByClassEventID(ctx, class.ID) // temporary comment
-		// if err != nil {
-		// 	return responseFetchOne{}, fmt.Errorf("error in fetch ranks : %s", err.Error())
-		// }
+		ranks, err := u.rawRepository.RankFetchByClassEventID(ctx, class.ID)
+		if err != nil {
+			return responseFetchOne{}, fmt.Errorf("error in fetch ranks : %s", err.Error())
+		}
 		classEvents = append(classEvents, classEventSummaryRow{
 			ClassEventFetchByEventIDRow: class,
-			//Summary:                     ranks,
+			Summary:                     ranks,
 		})
 	}
 
-	// clubRanks, err := u.repository.RankClubFetchByEventID(ctx, eventID)
-	// if err != nil {
-	// 	return responseFetchOne{}, fmt.Errorf("error fetch in club ranks : %s", err.Error())
-	// } // temporary comment
+	clubRanks, err := u.repository.RankClubFetchByEventID(ctx, eventID)
+	if err != nil {
+		return responseFetchOne{}, fmt.Errorf("error fetch in club ranks : %s", err.Error())
+	}
 
-	// generalChampions := []db.RankClubFetchByEventIDRow{}
-	// for i, clubRank := range clubRanks {
-	// 	if i > 2 {
-	// 		break
-	// 	}
-	// 	generalChampions = append(generalChampions, clubRank)
-	// } // temporary comment
+	generalChampions := []db.RankClubFetchByEventIDRow{}
+	for i, clubRank := range clubRanks {
+		if i > 2 {
+			break
+		}
+		generalChampions = append(generalChampions, clubRank)
+	}
 
-	// totalParticipants, err := u.repository.EventRegistrationCountAllByStatusApproved(ctx, event.ID)
-	// if err != nil {
-	// 	return responseFetchOne{}, fmt.Errorf("error in count all participants : %s", err.Error())
-	// } // temporary comment
+	totalParticipants, err := u.repository.EventRegistrationCountAllByStatusApproved(ctx, event.ID)
+	if err != nil {
+		return responseFetchOne{}, fmt.Errorf("error in count all participants : %s", err.Error())
+	}
 
 	privilege, _ := u.repository.EventPrivilegeFetchOne(ctx, db.EventPrivilegeFetchOneParams{
 		EventID: event.ID,
@@ -340,34 +340,34 @@ func (u Usecase) fetchOne(ctx context.Context, eventID uuid.UUID, userID string)
 	})
 
 	return responseFetchOne{
-		ID:           event.ID,
-		UserID:       event.UserID,
-		UserName:     event.UserName,
-		Type:         event.Type,
-		Name:         event.Name,
-		Description:  event.Description,
-		PrizePool:    event.PrizePool,
-		Location:     event.Location,
-		Province:     event.Province,
-		City:         event.City,
-		Thumbnail:    event.Thumbnail,
-		StartDate:    event.StartDate.Format("Monday, 02 January 2006"),
-		EndDate:      event.EndDate.Format("Monday, 02 January 2006"),
-		Deadline:     event.Deadline,
-		SportID:      event.SportID,
-		SportName:    event.SportName,
-		Rules:        event.Rules,
-		ProposalLink: event.ProposalLink,
-		Status:       event.Status.Bool,
-		Quota:        event.Quota,
-		Open:         event.Open.Format("Monday, 02 January 2006, 15:04"),
-		Remark:       string(event.Remark),
-		ClassEvents:  classEvents,
-		UserImage:    event.UserImage,
-		// Participants:     totalParticipants, // temporary comment
-		Privilege:     privilege,
-		EventTurnLock: event.IsGenerate,
-		// GeneralChampions: generalChampions, // temporary comment
+		ID:               event.ID,
+		UserID:           event.UserID,
+		UserName:         event.UserName,
+		Type:             event.Type,
+		Name:             event.Name,
+		Description:      event.Description,
+		PrizePool:        event.PrizePool,
+		Location:         event.Location,
+		Province:         event.Province,
+		City:             event.City,
+		Thumbnail:        event.Thumbnail,
+		StartDate:        event.StartDate.Format("Monday, 02 January 2006"),
+		EndDate:          event.EndDate.Format("Monday, 02 January 2006"),
+		Deadline:         event.Deadline,
+		SportID:          event.SportID,
+		SportName:        event.SportName,
+		Rules:            event.Rules,
+		ProposalLink:     event.ProposalLink,
+		Status:           event.Status.Bool,
+		Quota:            event.Quota,
+		Open:             event.Open.Format("Monday, 02 January 2006, 15:04"),
+		Remark:           string(event.Remark),
+		ClassEvents:      classEvents,
+		UserImage:        event.UserImage,
+		Participants:     totalParticipants,
+		Privilege:        privilege,
+		EventTurnLock:    event.IsGenerate,
+		GeneralChampions: generalChampions,
 	}, nil
 }
 
@@ -402,33 +402,33 @@ func (u Usecase) fetchInfinite(ctx context.Context, limit int32, args fetchInfin
 
 	data := []responseInfiniteRow{}
 	for _, event := range events {
-		// totalParticipants, err := u.repository.EventRegistrationCountAllByStatusApproved(ctx, event.ID) // temporary comment
-		// if err != nil {
-		// 	return responseInfinite{}, fmt.Errorf("error in count all participants : %s", err.Error())
-		// }
+		totalParticipants, err := u.repository.EventRegistrationCountAllByStatusApproved(ctx, event.ID)
+		if err != nil {
+			return responseInfinite{}, fmt.Errorf("error in count all participants : %s", err.Error())
+		}
 		data = append(data, responseInfiniteRow{
-			ID:          event.ID,
-			UserID:      event.UserID,
-			UserName:    event.UserName,
-			Type:        event.Type,
-			Name:        event.Name,
-			Description: event.Description,
-			PrizePool:   event.PrizePool,
-			Location:    event.Location,
-			Province:    event.Province,
-			City:        event.City,
-			Thumbnail:   event.Thumbnail,
-			StartDate:   event.StartDate.Format("Monday, 02 January 2006"),
-			EndDate:     event.EndDate.Format("Monday, 02 January 2006"),
-			Deadline:    event.Deadline.Format("02 January 2006, 15:04"),
-			SportID:     event.SportID,
-			SportName:   event.SportName,
-			Quota:       event.Quota,
-			Order:       event.OrderNumber,
-			Open:        event.Open.Format("Monday, 02 January 2006, 15:04"),
-			Remark:      string(event.Remark),
-			// Participants: totalParticipants, // temporary comment
-			UserImage: event.UserImage,
+			ID:           event.ID,
+			UserID:       event.UserID,
+			UserName:     event.UserName,
+			Type:         event.Type,
+			Name:         event.Name,
+			Description:  event.Description,
+			PrizePool:    event.PrizePool,
+			Location:     event.Location,
+			Province:     event.Province,
+			City:         event.City,
+			Thumbnail:    event.Thumbnail,
+			StartDate:    event.StartDate.Format("Monday, 02 January 2006"),
+			EndDate:      event.EndDate.Format("Monday, 02 January 2006"),
+			Deadline:     event.Deadline.Format("02 January 2006, 15:04"),
+			SportID:      event.SportID,
+			SportName:    event.SportName,
+			Quota:        event.Quota,
+			Order:        event.OrderNumber,
+			Open:         event.Open.Format("Monday, 02 January 2006, 15:04"),
+			Remark:       string(event.Remark),
+			Participants: totalParticipants,
+			UserImage:    event.UserImage,
 		})
 	}
 	return responseInfinite{
