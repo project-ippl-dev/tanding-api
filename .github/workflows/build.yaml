@@ -47,6 +47,14 @@ jobs:
         run: docker build -t asia-southeast2-docker.pkg.dev/${{ vars.PROJECT_ID }}/tanding-registry/tanding-api:${{ env.TAG }} .
       - name: Push Docker Image
         run: docker push asia-southeast2-docker.pkg.dev/${{ vars.PROJECT_ID }}/tanding-registry/tanding-api:${{ env.TAG }}
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy tanding-api \
+            --image=asia-southeast2-docker.pkg.dev/${{ vars.PROJECT_ID }}/tanding-registry/tanding-api:${{ env.TAG }} \
+            --region=asia-southeast2 \
+            --platform=managed \
+            --set-env-vars-file .env
       - name: Summary Report
         run: |
           echo '## Deployment Summary' >> $GITHUB_STEP_SUMMARY
