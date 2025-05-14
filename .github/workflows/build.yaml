@@ -1,4 +1,4 @@
-name: "build and deploy"
+name: "Build and Deploy"
 
 on:
   workflow_dispatch:
@@ -51,8 +51,8 @@ jobs:
             --allow-unauthenticated \
             --network=default \
             --subnet=default \
-            --set-env-vars="HOST=localhost,FE_BASE_URL=http://localhost:3000,STORAGE_BUCKET_ID=tanding-storage" \
-            --set-secrets DATABASE_USERNAME=DATABASE_USERNAME:latest,DATABASE_PASSWORD=DATABASE_PASSWORD:latest,DATABASE_NAME=DATABASE_NAME:latest,DATABASE_HOST=DATABASE_HOST:latest,DATABASE_PORT=DATABASE_PORT:latest,JWT_SECRET_KEY=JWT_SECRET_KEY:latest,SMTP_HOST=SMTP_HOST:latest,SMTP_PORT=SMTP_PORT:latest,SMTP_USERNAME=SMTP_USERNAME:latest,SMTP_PASSWORD=SMTP_PASSWORD:latest,SMTP_SENDER=SMTP_SENDER:latest,REDIS_HOST=REDIS_HOST:latest,REDIS_PORT=REDIS_PORT:latest\
+            --set-env-vars="FE_BASE_URL=http://localhost:3000,STORAGE_BUCKET_ID=tanding-storage" \
+            --set-secrets HOST=HOST:latest,DATABASE_USERNAME=DATABASE_USERNAME:latest,DATABASE_PASSWORD=DATABASE_PASSWORD:latest,DATABASE_NAME=DATABASE_NAME:latest,DATABASE_HOST=DATABASE_HOST:latest,DATABASE_PORT=DATABASE_PORT:latest,JWT_SECRET_KEY=JWT_SECRET_KEY:latest,SMTP_HOST=SMTP_HOST:latest,SMTP_PORT=SMTP_PORT:latest,SMTP_USERNAME=SMTP_USERNAME:latest,SMTP_PASSWORD=SMTP_PASSWORD:latest,SMTP_SENDER=SMTP_SENDER:latest,REDIS_HOST=REDIS_HOST:latest,REDIS_PORT=REDIS_PORT:latest\
 
       - name: Summary Report
         run: |
