@@ -20,6 +20,14 @@ jobs:
         shell: bash -euxo pipefail {0}
     steps:
       - uses: actions/checkout@v4
+      - name: Prepare env file
+        run: |
+          if [ -f .env.staging ]; then
+            cp .env.staging .env
+            echo "✓ .env.staging → .env"
+          else
+            echo "⚠️  .env.staging not found, skipping"
+          fi
       - name: Login to Gcloud
         uses: google-github-actions/auth@v2
         with:
