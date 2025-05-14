@@ -16,7 +16,7 @@ jobs:
     if: always()
     strategy:
       matrix:
-        go-version: [ '1.16' ]
+        go-version: [ '1.23' ]
     permissions:
       contents: read
     defaults:
@@ -37,7 +37,7 @@ jobs:
     if: always()
     strategy:
       matrix:
-        go-version: ['1.16']
+        go-version: ['1.23']
     permissions:
       contents: read
     defaults:
