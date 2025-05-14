@@ -46,6 +46,7 @@ jobs:
             --image=asia-southeast2-docker.pkg.dev/${{ vars.PROJECT_ID }}/tanding-registry/tanding-api:${{ env.TAG }} \
             --region=asia-southeast2 \
             --platform=managed \
+            --port=9001 \
             --service-account=deployment-be@acoustic-portal-407710.iam.gserviceaccount.com \
             --allow-unauthenticated \
             --set-env-vars="HOST=localhost,FE_BASE_URL=http://localhost:3000,STORAGE_BUCKET_ID=tanding-storage,REDIS_HOST=localhost,REDIS_PORT=6379" \
