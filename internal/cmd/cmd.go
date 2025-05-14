@@ -3,8 +3,9 @@ package cmd
 import (
 	"database/sql"
 	"fmt"
-	"github.com/project-ippl-dev/tanding-api/internal/mail"
+	"math/rand"
 	"net/http"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/labstack/echo/v4"
@@ -20,6 +21,7 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/event"
 	"github.com/project-ippl-dev/tanding-api/internal/eventRegistration"
 	"github.com/project-ippl-dev/tanding-api/internal/file"
+	"github.com/project-ippl-dev/tanding-api/internal/mail"
 	middlewareApp "github.com/project-ippl-dev/tanding-api/internal/middleware"
 	"github.com/project-ippl-dev/tanding-api/internal/sport"
 	"github.com/project-ippl-dev/tanding-api/internal/storage"
@@ -44,19 +46,19 @@ func Run() error {
 	defer rdb.Close()
 
 	s3Client := config.NewS3Client(conf.S3)
-	e := echo.New()
-
 	jwtClient := tools.NewJWTClient(conf.JWT)
 	mailClient := mail.NewMailClient(conf.SMTP)
-
 	storageClient := config.NewStorageClient(conf.StorageConfig)
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
-	routing(conf, postgresDB, rdb, s3Client, jwtClient, storageClient, mailClient, e)
+	e := echo.New()
+
+	routing(conf, postgresDB, rdb, s3Client, jwtClient, storageClient, mailClient, e, r)
 
 	return e.Start(fmt.Sprintf("%s:%d", conf.ServerConfig.Host, conf.ServerConfig.Port))
 }
 
-func routing(conf config.Config, postgresDB *sql.DB, rdb *redis.Client, s3Client config.S3Client, jwtClient tools.JWTClient, storageClient config.StorageClient, mailClient mail.MailClient, e *echo.Echo) {
+func routing(conf config.Config, postgresDB *sql.DB, rdb *redis.Client, s3Client config.S3Client, jwtClient tools.JWTClient, storageClient config.StorageClient, mailClient mail.MailClient, e *echo.Echo, r *rand.Rand) {
 	//Setup Cors
 	e.Use(middleware.CORS())
 
@@ -105,7 +107,7 @@ func routing(conf config.Config, postgresDB *sql.DB, rdb *redis.Client, s3Client
 	storageUsecase := storage.NewUsecase(storageClient)
 	clubUsecase := club.NewUsecase(repository, clubRepository)
 	eventUsecase := event.NewUsecase(repository, eventRepository)
-	bracketUsecase := bracket.NewUsecase(repository, bracketRepository)
+	bracketUsecase := bracket.NewUsecase(repository, bracketRepository, r)
 
 	//Declare Handlers
 	auth.RegisterHandler(authUsecase, jwtClient, conf.ServerConfig, e)
