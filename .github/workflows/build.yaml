@@ -20,14 +20,6 @@ jobs:
         shell: bash -euxo pipefail {0}
     steps:
       - uses: actions/checkout@v4
-      - name: Prepare env file
-        run: |
-          if [ -f .env.staging ]; then
-            cp .env.staging .env
-            echo "✓ .env.staging → .env"
-          else
-            echo "⚠️  .env.staging not found, skipping"
-          fi
       - name: Login to Gcloud
         uses: google-github-actions/auth@v2
         with:
@@ -56,23 +48,23 @@ jobs:
             --platform=managed \
             --allow-unauthenticated \
             --set-env-vars \
-              HOST=localhost ,\
-              FE_BASE_URL=http://localhost:3000 ,\
-              STORAGE_BUCKET_ID=tanding-storage ,\
-              REDIS_HOST=localhost ,\
+              HOST=localhost,\
+              FE_BASE_URL=http://localhost:3000,\
+              STORAGE_BUCKET_ID=tanding-storage,\
+              REDIS_HOST=localhost,\
               REDIS_PORT=6379 \
             --set-secrets \
-              DATABASE_USERNAME=DATABASE_USERNAME:latest ,\
-              DATABASE_PASSWORD=DATABASE_PASSWORD:latest ,\
-              DATABASE_NAME=DATABASE_NAME:latest ,\
-              DATABASE_HOST=DATABASE_HOST:latest ,\
+              DATABASE_USERNAME=DATABASE_USERNAME:latest,\
+              DATABASE_PASSWORD=DATABASE_PASSWORD:latest,\
+              DATABASE_NAME=DATABASE_NAME:latest,\
+              DATABASE_HOST=DATABASE_HOST:latest,\
               DATABASE_PORT=DATABASE_PORT:latest, \
-              JWT_SECRET_KEY=JWT_SECRET_KEY:latest ,\
-              SMTP_HOST=SMTP_HOST:latest ,\
-              SMTP_PORT=SMTP_PORT:latest ,\
-              SMTP_USERNAME=SMTP_USERNAME:latest ,\
-              SMTP_PASSWORD=SMTP_PASSWORD:latest ,\
-              SMTP_SENDER=SMTP_SENDER:latest \
+              JWT_SECRET_KEY=JWT_SECRET_KEY:latest,\
+              SMTP_HOST=SMTP_HOST:latest,\
+              SMTP_PORT=SMTP_PORT:latest,\
+              SMTP_USERNAME=SMTP_USERNAME:latest,\
+              SMTP_PASSWORD=SMTP_PASSWORD:latest,\
+              SMTP_SENDER=SMTP_SENDER:latest\
 
       - name: Summary Report
         run: |
