@@ -1,40 +1,44 @@
 package event
 
 import (
-	"github.com/project-ippl-dev/tanding-api/internal/middleware"
-	"github.com/project-ippl-dev/tanding-api/internal/tools"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"github.com/project-ippl-dev/tanding-api/internal/middleware"
+	"github.com/project-ippl-dev/tanding-api/internal/tools"
 	"net/http"
 )
 
 type handler struct {
-	usecase Usecase
+	usecase   Usecase
+	jwtClient tools.JWTClient
 }
 
-func RegisterHandler(usecase Usecase, m middleware.Params, e *echo.Echo) {
-	handler := handler{usecase: usecase}
+func RegisterHandler(usecase Usecase, m middleware.Params, jwtClient tools.JWTClient, e *echo.Echo) {
+	eventHandler := handler{
+		usecase:   usecase,
+		jwtClient: jwtClient,
+	}
 
 	//Admin Role
-	e.GET("/event", handler.fetchAll, m.JWTMiddleware(), m.Middleware.RoleAdminOnly)
-	e.DELETE("/event/:event", handler.delete, m.JWTMiddleware(), m.Middleware.RoleAdminOnly)
-	e.PATCH("/event/:event/status", handler.updateStatus, m.JWTMiddleware(), m.Middleware.RoleAdminOnly)
-	e.PATCH("/event/:event/remark", handler.updateRemark, m.JWTMiddleware(), m.Middleware.RoleAdminOnly)
+	e.GET("/event", eventHandler.fetchAll, m.JWTMiddleware(), m.Middleware.RoleAdminOnly)
+	e.DELETE("/event/:event", eventHandler.delete, m.JWTMiddleware(), m.Middleware.RoleAdminOnly)
+	e.PATCH("/event/:event/status", eventHandler.updateStatus, m.JWTMiddleware(), m.Middleware.RoleAdminOnly)
+	e.PATCH("/event/:event/remark", eventHandler.updateRemark, m.JWTMiddleware(), m.Middleware.RoleAdminOnly)
 
 	//Only Auth
-	e.GET("/event/:event", handler.fetchOne, m.JWTMiddleware())
-	e.GET("/event/infinite", handler.fetchInfinite)
-	e.POST("/event", handler.store, m.JWTMiddleware())
+	e.GET("/event/:event", eventHandler.fetchOne, m.JWTMiddleware())
+	e.GET("/event/infinite", eventHandler.fetchInfinite)
+	e.POST("/event", eventHandler.store, m.JWTMiddleware())
 
 	//Competition Privilege
-	e.GET("/event/own", handler.fetchByUser, m.JWTMiddleware(), m.Middleware.HasEventPrivilege)
-	e.PUT("/event/:event", handler.update, m.JWTMiddleware(), m.Middleware.GrantCompetition)
+	e.GET("/event/own", eventHandler.fetchByUser, m.JWTMiddleware(), m.Middleware.HasEventPrivilege)
+	e.PUT("/event/:event", eventHandler.update, m.JWTMiddleware(), m.Middleware.GrantCompetition)
 
 	//Event Owner
-	e.POST("/event/:event/committee", handler.assign, m.JWTMiddleware(), m.Middleware.EventPrivilegeOwner)
-	e.GET("/event/:event/committee", handler.committeeFetchAll, m.JWTMiddleware(), m.Middleware.EventPrivilegeOwner)
-	e.PATCH("/event/:event/committee/:committee", handler.committeeUpdate, m.JWTMiddleware(), m.Middleware.EventPrivilegeOwner)
-	e.DELETE("/event/:event/committee/:committee", handler.committeeDelete, m.JWTMiddleware(), m.Middleware.EventPrivilegeOwner)
+	e.POST("/event/:event/committee", eventHandler.assign, m.JWTMiddleware(), m.Middleware.EventPrivilegeOwner)
+	e.GET("/event/:event/committee", eventHandler.committeeFetchAll, m.JWTMiddleware(), m.Middleware.EventPrivilegeOwner)
+	e.PATCH("/event/:event/committee/:committee", eventHandler.committeeUpdate, m.JWTMiddleware(), m.Middleware.EventPrivilegeOwner)
+	e.DELETE("/event/:event/committee/:committee", eventHandler.committeeDelete, m.JWTMiddleware(), m.Middleware.EventPrivilegeOwner)
 }
 
 func (h handler) store(c echo.Context) error {
@@ -45,7 +49,7 @@ func (h handler) store(c echo.Context) error {
 	if err := req.Validate(); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
 	}
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
 	statusCode, eventID, err := h.usecase.store(ctx, req, decoded)
 	if err != nil {
@@ -99,7 +103,7 @@ func (h handler) delete(c echo.Context) error {
 }
 
 func (h handler) fetchByUser(c echo.Context) error {
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	page, pageSize := tools.PaginationPageAndPageSize(c)
 	ctx := c.Request().Context()
 	pagination, err := h.usecase.fetchByUser(ctx, page, pageSize, decoded.ID)
@@ -115,7 +119,7 @@ func (h handler) fetchOne(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
 	event, err := h.usecase.fetchOne(ctx, eventID, decoded.ID)
 	if err != nil {
@@ -192,7 +196,7 @@ func (h handler) committeeUpdate(c echo.Context) error {
 	}
 
 	ctx := c.Request().Context()
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	statusCode, err := h.usecase.committeeUpdate(ctx, arg, decoded.ID)
 	if err != nil {
 		return c.JSON(statusCode, tools.Response{Message: err.Error()})
@@ -206,7 +210,7 @@ func (h handler) committeeDelete(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
 	ctx := c.Request().Context()
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	statusCode, err := h.usecase.committeeDelete(ctx, arg, decoded.ID)
 	if err != nil {
 		return c.JSON(statusCode, tools.Response{Message: err.Error()})

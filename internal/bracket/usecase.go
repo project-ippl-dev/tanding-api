@@ -16,10 +16,15 @@ import (
 type Usecase struct {
 	repository    *db.Queries
 	rawRepository RawRepository
+	r             *rand.Rand
 }
 
-func NewUsecase(repository *db.Queries, rawRepository RawRepository) Usecase {
-	return Usecase{repository: repository, rawRepository: rawRepository}
+func NewUsecase(repository *db.Queries, rawRepository RawRepository, r *rand.Rand) Usecase {
+	return Usecase{
+		repository:    repository,
+		rawRepository: rawRepository,
+		r:             r,
+	}
 }
 
 func (u Usecase) store(ctx context.Context, arg generateParams) (statusCode int, err error) {
@@ -429,8 +434,8 @@ func (u Usecase) roundDown(ctx context.Context, arg generateParams) (statusCode 
 		if err != nil {
 			return http.StatusNotFound, roundDownResponse{}, fmt.Errorf("bracket not found : %s", err.Error())
 		}
-		rand.Seed(time.Now().UnixNano())
-		rand.Shuffle(len(brackets), func(i, j int) {
+		u.r.Seed(time.Now().UnixNano())
+		u.r.Shuffle(len(brackets), func(i, j int) {
 			brackets[i], brackets[j] = brackets[j], brackets[i]
 		})
 		var result []orderRoundDownResponse
@@ -461,8 +466,8 @@ func (u Usecase) roundDownBracketSingle(ctx context.Context, classEvent db.Class
 		return http.StatusNotFound, nil, fmt.Errorf("registration data not found : %s", err.Error())
 	}
 	matches := u.generateBracket(len(registrations), int(classEvent.MatchIndex))
-	rand.Seed(time.Now().UnixNano())
-	rand.Shuffle(len(registrations), func(i, j int) {
+	u.r.Seed(time.Now().UnixNano())
+	u.r.Shuffle(len(registrations), func(i, j int) {
 		registrations[i], registrations[j] = registrations[j], registrations[i]
 	})
 	var randomTeams []bracketParticipantFetchByEventBracketIDRow
@@ -470,7 +475,7 @@ func (u Usecase) roundDownBracketSingle(ctx context.Context, classEvent db.Class
 	min := 0
 	max := len(registrations)
 	for _, match := range matches {
-		rand.Seed(time.Now().UnixNano())
+		u.r.Seed(time.Now().UnixNano())
 		index := rand.Intn(max-min) + min
 		if match[0] != 0 {
 			for {
