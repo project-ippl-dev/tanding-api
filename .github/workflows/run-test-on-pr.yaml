@@ -3,7 +3,7 @@ name: "Run test on PR"
 on:
   pull_request:
     branches:
-      - master
+      - main
       - dev
     types:
       - opened
