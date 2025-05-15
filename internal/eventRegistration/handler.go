@@ -10,17 +10,21 @@ import (
 )
 
 type handler struct {
-	usecase Usecase
+	usecase   Usecase
+	jwtClient tools.JWTClient
 }
 
-func RegisterHandler(usecase Usecase, m middleware.Params, e *echo.Echo) {
-	handler := handler{usecase: usecase}
+func RegisterHandler(usecase Usecase, m middleware.Params, jwtClient tools.JWTClient, e *echo.Echo) {
+	eventRegistrationHandler := handler{
+		usecase:   usecase,
+		jwtClient: jwtClient,
+	}
 
-	e.GET("/event/:event/register", handler.fetchAll, m.JWTMiddleware())
-	e.POST("/event/:event/register", handler.register, m.JWTMiddleware(), m.Middleware.EventManipulationRemarkOpen, m.Middleware.EventRegistrationOnlyClubOwner)
-	e.PATCH("/event/:event/register/:register", handler.update, m.JWTMiddleware())
-	e.PATCH("/event/:event/register/:register/rejected", handler.setReject, m.JWTMiddleware())
-	e.GET("/event/:event/participant", handler.fetchParticipant, m.JWTMiddleware())
+	e.GET("/event/:event/register", eventRegistrationHandler.fetchAll, m.JWTMiddleware())
+	e.POST("/event/:event/register", eventRegistrationHandler.register, m.JWTMiddleware(), m.Middleware.EventManipulationRemarkOpen, m.Middleware.EventRegistrationOnlyClubOwner)
+	e.PATCH("/event/:event/register/:register", eventRegistrationHandler.update, m.JWTMiddleware())
+	e.PATCH("/event/:event/register/:register/rejected", eventRegistrationHandler.setReject, m.JWTMiddleware())
+	e.GET("/event/:event/participant", eventRegistrationHandler.fetchParticipant, m.JWTMiddleware())
 }
 
 func (h handler) register(c echo.Context) error {
@@ -47,7 +51,7 @@ func (h handler) fetchAll(c echo.Context) error {
 	page, pageSize := tools.PaginationPageAndPageSize(c)
 	ownStatus := c.QueryParam("own")
 	if ownStatus == "1" {
-		decoded := tools.JWTDecode(c)
+		decoded := h.jwtClient.Decode(c)
 		args.UserID = decoded.ID
 	}
 	ctx := c.Request().Context()
@@ -69,7 +73,7 @@ func (h handler) update(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
 	}
 
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
 	statusCode, err := h.usecase.update(ctx, req, decoded.ID)
 	if err != nil {
@@ -85,7 +89,7 @@ func (h handler) setReject(c echo.Context) error {
 	}
 
 	ctx := c.Request().Context()
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	statusCode, err := h.usecase.setReject(ctx, arg, decoded.ID)
 	if err != nil {
 		return c.JSON(statusCode, tools.Response{Message: err.Error()})

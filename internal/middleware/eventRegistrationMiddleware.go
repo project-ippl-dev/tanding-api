@@ -10,7 +10,7 @@ import (
 
 func (m Middleware) EventRegistrationOnlyClubOwner(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		decoded := tools.JWTDecode(c)
+		decoded := m.jwtClient.Decode(c)
 		ctx := c.Request().Context()
 		if _, err := m.repository.ClubFetchOwner(ctx, uuid.MustParse(decoded.ID)); err != nil {
 			return c.JSON(http.StatusForbidden, tools.Response{Message: "forbidden access, only user which had club can access"})

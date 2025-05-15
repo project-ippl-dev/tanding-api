@@ -12,21 +12,25 @@ import (
 )
 
 type handler struct {
-	usecase Usecase
+	usecase   Usecase
+	jwtClient tools.JWTClient
 }
 
-func RegisterHandler(usecase Usecase, m middleware.Params, e *echo.Echo) {
-	handler := handler{usecase: usecase}
+func RegisterHandler(usecase Usecase, m middleware.Params, jwtClient tools.JWTClient, e *echo.Echo) {
+	clubHandler := handler{
+		usecase:   usecase,
+		jwtClient: jwtClient,
+	}
 
-	e.POST("/club", handler.store, m.JWTMiddleware())
-	e.PUT("/club/:club", handler.update, m.JWTMiddleware())
-	e.DELETE("/club/:club", handler.delete, m.JWTMiddleware())
-	e.POST("/club/:club/invite", handler.invite, m.JWTMiddleware())
-	e.POST("/club/:club/join", handler.join, m.JWTMiddleware())
-	e.GET("/club/:club/join/approval", handler.fetchJoinApproval, m.JWTMiddleware())
-	e.GET("/club/invite/approval", handler.fetchInviteApproval, m.JWTMiddleware())
-	e.PATCH("/club/:club/join/approval/:approval", handler.updateJoinApproval, m.JWTMiddleware())
-	e.PATCH("/club/invite/approval/:approval", handler.updateInviteApproval, m.JWTMiddleware())
+	e.POST("/club", clubHandler.store, m.JWTMiddleware())
+	e.PUT("/club/:club", clubHandler.update, m.JWTMiddleware())
+	e.DELETE("/club/:club", clubHandler.delete, m.JWTMiddleware())
+	e.POST("/club/:club/invite", clubHandler.invite, m.JWTMiddleware())
+	e.POST("/club/:club/join", clubHandler.join, m.JWTMiddleware())
+	e.GET("/club/:club/join/approval", clubHandler.fetchJoinApproval, m.JWTMiddleware())
+	e.GET("/club/invite/approval", clubHandler.fetchInviteApproval, m.JWTMiddleware())
+	e.PATCH("/club/:club/join/approval/:approval", clubHandler.updateJoinApproval, m.JWTMiddleware())
+	e.PATCH("/club/invite/approval/:approval", clubHandler.updateInviteApproval, m.JWTMiddleware())
 }
 
 func (h handler) store(c echo.Context) error {
@@ -35,9 +39,9 @@ func (h handler) store(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
 	if err := req.Validate(); err != nil {
-		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
+		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation ", Errors: err.Error()})
 	}
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
 	clubID, err := h.usecase.store(ctx, req, decoded.ID)
 	if err != nil {
@@ -59,7 +63,7 @@ func (h handler) update(c echo.Context) error {
 	if err = req.Validate(); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
 	}
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
 	if err = h.usecase.update(ctx, req, decoded.ID, clubID); err != nil {
 		return c.JSON(http.StatusNotFound, tools.Response{Message: err.Error()})
@@ -73,7 +77,7 @@ func (h handler) delete(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
 	if err = h.usecase.delete(ctx, decoded.ID, clubID); err != nil {
 		return c.JSON(http.StatusNotFound, tools.Response{Message: err.Error()})
@@ -89,7 +93,7 @@ func (h handler) invite(c echo.Context) error {
 	if err := req.Validate(); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
 	}
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
 	if err := h.usecase.invite(ctx, req, decoded.ID); err != nil {
 		return c.JSON(http.StatusInternalServerError, tools.Response{Message: err.Error()})
@@ -105,7 +109,7 @@ func (h handler) join(c echo.Context) error {
 	if err := req.Validate(); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
 	}
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
 	statusCode, err := h.usecase.join(ctx, req, decoded.ID)
 	if err != nil {
@@ -135,7 +139,7 @@ func (h handler) fetchInviteApproval(c echo.Context) error {
 	limit := tools.PaginationLimit(c)
 	IDParam := c.QueryParam("id")
 	ID, _ := strconv.ParseInt(IDParam, 10, 64)
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
 	data, err := h.usecase.fetchInviteApproval(ctx, limit, decoded.ID, ID)
 	if err != nil {
@@ -152,7 +156,7 @@ func (h handler) updateJoinApproval(c echo.Context) error {
 	if err := req.Validate(); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
 	}
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
 	statusCode, err := h.usecase.updateJoinApproval(ctx, decoded.ID, req)
 	if err != nil {
@@ -169,7 +173,7 @@ func (h handler) updateInviteApproval(c echo.Context) error {
 	if err := req.Validate(); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
 	}
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
 	if err := h.usecase.updateInviteApproval(ctx, decoded.ID, req); err != nil {
 		return c.JSON(http.StatusNotFound, tools.Response{Message: err.Error()})

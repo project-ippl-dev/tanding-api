@@ -24,15 +24,30 @@ type JWTResponse struct {
 	ExpiredAt   int64  `json:"expired_at"`
 }
 
-// JWTAuth representation of Authentication Middleware with JWT
-func JWTAuth() echo.MiddlewareFunc {
-	jwtMiddleware := middleware.JWT([]byte(config.Configuration().JWT.SecretKey))
+type JWTClient interface {
+	Auth() echo.MiddlewareFunc
+	CreateToken(req JWT) (JWTResponse, error)
+	TokenParse(accessToken string) (JWT, error)
+	Decode(c echo.Context) JWT
+	Middleware() echo.MiddlewareFunc
+}
+
+type jwtClient struct {
+	conf config.JWTConfig
+}
+
+func NewJWTClient(jwtConf config.JWTConfig) JWTClient {
+	return &jwtClient{
+		conf: jwtConf,
+	}
+}
+
+func (ths *jwtClient) Auth() echo.MiddlewareFunc {
+	jwtMiddleware := middleware.JWT([]byte(ths.conf.SecretKey))
 	return jwtMiddleware
 }
 
-// JWTCreateToken representation generate JWT Token
-func JWTCreateToken(request JWT) (JWTResponse, error) {
-	JWTSecretKey := config.Configuration().JWT.SecretKey
+func (ths *jwtClient) CreateToken(request JWT) (JWTResponse, error) {
 	expiredAt := time.Now().Add(time.Hour * 24).Unix()
 
 	atClaims := jwt.MapClaims{}
@@ -43,7 +58,7 @@ func JWTCreateToken(request JWT) (JWTResponse, error) {
 	atClaims["role_name"] = request.RoleName
 	atClaims["exp"] = expiredAt
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
-	token, err := at.SignedString([]byte(JWTSecretKey))
+	token, err := at.SignedString([]byte(ths.conf.SecretKey))
 	response := JWTResponse{
 		AccessToken: token,
 		Type:        "bearer",
@@ -53,10 +68,9 @@ func JWTCreateToken(request JWT) (JWTResponse, error) {
 	return response, err
 }
 
-// JWTTokenParse represent decode JWT token string to userID
-func JWTTokenParse(accessToken string) (JWT, error) {
+func (ths *jwtClient) TokenParse(accessToken string) (JWT, error) {
 	token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
-		return []byte(config.Configuration().JWT.SecretKey), nil
+		return []byte(ths.conf.SecretKey), nil
 	})
 	if err != nil {
 		return JWT{}, err
@@ -74,8 +88,7 @@ func JWTTokenParse(accessToken string) (JWT, error) {
 	return response, nil
 }
 
-// JWTDecode represent decode JWT based on headers name Authorization
-func JWTDecode(c echo.Context) JWT {
+func (ths *jwtClient) Decode(c echo.Context) JWT {
 	user := c.Get("user").(*jwt.Token)
 	claims := user.Claims.(jwt.MapClaims)
 	result := JWT{
@@ -86,10 +99,10 @@ func JWTDecode(c echo.Context) JWT {
 	return result
 }
 
-func JWTMiddleware() echo.MiddlewareFunc {
+func (ths *jwtClient) Middleware() echo.MiddlewareFunc {
 	conf := middleware.JWTConfig{
-		SigningKey:  []byte(config.Configuration().JWT.SecretKey),
-		TokenLookup: "header:Authorization,param:token",
+		SigningKey:  []byte(ths.conf.SecretKey),
+		TokenLookup: "header:Authorization",
 	}
 	return middleware.JWTWithConfig(conf)
 }

@@ -36,7 +36,7 @@ func (m Middleware) EventPrivilegeOwner(next echo.HandlerFunc) echo.HandlerFunc 
 			return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 		}
 		ctx := c.Request().Context()
-		decoded := tools.JWTDecode(c)
+		decoded := m.jwtClient.Decode(c)
 		privilege, err := m.repository.EventPrivilegeFetchOne(ctx, db.EventPrivilegeFetchOneParams{
 			EventID: eventID,
 			UserID:  uuid.MustParse(decoded.ID),
@@ -59,7 +59,7 @@ func (m Middleware) EventPrivilegeWithoutContributor(next echo.HandlerFunc) echo
 			return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 		}
 		ctx := c.Request().Context()
-		decoded := tools.JWTDecode(c)
+		decoded := m.jwtClient.Decode(c)
 		privilege, err := m.repository.EventPrivilegeFetchOne(ctx, db.EventPrivilegeFetchOneParams{
 			EventID: eventID,
 			UserID:  uuid.MustParse(decoded.ID),
@@ -82,7 +82,7 @@ func (m Middleware) EventPrivilegeWithoutReviewer(next echo.HandlerFunc) echo.Ha
 			return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 		}
 		ctx := c.Request().Context()
-		decoded := tools.JWTDecode(c)
+		decoded := m.jwtClient.Decode(c)
 		privilege, err := m.repository.EventPrivilegeFetchOne(ctx, db.EventPrivilegeFetchOneParams{
 			EventID: eventID,
 			UserID:  uuid.MustParse(decoded.ID),
@@ -108,7 +108,7 @@ func (m Middleware) EventPrivilegeAdmin(next echo.HandlerFunc) echo.HandlerFunc 
 			return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 		}
 		ctx := c.Request().Context()
-		decoded := tools.JWTDecode(c)
+		decoded := m.jwtClient.Decode(c)
 		if decoded.RoleName == db.RoleAdmin {
 			return next(c)
 		}
@@ -129,7 +129,7 @@ func (m Middleware) EventPrivilegeAdmin(next echo.HandlerFunc) echo.HandlerFunc 
 func (m Middleware) HasEventPrivilege(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ctx := c.Request().Context()
-		decoded := tools.JWTDecode(c)
+		decoded := m.jwtClient.Decode(c)
 		events, err := m.repository.EventPrivilegeFetchByUserID(ctx, uuid.MustParse(decoded.ID))
 		if err != nil {
 			return c.JSON(http.StatusForbidden, tools.Response{Message: "forbidden access"})

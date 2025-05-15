@@ -20,14 +20,22 @@ type Usecase struct {
 	repository *db.Queries
 	db         *sql.DB
 	rdb        *redis.Client
+	mailClient mail.MailClient
+	jwtClient  tools.JWTClient
 }
 
-func NewUsecase(repository *db.Queries, db *sql.DB, rdb *redis.Client) Usecase {
-	return Usecase{repository: repository, db: db, rdb: rdb}
+func NewUsecase(repository *db.Queries, db *sql.DB, rdb *redis.Client, mailClient mail.MailClient, jwtClient tools.JWTClient) Usecase {
+	return Usecase{
+		repository: repository,
+		db:         db,
+		rdb:        rdb,
+		mailClient: mailClient,
+		jwtClient:  jwtClient,
+	}
 }
 
 func (u Usecase) register(ctx context.Context, req registerRequest, host string, feHost string) (statusCode int, err error) {
-	if _, err := u.repository.AccountFetchUserIDByUsername(ctx, db.AccountFetchUserIDByUsernameParams{
+	if _, err = u.repository.AccountFetchUserIDByUsername(ctx, db.AccountFetchUserIDByUsernameParams{
 		Username: req.Email,
 		Type:     "manual",
 	}); err == nil {
@@ -73,7 +81,7 @@ func (u Usecase) register(ctx context.Context, req registerRequest, host string,
 		return http.StatusInternalServerError, fmt.Errorf("error in rollback create account tx : %s", err.Error())
 	}
 	//Create Verification Token
-	token, err := tools.JWTCreateToken(tools.JWT{
+	token, err := u.jwtClient.CreateToken(tools.JWT{
 		ID:        userID.String(),
 		AccountID: accountID,
 		RoleName:  "user",
@@ -101,7 +109,7 @@ func (u Usecase) register(ctx context.Context, req registerRequest, host string,
 		if err != nil {
 			log.Printf("error in converting html file to buffer : %s \n", err.Error())
 		}
-		mail.SendMail(mail.Request{
+		u.mailClient.SendMail(mail.Request{
 			To:      req.Email,
 			Subject: "[Tanding!] Please confirm your email address",
 			Body:    buffer,
@@ -159,7 +167,7 @@ func (u Usecase) login(ctx context.Context, req loginReq) (statusCode int, respo
 		return http.StatusInternalServerError, response, err
 	}
 
-	token, err := tools.JWTCreateToken(tools.JWT{
+	token, err := u.jwtClient.CreateToken(tools.JWT{
 		ID:        account.UserID.String(),
 		AccountID: account.ID,
 		RoleName:  account.Role,
@@ -235,7 +243,7 @@ func (u Usecase) callback(ctx context.Context, kind string, accessToken string) 
 		return http.StatusInternalServerError, response, err
 	}
 
-	token, err := tools.JWTCreateToken(tools.JWT{
+	token, err := u.jwtClient.CreateToken(tools.JWT{
 		ID:        account.UserID.String(),
 		AccountID: account.ID,
 		RoleName:  account.Role,
@@ -387,7 +395,7 @@ func (u Usecase) forgot(ctx context.Context, username string, host string, feHos
 	if err != nil {
 		return http.StatusNotFound, fmt.Errorf("error in fetch user : %s", err.Error())
 	}
-	token, err := tools.JWTCreateToken(tools.JWT{
+	token, err := u.jwtClient.CreateToken(tools.JWT{
 		ID:        user.ID.String(),
 		AccountID: user.AccountID,
 		RoleName:  user.Role,
@@ -405,7 +413,7 @@ func (u Usecase) forgot(ctx context.Context, username string, host string, feHos
 		if err != nil {
 			log.Printf("error in converting html file to buffer : %s \n", err.Error())
 		}
-		mail.SendMail(mail.Request{
+		u.mailClient.SendMail(mail.Request{
 			To:      user.Username,
 			Subject: "[Tanding!] Recover Your Tanding! Account",
 			Body:    buffer,
@@ -469,7 +477,7 @@ func (u Usecase) resend(ctx context.Context, username string, kind string) (stat
 	if err != nil {
 		return http.StatusNotFound, fmt.Errorf("error in fetch user by username : %s", err.Error())
 	}
-	token, err := tools.JWTCreateToken(tools.JWT{
+	token, err := u.jwtClient.CreateToken(tools.JWT{
 		ID:        user.ID.String(),
 		AccountID: user.AccountID,
 		RoleName:  user.Role,
@@ -526,7 +534,7 @@ func (u Usecase) binding(ctx context.Context, arg bindingParams) (statusCode int
 		if err != nil {
 			return http.StatusInternalServerError, fmt.Errorf("error in create account : %s", err.Error())
 		}
-		token, err := tools.JWTCreateToken(tools.JWT{
+		token, err := u.jwtClient.CreateToken(tools.JWT{
 			ID:        arg.Decoded.ID,
 			AccountID: accountID,
 			RoleName:  arg.Decoded.RoleName,
@@ -548,7 +556,7 @@ func (u Usecase) binding(ctx context.Context, arg bindingParams) (statusCode int
 			if err != nil {
 				log.Printf("error in converting html file to buffer : %s \n", err.Error())
 			}
-			mail.SendMail(mail.Request{
+			u.mailClient.SendMail(mail.Request{
 				To:      arg.Request.Email,
 				Subject: "[Tanding!] Binding Tanding! Account",
 				Body:    buffer,

@@ -10,18 +10,17 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/project-ippl-dev/tanding-api/config"
 )
 
 type Usecase struct {
-	sess *session.Session
+	s3Client config.S3Client
 }
 
-func NewUsecase(sess *session.Session) Usecase {
-	return Usecase{sess: sess}
+func NewUsecase(s3Client config.S3Client) Usecase {
+	return Usecase{s3Client: s3Client}
 }
 
 func (u Usecase) upload(ctx context.Context, req params) (path string, err error) {
@@ -32,30 +31,28 @@ func (u Usecase) upload(ctx context.Context, req params) (path string, err error
 	defer src.Close()
 
 	fileInfo := req.FileInformation
-	s3Conf := config.S3Credential()
 	filePath := fmt.Sprintf("%s/%d_%s", req.FileInformation.Dir, time.Now().Unix(), fileInfo.FileName)
-	svc := s3manager.NewUploader(u.sess)
+	svc := s3manager.NewUploader(u.s3Client.Sess)
 	object := s3manager.UploadInput{
-		Bucket:      &s3Conf.Bucket,
+		Bucket:      &u.s3Client.S3Conf.Bucket,
 		ACL:         aws.String("public-read"),
 		Key:         aws.String(filePath),
 		Body:        src,
 		ContentType: aws.String(fileInfo.MIMEType),
 	}
 
-	if _, err := svc.Upload(&object); err != nil {
+	if _, err = svc.Upload(&object); err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s/%s/%s", s3Conf.PublicURL, s3Conf.Bucket, filePath), nil
+	return fmt.Sprintf("%s/%s/%s", u.s3Client.S3Conf.PublicURL, u.s3Client.S3Conf.Bucket, filePath), nil
 }
 
 func (u Usecase) base64Upload(req base64Params) (string, error) {
 	fileInfo := req.FileInformation
-	s3Conf := config.S3Credential()
 	filePath := fmt.Sprintf("%s/%s", req.FileInformation.Dir, fileInfo.FileName)
-	svc := s3manager.NewUploader(u.sess)
+	svc := s3manager.NewUploader(u.s3Client.Sess)
 	object := s3manager.UploadInput{
-		Bucket:      &s3Conf.Bucket,
+		Bucket:      &u.s3Client.S3Conf.Bucket,
 		ACL:         aws.String("public-read"),
 		Key:         aws.String(filePath),
 		Body:        req.File,
@@ -65,22 +62,22 @@ func (u Usecase) base64Upload(req base64Params) (string, error) {
 	if _, err := svc.Upload(&object); err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s/%s/%s", s3Conf.PublicURL, s3Conf.Bucket, filePath), nil
+	return fmt.Sprintf("%s/%s/%s", u.s3Client.S3Conf.PublicURL, u.s3Client.S3Conf.Bucket, filePath), nil
 }
 
 func (u Usecase) Delete(dir, path string) (statusCode int, err error) {
-	svc := s3.New(u.sess)
-	if _, err := svc.HeadObject(&s3.HeadObjectInput{
-		Bucket: aws.String(config.S3Credential().Bucket),
+	svc := s3.New(u.s3Client.Sess)
+	if _, err = svc.HeadObject(&s3.HeadObjectInput{
+		Bucket: aws.String(u.s3Client.S3Conf.Bucket),
 		Key:    aws.String(dir + "/" + path),
 	}); err != nil {
 		return http.StatusNotFound, fmt.Errorf("file not found")
 	}
 	object := s3.DeleteObjectInput{
-		Bucket: aws.String(config.S3Credential().Bucket),
+		Bucket: aws.String(u.s3Client.S3Conf.Bucket),
 		Key:    aws.String(dir + "/" + path),
 	}
-	if _, err := svc.DeleteObject(&object); err != nil {
+	if _, err = svc.DeleteObject(&object); err != nil {
 		return http.StatusRequestTimeout, err
 	}
 	return http.StatusOK, nil

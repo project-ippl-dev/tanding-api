@@ -11,14 +11,16 @@ import (
 
 type Middleware struct {
 	repository *db.Queries
+	jwtClient  tools.JWTClient
 }
 
 type Params struct {
 	Middleware Middleware
+	JWTClient  tools.JWTClient
 }
 
 func (p Params) JWTMiddleware() echo.MiddlewareFunc {
-	return tools.JWTMiddleware()
+	return p.JWTClient.Middleware()
 }
 
 func InitMiddleware(repository *db.Queries) Middleware {
@@ -28,7 +30,7 @@ func InitMiddleware(repository *db.Queries) Middleware {
 func (m Middleware) GrantCompetition(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ctx := c.Request().Context()
-		decoded := tools.JWTDecode(c)
+		decoded := m.jwtClient.Decode(c)
 		if _, err := m.repository.PrivilegeFetchOneByUserID(ctx, db.PrivilegeFetchOneByUserIDParams{
 			ID:   uuid.MustParse(decoded.ID),
 			Name: "competition",
@@ -43,7 +45,7 @@ func (m Middleware) GrantCompetition(next echo.HandlerFunc) echo.HandlerFunc {
 func (m Middleware) GrantExclusive(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ctx := c.Request().Context()
-		decoded := tools.JWTDecode(c)
+		decoded := m.jwtClient.Decode(c)
 		if _, err := m.repository.PrivilegeFetchOneByUserID(ctx, db.PrivilegeFetchOneByUserIDParams{
 			ID:   uuid.MustParse(decoded.ID),
 			Name: "exclusive",
@@ -58,7 +60,7 @@ func (m Middleware) GrantExclusive(next echo.HandlerFunc) echo.HandlerFunc {
 func (m Middleware) GrantOwner(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ctx := c.Request().Context()
-		decoded := tools.JWTDecode(c)
+		decoded := m.jwtClient.Decode(c)
 		if _, err := m.repository.PrivilegeFetchOneByUserID(ctx, db.PrivilegeFetchOneByUserIDParams{
 			ID:   uuid.MustParse(decoded.ID),
 			Name: "owner",
@@ -73,7 +75,7 @@ func (m Middleware) GrantOwner(next echo.HandlerFunc) echo.HandlerFunc {
 func (m Middleware) GrantAdmin(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ctx := c.Request().Context()
-		decoded := tools.JWTDecode(c)
+		decoded := m.jwtClient.Decode(c)
 		if _, err := m.repository.PrivilegeFetchOneByUserID(ctx, db.PrivilegeFetchOneByUserIDParams{
 			ID:   uuid.MustParse(decoded.ID),
 			Name: "admin",
@@ -88,7 +90,7 @@ func (m Middleware) GrantAdmin(next echo.HandlerFunc) echo.HandlerFunc {
 func (m Middleware) GrantReviewer(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ctx := c.Request().Context()
-		decoded := tools.JWTDecode(c)
+		decoded := m.jwtClient.Decode(c)
 		if _, err := m.repository.PrivilegeFetchOneByUserID(ctx, db.PrivilegeFetchOneByUserIDParams{
 			ID:   uuid.MustParse(decoded.ID),
 			Name: "reviewer",
@@ -103,7 +105,7 @@ func (m Middleware) GrantReviewer(next echo.HandlerFunc) echo.HandlerFunc {
 func (m Middleware) GrantContributor(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ctx := c.Request().Context()
-		decoded := tools.JWTDecode(c)
+		decoded := m.jwtClient.Decode(c)
 		if _, err := m.repository.PrivilegeFetchOneByUserID(ctx, db.PrivilegeFetchOneByUserIDParams{
 			ID:   uuid.MustParse(decoded.ID),
 			Name: "contributor",
@@ -117,7 +119,7 @@ func (m Middleware) GrantContributor(next echo.HandlerFunc) echo.HandlerFunc {
 
 func (m Middleware) RoleAdminOnly(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		decoded := tools.JWTDecode(c)
+		decoded := m.jwtClient.Decode(c)
 		if decoded.RoleName != "admin" {
 			return c.JSON(http.StatusForbidden, tools.Response{Message: "forbidden access"})
 		}
