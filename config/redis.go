@@ -5,8 +5,7 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-func RedisConnection() (*redis.Client, error) {
-	redisConf := Configuration().Redis
+func NewRedisClient(redisConf RedisConfig) (*redis.Client, error) {
 	rdb := redis.NewClient(&redis.Options{
 		Addr: redisConf.Host + ":" + redisConf.Port,
 	})

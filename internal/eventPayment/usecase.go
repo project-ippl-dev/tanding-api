@@ -17,10 +17,16 @@ type Usecase struct {
 	repository    *db.Queries
 	rawRepository RawRepository
 	rdb           *redis.Client
+	r             *rand.Rand
 }
 
-func NewUsecase(repository *db.Queries, rawRepository RawRepository, rdb *redis.Client) Usecase {
-	return Usecase{repository: repository, rawRepository: rawRepository, rdb: rdb}
+func NewUsecase(repository *db.Queries, rawRepository RawRepository, rdb *redis.Client, r *rand.Rand) Usecase {
+	return Usecase{
+		repository:    repository,
+		rawRepository: rawRepository,
+		rdb:           rdb,
+		r:             r,
+	}
 }
 
 func (u Usecase) store(ctx context.Context, req request, userID string) (statusCode int, err error) {
@@ -297,9 +303,9 @@ func (u Usecase) cartDetail(ctx context.Context, eventID uuid.UUID, userID strin
 	}
 	uniqueNumber, err := u.rdb.Get(ctx, "unique-"+userID).Result()
 	if err != nil {
-		rand.Seed(time.Now().UnixNano())
+		u.r.Seed(time.Now().UnixNano())
 		min, max := 100, 999
-		uniqueNumber = fmt.Sprintf("%d", rand.Intn(max-min+1)+min)
+		uniqueNumber = fmt.Sprintf("%d", u.r.Intn(max-min+1)+min)
 		if err := u.rdb.Set(ctx, "unique-"+userID, uniqueNumber, 8*time.Hour).Err(); err != nil {
 			return cartDetailResponse{}, fmt.Errorf("error in set rdb unique key : %s", err.Error())
 		}

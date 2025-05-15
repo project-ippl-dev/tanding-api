@@ -12,24 +12,28 @@ import (
 )
 
 type handler struct {
-	usecase Usecase
+	usecase    Usecase
+	jwtClient  tools.JWTClient
+	serverConf config.ServerConfig
 }
 
-func RegisterHandler(usecase Usecase, e *echo.Echo) {
-	handler := handler{usecase: usecase}
-
-	jwtMiddleware := tools.JWTMiddleware()
+func RegisterHandler(usecase Usecase, jwtClient tools.JWTClient, serverConf config.ServerConfig, e *echo.Echo) {
+	authHandler := handler{
+		usecase:    usecase,
+		jwtClient:  jwtClient,
+		serverConf: serverConf,
+	}
 
 	auth := e.Group("/auth")
-	auth.POST("/register", handler.register)
-	auth.GET("/verification/:type/:token", handler.verify)
-	auth.POST("/login", handler.login)
-	auth.POST("/callback/:type/:token", handler.callback)
-	auth.GET("/check/:type/:request", handler.check)
-	auth.GET("/forgot-password/:username", handler.forgot)
-	auth.POST("/reset-password/:token", handler.reset)
-	auth.GET("/resend-token/:type/:username", handler.resend)
-	auth.POST("/bind/:type", handler.binding, jwtMiddleware)
+	auth.POST("/register", authHandler.register)
+	auth.GET("/verification/:type/:token", authHandler.verify)
+	auth.POST("/login", authHandler.login)
+	auth.POST("/callback/:type/:token", authHandler.callback)
+	auth.GET("/check/:type/:request", authHandler.check)
+	auth.GET("/forgot-password/:username", authHandler.forgot)
+	auth.POST("/reset-password/:token", authHandler.reset)
+	auth.GET("/resend-token/:type/:username", authHandler.resend)
+	auth.POST("/bind/:type", authHandler.binding, jwtClient.Middleware())
 }
 
 func (h handler) register(c echo.Context) error {
@@ -41,8 +45,7 @@ func (h handler) register(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
 	}
 	ctx := c.Request().Context()
-	s := config.Configuration().Server
-	statusCode, err := h.usecase.register(ctx, req, s.Host, s.FE)
+	statusCode, err := h.usecase.register(ctx, req, h.serverConf.Host, h.serverConf.FE)
 	if err != nil {
 		return c.JSON(statusCode, tools.Response{Message: err.Error()})
 	}
@@ -52,7 +55,7 @@ func (h handler) register(c echo.Context) error {
 func (h handler) verify(c echo.Context) error {
 	token := c.Param("token")
 	kind := c.Param("type")
-	decoded, err := tools.JWTTokenParse(token)
+	decoded, err := h.jwtClient.TokenParse(token)
 	if err != nil {
 		return c.JSON(http.StatusForbidden, tools.Response{Message: "Token is not valid or expired, error : " + err.Error()})
 	}
@@ -105,11 +108,10 @@ func (h handler) check(c echo.Context) error {
 func (h handler) forgot(c echo.Context) error {
 	username := c.Param("username")
 	ctx := c.Request().Context()
-	s := config.Configuration().Server
 	if err := validation.Validate(&username, validation.Required, is.Email); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
 	}
-	statusCode, err := h.usecase.forgot(ctx, username, s.Host, s.FE)
+	statusCode, err := h.usecase.forgot(ctx, username, h.serverConf.Host, h.serverConf.FE)
 	if err != nil {
 		return c.JSON(statusCode, tools.Response{Message: err.Error()})
 	}
@@ -125,7 +127,7 @@ func (h handler) reset(c echo.Context) error {
 	if err := req.Validate(); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
 	}
-	decoded, err := tools.JWTTokenParse(token)
+	decoded, err := h.jwtClient.TokenParse(token)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: "error in parsing token, token maybe expired or invalid : " + err.Error()})
 	}
@@ -153,7 +155,7 @@ func (h handler) resend(c echo.Context) error {
 
 func (h handler) binding(c echo.Context) error {
 	kind := c.Param("type")
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 
 	var req bindingRequest
 	if err := c.Bind(&req); err != nil {
@@ -168,7 +170,7 @@ func (h handler) binding(c echo.Context) error {
 		Kind:    kind,
 		Request: req,
 		Decoded: decoded,
-		Host:    config.Configuration().Server.Host,
+		Host:    h.serverConf.Host,
 	})
 	if err != nil {
 		return c.JSON(statusCode, tools.Response{Message: err.Error()})
