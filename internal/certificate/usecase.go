@@ -20,19 +20,19 @@ func NewUsecase(repository *db.Queries) Usecase {
 func (u Usecase) fetchOne(ctx context.Context, certificateID uuid.UUID) (response, error) {
 	result, err := u.repository.CertificateFetchOne(ctx, certificateID)
 	if err != nil {
-		return response{}, fmt.Errorf("certificate not found : " + err.Error())
+		return response{}, fmt.Errorf("certificate not found : %s", err.Error())
 	}
 	event, err := u.repository.EventFetchOneInfiniteByID(ctx, result.EventID)
 	if err != nil {
-		return response{}, fmt.Errorf("event not found : " + err.Error())
+		return response{}, fmt.Errorf("event not found : %s", err.Error())
 	}
 	participants, err := u.repository.EventRegistrationCountAllByStatusApproved(ctx, event.ID)
 	if err != nil {
-		return response{}, fmt.Errorf("event not found : " + err.Error())
+		return response{}, fmt.Errorf("event not found : %s", err.Error())
 	}
 	photo, err := u.repository.UserFetchPhotoByID(ctx, result.UserID)
 	if err != nil {
-		return response{}, fmt.Errorf("recipient not found : " + err.Error())
+		return response{}, fmt.Errorf("recipient not found : %s", err.Error())
 	}
 	return response{
 		Certificate: result,
@@ -49,9 +49,9 @@ func (u Usecase) fetchByUserID(ctx context.Context, page, pageSize int32, userID
 
 	count, err := u.repository.CertificateCountAllByUserID(ctx, uuid.MustParse(userID))
 	if err != nil {
-		return tools.Pagination{}, fmt.Errorf("error in count certificate : " + err.Error())
+		return tools.Pagination{}, fmt.Errorf("error in count certificate : %s", err.Error())
 	}
-	certificates, err := u.repository.CertificateFetchAllByUserID(ctx, db.CertificateFetchAllByUserIDParams{
+	certificates, _ := u.repository.CertificateFetchAllByUserID(ctx, db.CertificateFetchAllByUserIDParams{
 		UserID: uuid.MustParse(userID),
 		Limit:  pageSize,
 		Offset: skip,
@@ -70,9 +70,9 @@ func (u Usecase) fetchByClubID(ctx context.Context, page, pageSize int32, clubID
 
 	count, err := u.repository.ClubCertificateCountAllByClubID(ctx, clubID)
 	if err != nil {
-		return tools.Pagination{}, fmt.Errorf("error in count certificate : " + err.Error())
+		return tools.Pagination{}, fmt.Errorf("error in count certificate : %s", err.Error())
 	}
-	certificates, err := u.repository.ClubCertificateFetchAllByUserID(ctx, db.ClubCertificateFetchAllByUserIDParams{
+	certificates, _ := u.repository.ClubCertificateFetchAllByUserID(ctx, db.ClubCertificateFetchAllByUserIDParams{
 		ClubID: clubID,
 		Limit:  pageSize,
 		Offset: skip,
