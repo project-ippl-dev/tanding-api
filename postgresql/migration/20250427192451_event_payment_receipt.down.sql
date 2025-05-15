@@ -1,0 +1,1 @@
+DROP TABLE event_payment_receipts;

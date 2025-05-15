@@ -3,11 +3,12 @@ package event
 import (
 	"context"
 	"database/sql"
-	"github.com/project-ippl-dev/tanding-api/internal/db"
-	"github.com/google/uuid"
-	"github.com/lib/pq"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/lib/pq"
+	"github.com/project-ippl-dev/tanding-api/internal/db"
 )
 
 type RawRepository struct {
@@ -234,56 +235,48 @@ func (r *RawRepository) EventFetchInfinite(ctx context.Context, args fetchInfini
 			return nil, err
 		}
 		rows = result
-		break
 	case "sport":
 		result, err := r.db.QueryContext(ctx, fetchInfiniteBySportID, args.OrderNumber, args.Name, args.SportID, args.Limit)
 		if err != nil {
 			return nil, err
 		}
 		rows = result
-		break
 	case "category":
 		result, err := r.db.QueryContext(ctx, fetchInfiniteByCategory, args.OrderNumber, args.Name, args.Category, args.Limit)
 		if err != nil {
 			return nil, err
 		}
 		rows = result
-		break
 	case "remark":
 		result, err := r.db.QueryContext(ctx, fetchInfiniteByRemark, args.OrderNumber, args.Name, args.Remark, args.Limit)
 		if err != nil {
 			return nil, err
 		}
 		rows = result
-		break
 	case "sport-category":
 		result, err := r.db.QueryContext(ctx, fetchInfiniteBySportIDAndCategory, args.OrderNumber, args.Name, args.SportID, args.Category, args.Limit)
 		if err != nil {
 			return nil, err
 		}
 		rows = result
-		break
 	case "sport-remark":
 		result, err := r.db.QueryContext(ctx, fetchInfiniteBySportIDAndRemark, args.OrderNumber, args.Name, args.SportID, args.Remark, args.Limit)
 		if err != nil {
 			return nil, err
 		}
 		rows = result
-		break
 	case "category-remark":
 		result, err := r.db.QueryContext(ctx, fetchInfiniteByCategoryAndRemark, args.OrderNumber, args.Name, args.Category, args.Remark, args.Limit)
 		if err != nil {
 			return nil, err
 		}
 		rows = result
-		break
 	case "sport-category-remark":
 		result, err := r.db.QueryContext(ctx, fetchInfiniteByFilterall, args.OrderNumber, args.Name, args.SportID, args.Category, args.Remark, args.Limit)
 		if err != nil {
 			return nil, err
 		}
 		rows = result
-		break
 	}
 	defer rows.Close()
 	items := []fetchInfiniteRow{}
@@ -384,28 +377,20 @@ func (r *RawRepository) EventFetchLatestOrder(ctx context.Context, args fetchQue
 	switch queryStatus {
 	default:
 		row = r.db.QueryRowContext(ctx, fetchLatestOrder, args.Name)
-		break
 	case "sport":
 		row = r.db.QueryRowContext(ctx, fetchLatestOrderBySportID, args.Name, args.SportID)
-		break
 	case "category":
 		row = r.db.QueryRowContext(ctx, fetchLatestOrderByCategory, args.Name, args.Category)
-		break
 	case "remark":
 		row = r.db.QueryRowContext(ctx, fetchLatestOrderByRemark, args.Name, args.Remark)
-		break
 	case "sport-category":
 		row = r.db.QueryRowContext(ctx, fetchLatestOrderBySportIDAndCategory, args.Name, args.SportID, args.Category)
-		break
 	case "sport-remark":
 		row = r.db.QueryRowContext(ctx, fetchLatestOrderBySportIDAndRemark, args.Name, args.SportID, args.Remark)
-		break
 	case "category-remark":
 		row = r.db.QueryRowContext(ctx, fetchLatestOrderByCategoryAndRemark, args.Name, args.Category, args.Remark)
-		break
 	case "sport-category-remark":
 		row = r.db.QueryRowContext(ctx, fetchLatestOrderByFilterAll, args.Name, args.SportID, args.Category, args.Remark)
-		break
 	}
 	var order_number int64
 	err := row.Scan(&order_number)
