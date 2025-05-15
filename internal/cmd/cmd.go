@@ -15,6 +15,7 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/accomplishment"
 	"github.com/project-ippl-dev/tanding-api/internal/auth"
 	"github.com/project-ippl-dev/tanding-api/internal/bracket"
+	"github.com/project-ippl-dev/tanding-api/internal/certificate"
 	"github.com/project-ippl-dev/tanding-api/internal/club"
 	"github.com/project-ippl-dev/tanding-api/internal/db"
 	"github.com/project-ippl-dev/tanding-api/internal/document"
@@ -108,6 +109,7 @@ func routing(conf config.Config, postgresDB *sql.DB, rdb *redis.Client, s3Client
 	clubUsecase := club.NewUsecase(repository, clubRepository)
 	eventUsecase := event.NewUsecase(repository, eventRepository)
 	bracketUsecase := bracket.NewUsecase(repository, bracketRepository, r)
+	certificateUsecase := certificate.NewUsecase(repository)
 
 	//Declare Handlers
 	auth.RegisterHandler(authUsecase, jwtClient, conf.ServerConfig, e)
@@ -121,4 +123,5 @@ func routing(conf config.Config, postgresDB *sql.DB, rdb *redis.Client, s3Client
 	storage.RegisterHandler(storageUsecase, middlewareArgs, e)
 	club.RegisterHandler(clubUsecase, middlewareArgs, jwtClient, e)
 	event.RegisterHandler(eventUsecase, middlewareArgs, jwtClient, e)
+	certificate.RegisterHandler(certificateUsecase, middlewareArgs, e)
 }
