@@ -25,21 +25,9 @@ func newHandlerMock(t *testing.T) (handlerMock, *echo.Echo) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	//mockDB := mock_db.NewMockDBTX(mockCtrl)
 	mockBracketUsecase := mock_bracket.NewMockUsecase(mockCtrl)
 
-	//jwtConfig := config.JWTConfig{
-	//	SecretKey: jwtSecretKeyTest,
-	//}
-
-	//jwtClient := tools.NewJWTClient(jwtConfig)
-
 	e := echo.New()
-	//repository := db.New(mockDB)
-	//m := middleware.InitMiddleware(repository, jwtClient, jwtConfig)
-	////bracket.RegisterHandler(mockBracketUsecase, middleware.Params{
-	////	Middleware: m,
-	////}, e)
 
 	return handlerMock{
 		mockUsecase: mockBracketUsecase,
