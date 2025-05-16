@@ -3,14 +3,13 @@ package bracket
 import (
 	"context"
 	"database/sql"
-
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/google/uuid"
 	"github.com/project-ippl-dev/tanding-api/internal/db"
 )
 
-type generateParams struct {
+type GenerateParams struct {
 	ClassEventID uuid.UUID `param:"class"`
 }
 
@@ -19,13 +18,13 @@ type orderRoundDownResponse struct {
 	Iteration int16 `json:"iteration"`
 }
 
-type updateLockParams struct {
+type UpdateLockParams struct {
 	ClassEventID uuid.UUID               `param:"class"`
 	Status       *bool                   `json:"status"`
 	Participants []participantLockParams `json:"participants"`
 }
 
-func (u updateLockParams) Validate() error {
+func (u UpdateLockParams) Validate() error {
 	return validation.ValidateStruct(&u,
 		validation.Field(&u.Participants, validation.When(*u.Status, validation.Required)),
 	)
@@ -43,11 +42,11 @@ func (p participantLockParams) Validate() error {
 	)
 }
 
-type updateGenerateParams struct {
+type UpdateGenerateParams struct {
 	ClassEventID uuid.UUID `param:"class"`
 }
 
-type fetchOneResponse struct {
+type FetchOneResponse struct {
 	Message        string                       `json:"message"`
 	Data           interface{}                  `json:"data"`
 	GenerateStatus *bool                        `json:"generate_status"`
@@ -57,7 +56,7 @@ type fetchOneResponse struct {
 	Summary        []RankFetchByClassEventIDRow `json:"summary"`
 }
 
-type roundDownResponse struct {
+type RoundDownResponse struct {
 	Message   string       `json:"message"`
 	Data      interface{}  `json:"data"`
 	MatchType db.MatchType `json:"match_type"`
@@ -87,7 +86,7 @@ type seedData struct {
 }
 
 type bracketParticipantResponse struct {
-	bracketParticipantFetchByEventBracketIDRow
+	BracketParticipantFetchByEventBracketIDRow
 	ClubLogo string `json:"club_logo"`
 	Score    bracketParticipantScoreParams
 }
@@ -108,20 +107,20 @@ func (s seedData) Validate() error {
 	)
 }
 
-func (b bracketParticipantFetchByEventBracketIDRow) Validate() error {
+func (b BracketParticipantFetchByEventBracketIDRow) Validate() error {
 	return validation.ValidateStruct(&b,
 		validation.Field(&b.EventRegistrationID, validation.Required),
 	)
 }
 
-type updateSingleLockParams struct {
+type UpdateSingleLockParams struct {
 	EventID      uuid.UUID      `param:"event"`
 	ClassEventID uuid.UUID      `param:"class"`
 	Data         matchIndexData `json:"data"`
 	Status       *bool          `json:"status"`
 }
 
-func (u updateSingleLockParams) Validate() error {
+func (u UpdateSingleLockParams) Validate() error {
 	return validation.ValidateStruct(&u,
 		validation.Field(&u.Data, validation.Required),
 	)

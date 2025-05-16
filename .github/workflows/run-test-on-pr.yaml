@@ -51,4 +51,4 @@ jobs:
           go-version: ${{ matrix.go-version }}
       - name: Run test
         run: |
-          go test ./...
+          make unit-test

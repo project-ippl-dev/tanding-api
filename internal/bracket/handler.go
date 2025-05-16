@@ -9,63 +9,67 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/tools"
 )
 
-type handler struct {
+type Handler struct {
 	usecase Usecase
 }
 
-func RegisterHandler(usecase Usecase, m middleware.Params, e *echo.Echo) {
-	handler := handler{usecase: usecase}
-
-	e.POST("/event/:event/class/:class/bracket", handler.store, m.JWTMiddleware(), m.Middleware.EventPrivilegeAdmin, m.Middleware.EventManipulationRemarkClosed)
-	e.GET("/event/:event/class/:class/bracket", handler.fetchOne)
-	e.GET("/event/:event/class/:class/bracket/random", handler.roundDown, m.JWTMiddleware(), m.Middleware.EventPrivilegeAdmin, m.Middleware.EventManipulationRemarkClosed)
-	e.PATCH("/event/:event/class/:class/bracket/order/lock", handler.updateOrderLock, m.JWTMiddleware(), m.Middleware.EventPrivilegeAdmin, m.Middleware.EventManipulationRemarkClosed)
-	e.PATCH("/event/:event/class/:class/bracket/single/lock", handler.updateSingleLock, m.JWTMiddleware(), m.Middleware.EventPrivilegeAdmin, m.Middleware.EventManipulationRemarkClosed)
-	e.PATCH("/event/:event/class/:class/bracket/generate/canceled", handler.cancelBracket, m.JWTMiddleware(), m.Middleware.EventPrivilegeAdmin, m.Middleware.EventManipulationRemarkClosed)
-	e.PATCH("/event/:event/turn/lock", handler.eventTurnLock, m.JWTMiddleware(), m.Middleware.EventPrivilegeAdmin, m.Middleware.EventManipulationRemarkClosed)
+func NewHandler(usecase Usecase) Handler {
+	return Handler{usecase: usecase}
 }
 
-func (h handler) store(c echo.Context) error {
-	var arg generateParams
+func RegisterHandler(usecase Usecase, m middleware.Params, e *echo.Echo) {
+	bracketHandler := NewHandler(usecase)
+
+	e.POST("/event/:event/class/:class/bracket", bracketHandler.Store, m.JWTMiddleware(), m.Middleware.EventPrivilegeAdmin, m.Middleware.EventManipulationRemarkClosed)
+	e.GET("/event/:event/class/:class/bracket", bracketHandler.FetchOne)
+	e.GET("/event/:event/class/:class/bracket/random", bracketHandler.RoundDown, m.JWTMiddleware(), m.Middleware.EventPrivilegeAdmin, m.Middleware.EventManipulationRemarkClosed)
+	e.PATCH("/event/:event/class/:class/bracket/order/lock", bracketHandler.UpdateOrderLock, m.JWTMiddleware(), m.Middleware.EventPrivilegeAdmin, m.Middleware.EventManipulationRemarkClosed)
+	e.PATCH("/event/:event/class/:class/bracket/single/lock", bracketHandler.UpdateSingleLock, m.JWTMiddleware(), m.Middleware.EventPrivilegeAdmin, m.Middleware.EventManipulationRemarkClosed)
+	e.PATCH("/event/:event/class/:class/bracket/generate/canceled", bracketHandler.CancelBracket, m.JWTMiddleware(), m.Middleware.EventPrivilegeAdmin, m.Middleware.EventManipulationRemarkClosed)
+	e.PATCH("/event/:event/turn/lock", bracketHandler.EventTurnLock, m.JWTMiddleware(), m.Middleware.EventPrivilegeAdmin, m.Middleware.EventManipulationRemarkClosed)
+}
+
+func (h Handler) Store(c echo.Context) error {
+	var arg GenerateParams
 	if err := c.Bind(&arg); err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
 	ctx := c.Request().Context()
-	statusCode, err := h.usecase.store(ctx, arg)
+	statusCode, err := h.usecase.Store(ctx, arg)
 	if err != nil {
 		return c.JSON(statusCode, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(statusCode, tools.Response{Message: "generate bracket success"})
 }
 
-func (h handler) fetchOne(c echo.Context) error {
-	var arg generateParams
+func (h Handler) FetchOne(c echo.Context) error {
+	var arg GenerateParams
 	if err := c.Bind(&arg); err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
 	ctx := c.Request().Context()
-	result, err := h.usecase.fetchOne(ctx, arg)
+	result, err := h.usecase.FetchOne(ctx, arg)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(http.StatusOK, result)
 }
 
-func (h handler) roundDown(c echo.Context) error {
-	var arg generateParams
+func (h Handler) RoundDown(c echo.Context) error {
+	var arg GenerateParams
 	if err := c.Bind(&arg); err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
 	ctx := c.Request().Context()
-	statusCode, response, err := h.usecase.roundDown(ctx, arg)
+	statusCode, response, err := h.usecase.RoundDown(ctx, arg)
 	if err != nil {
 		return c.JSON(statusCode, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(statusCode, response)
 }
 
-func (h handler) updateOrderLock(c echo.Context) error {
-	var arg updateLockParams
+func (h Handler) UpdateOrderLock(c echo.Context) error {
+	var arg UpdateLockParams
 	if err := c.Bind(&arg); err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
@@ -73,28 +77,28 @@ func (h handler) updateOrderLock(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, tools.Response{Message: err.Error()})
 	}
 	ctx := c.Request().Context()
-	statusCode, err := h.usecase.orderLock(ctx, arg)
+	statusCode, err := h.usecase.OrderLock(ctx, arg)
 	if err != nil {
 		return c.JSON(statusCode, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(statusCode, tools.Response{Message: "update lock status on specific bracket success"})
 }
 
-func (h handler) cancelBracket(c echo.Context) error {
-	var arg updateGenerateParams
+func (h Handler) CancelBracket(c echo.Context) error {
+	var arg UpdateGenerateParams
 	if err := c.Bind(&arg); err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
 	ctx := c.Request().Context()
-	statusCode, err := h.usecase.cancelBracket(ctx, arg)
+	statusCode, err := h.usecase.CancelBracket(ctx, arg)
 	if err != nil {
 		return c.JSON(statusCode, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(statusCode, tools.Response{Message: "update generate status on specific bracket success"})
 }
 
-func (h handler) updateSingleLock(c echo.Context) error {
-	var arg updateSingleLockParams
+func (h Handler) UpdateSingleLock(c echo.Context) error {
+	var arg UpdateSingleLockParams
 	if err := c.Bind(&arg); err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
@@ -102,21 +106,21 @@ func (h handler) updateSingleLock(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
 	}
 	ctx := c.Request().Context()
-	statusCode, err := h.usecase.updateSingleLock(ctx, arg)
+	statusCode, err := h.usecase.UpdateSingleLock(ctx, arg)
 	if err != nil {
 		return c.JSON(statusCode, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(statusCode, tools.Response{Message: "lock bracket for single elimination success"})
 }
 
-func (h handler) eventTurnLock(c echo.Context) error {
+func (h Handler) EventTurnLock(c echo.Context) error {
 	eventIDParam := c.Param("event")
 	eventID, err := uuid.Parse(eventIDParam)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
 	ctx := c.Request().Context()
-	statusCode, err := h.usecase.eventTurnLock(ctx, eventID)
+	statusCode, err := h.usecase.EventTurnLock(ctx, eventID)
 	if err != nil {
 		return c.JSON(statusCode, tools.Response{Message: err.Error()})
 	}

@@ -1,5 +1,7 @@
 package tools
 
+//go:generate mockgen -source=./jwt.go -destination=../../mocks/tools/jwt_mock.go
+
 import (
 	"time"
 
@@ -29,7 +31,6 @@ type JWTClient interface {
 	CreateToken(req JWT) (JWTResponse, error)
 	TokenParse(accessToken string) (JWT, error)
 	Decode(c echo.Context) JWT
-	Middleware() echo.MiddlewareFunc
 }
 
 type jwtClient struct {

@@ -3,7 +3,7 @@ CREATE TYPE participant_type AS ENUM('home', 'away');
 CREATE TABLE bracket_participants(
     id BIGSERIAL PRIMARY KEY,
     event_bracket_id UUID NOT NULL,
-    event_registration_id UUID,
+    event_registration_id UUID NOT NULL,
     type participant_type NOT NULL,
     is_bye BOOLEAN NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
