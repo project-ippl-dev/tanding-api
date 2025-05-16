@@ -1,4 +1,4 @@
-name: "build"
+name: "Build and Deploy"
 
 on:
   workflow_dispatch:
@@ -11,27 +11,23 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       matrix:
-        go-version: [ '1.16' ]
+        go-version: [ '1.23' ]
     permissions:
       contents: read
-      packages: write
-      attestations: write
       id-token: write
     defaults:
       run:
         shell: bash -euxo pipefail {0}
     steps:
       - uses: actions/checkout@v4
-      - name: Log in to Docker Hub
-        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
+      - name: Login to Gcloud
+        uses: google-github-actions/auth@v2
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
-        with:
-          images: ${{ env.DOCKER_HUBNAME }}/${{ env.DOCKER_REPOSITORY }}
+          credentials_json: ${{ secrets.SERVICE_ACCOUNT_CREDENTIAL }}
+      - name: Setup Gcloud
+        uses: google-github-actions/setup-gcloud@v2
+      - name: Docker Auth
+        run: gcloud auth configure-docker asia-southeast2-docker.pkg.dev
       - name: Get Git SHA
         run: |
           SEMVER=v0.1.0
@@ -39,18 +35,26 @@ jobs:
           GIT_COMMIT_DATETIME=$(git show -s --date=format:'%Y%m%d%H%M%S' --format=%cd $GIT_COMMIT_HASH_SHORT)
           TAG="$SEMVER-$GIT_COMMIT_DATETIME-$GIT_COMMIT_HASH_SHORT"
           echo "TAG=$TAG" >> $GITHUB_ENV
-      - name: Build and push Docker image
-        id: push
-        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: $TAG
-          labels: ${{ steps.meta.outputs.labels }}
-      - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v2
-        with:
-          subject-name: index.docker.io/${{ env.DOCKER_HUBNAME }}/${{ env.DOCKER_REPOSITORY }}
-          subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true
+      - name: Build Docker Image
+        run: docker build -t asia-southeast2-docker.pkg.dev/${{ vars.PROJECT_ID }}/tanding-registry/tanding-api:${{ env.TAG }} .
+      - name: Push Docker Image
+        run: docker push asia-southeast2-docker.pkg.dev/${{ vars.PROJECT_ID }}/tanding-registry/tanding-api:${{ env.TAG }}
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy tanding-api \
+            --image=asia-southeast2-docker.pkg.dev/${{ vars.PROJECT_ID }}/tanding-registry/tanding-api:${{ env.TAG }} \
+            --region=asia-southeast2 \
+            --platform=managed \
+            --port=9001 \
+            --service-account=deployment-be@acoustic-portal-407710.iam.gserviceaccount.com \
+            --allow-unauthenticated \
+            --network=default \
+            --subnet=default \
+            --set-env-vars="FE_BASE_URL=http://localhost:3000,STORAGE_BUCKET_ID=tanding-storage" \
+            --set-secrets HOST=HOST:latest,DATABASE_USERNAME=DATABASE_USERNAME:latest,DATABASE_PASSWORD=DATABASE_PASSWORD:latest,DATABASE_NAME=DATABASE_NAME:latest,DATABASE_HOST=DATABASE_HOST:latest,DATABASE_PORT=DATABASE_PORT:latest,JWT_SECRET_KEY=JWT_SECRET_KEY:latest,SMTP_HOST=SMTP_HOST:latest,SMTP_PORT=SMTP_PORT:latest,SMTP_USERNAME=SMTP_USERNAME:latest,SMTP_PASSWORD=SMTP_PASSWORD:latest,SMTP_SENDER=SMTP_SENDER:latest,REDIS_HOST=REDIS_HOST:latest,REDIS_PORT=REDIS_PORT:latest\
+
+      - name: Summary Report
+        run: |
+          echo '## Deployment Summary' >> $GITHUB_STEP_SUMMARY
+          echo "### Deployed Tag: ${{ env.TAG }}" >> $GITHUB_STEP_SUMMARY

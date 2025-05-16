@@ -1,4 +1,4 @@
-FROM golang:1.16-alpine as builder
+FROM golang:1.23-alpine AS builder
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
@@ -9,6 +9,4 @@ FROM alpine:3.14
 WORKDIR /app
 RUN apk add --no-cache tzdata
 COPY --from=builder /app/tanding-api .
-COPY --from=builder /app/public public
-EXPOSE 9000
 CMD ["./tanding-api"]

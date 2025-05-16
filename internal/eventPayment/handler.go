@@ -10,26 +10,27 @@ import (
 )
 
 type handler struct {
-	usecase Usecase
+	usecase   Usecase
+	jwtClient tools.JWTClient
 }
 
-func RegisterHandler(usecase Usecase, m middleware.Params, e *echo.Echo) {
-	handler := handler{usecase: usecase}
+func RegisterHandler(usecase Usecase, m middleware.Params, jwtClient tools.JWTClient, e *echo.Echo) {
+	eventPaymentHandler := handler{usecase: usecase}
 
 	//Role Admin Only
-	e.PATCH("/event/:event/payment/:payment", handler.update, m.JWTMiddleware(), m.Middleware.RoleAdminOnly)
-	e.GET("/event/payment", handler.fetchAll, m.JWTMiddleware(), m.Middleware.RoleAdminOnly)
-	e.GET("/event/payment/:payment/detail", handler.detail, m.JWTMiddleware(), m.Middleware.RoleAdminOnly)
+	e.PATCH("/event/:event/payment/:payment", eventPaymentHandler.update, m.JWTMiddleware(), m.Middleware.RoleAdminOnly)
+	e.GET("/event/payment", eventPaymentHandler.fetchAll, m.JWTMiddleware(), m.Middleware.RoleAdminOnly)
+	e.GET("/event/payment/:payment/detail", eventPaymentHandler.detail, m.JWTMiddleware(), m.Middleware.RoleAdminOnly)
 
 	//Event Payment For Event Privilege Role Admin
-	e.GET("/event/:event/payment/summary", handler.summary, m.JWTMiddleware(), m.Middleware.EventPrivilegeAdmin)
-	e.GET("/event/:event/payment", handler.fetchByEventPrivilege, m.JWTMiddleware(), m.Middleware.EventPrivilegeAdmin)
+	e.GET("/event/:event/payment/summary", eventPaymentHandler.summary, m.JWTMiddleware(), m.Middleware.EventPrivilegeAdmin)
+	e.GET("/event/:event/payment", eventPaymentHandler.fetchByEventPrivilege, m.JWTMiddleware(), m.Middleware.EventPrivilegeAdmin)
 
 	//Event Payment For Club Owner
-	e.POST("/event/:event/payment", handler.store, m.JWTMiddleware(), m.Middleware.EventManipulationRemarkOpen)
-	e.GET("/event/:event/payment/club", handler.fetchByUserID, m.JWTMiddleware())
-	e.GET("/event/cart", handler.cart, m.JWTMiddleware())
-	e.GET("/event/:event/cart/detail", handler.cartDetail, m.JWTMiddleware())
+	e.POST("/event/:event/payment", eventPaymentHandler.store, m.JWTMiddleware(), m.Middleware.EventManipulationRemarkOpen)
+	e.GET("/event/:event/payment/club", eventPaymentHandler.fetchByUserID, m.JWTMiddleware())
+	e.GET("/event/cart", eventPaymentHandler.cart, m.JWTMiddleware())
+	e.GET("/event/:event/cart/detail", eventPaymentHandler.cartDetail, m.JWTMiddleware())
 
 }
 
@@ -41,7 +42,7 @@ func (h handler) store(c echo.Context) error {
 	if err := req.Validate(); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
 	}
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
 	statusCode, err := h.usecase.store(ctx, req, decoded.ID)
 	if err != nil {
@@ -74,7 +75,7 @@ func (h handler) update(c echo.Context) error {
 	if err := arg.Validate(); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
 	}
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
 	statusCode, err := h.usecase.update(ctx, arg, decoded.ID)
 	if err != nil {
@@ -89,7 +90,7 @@ func (h handler) fetchByUserID(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
 	page, pageSize := tools.PaginationPageAndPageSize(c)
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
 	statusCode, pagination, err := h.usecase.fetchByUserID(ctx, page, pageSize, arg, decoded.ID)
 	if err != nil {
@@ -122,7 +123,7 @@ func (h handler) fetchByEventPrivilege(c echo.Context) error {
 }
 
 func (h handler) cart(c echo.Context) error {
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	page, pageSize := tools.PaginationPageAndPageSize(c)
 	ctx := c.Request().Context()
 	pagination, err := h.usecase.cart(ctx, page, pageSize, decoded.ID)
@@ -138,7 +139,7 @@ func (h handler) cartDetail(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
 	result, err := h.usecase.cartDetail(ctx, eventID, decoded.ID)
 	if err != nil {

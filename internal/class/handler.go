@@ -11,17 +11,21 @@ import (
 )
 
 type handler struct {
-	usecase Usecase
+	usecase   Usecase
+	jwtClient tools.JWTClient
 }
 
-func RegisterHandler(usecase Usecase, m middleware.Params, e *echo.Echo) {
-	handler := handler{usecase: usecase}
+func RegisterHandler(usecase Usecase, m middleware.Params, jwtClient tools.JWTClient, e *echo.Echo) {
+	classHandler := handler{
+		usecase:   usecase,
+		jwtClient: jwtClient,
+	}
 
-	e.POST("/class", handler.store, m.JWTMiddleware())
-	e.GET("/class", handler.fetchAll, m.JWTMiddleware())
-	e.GET("/class/sport/:sport", handler.fetchBySportID, m.JWTMiddleware())
-	e.PUT("/class/:class", handler.update, m.JWTMiddleware())
-	e.DELETE("/class/:class", handler.delete, m.JWTMiddleware())
+	e.POST("/class", classHandler.store, m.JWTMiddleware())
+	e.GET("/class", classHandler.fetchAll, m.JWTMiddleware())
+	e.GET("/class/sport/:sport", classHandler.fetchBySportID, m.JWTMiddleware())
+	e.PUT("/class/:class", classHandler.update, m.JWTMiddleware())
+	e.DELETE("/class/:class", classHandler.delete, m.JWTMiddleware())
 }
 
 func (h handler) store(c echo.Context) error {
@@ -32,7 +36,7 @@ func (h handler) store(c echo.Context) error {
 	if err := req.Validate(); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
 	}
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	if decoded.RoleName == "user" && req.Type != db.ClassTypeCustom {
 		return c.JSON(http.StatusForbidden, tools.Response{Message: "forbidden access"})
 	}
@@ -76,7 +80,7 @@ func (h handler) update(c echo.Context) error {
 	if err := req.Validate(); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
 	}
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	if decoded.RoleName == "user" && req.Type != db.ClassTypeCustom {
 		return c.JSON(http.StatusForbidden, tools.Response{Message: "forbidden access"})
 	}
@@ -100,7 +104,7 @@ func (h handler) delete(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
 	ctx := c.Request().Context()
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	statusCode, err := h.usecase.delete(ctx, decoded, classID)
 	if err != nil {
 		return c.JSON(statusCode, tools.Response{Message: err.Error()})

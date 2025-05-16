@@ -9,16 +9,20 @@ import (
 )
 
 type handler struct {
-	usecase Usecase
+	usecase   Usecase
+	jwtClient tools.JWTClient
 }
 
-func RegisterHandler(usecase Usecase, profile *echo.Group) {
-	handler := handler{usecase: usecase}
+func RegisterHandler(usecase Usecase, jwtClient tools.JWTClient, profile *echo.Group) {
+	documentHandler := handler{
+		usecase:   usecase,
+		jwtClient: jwtClient,
+	}
 
-	profile.POST("/:uuid/document", handler.store)
-	profile.GET("/:uuid/document", handler.fetchAll)
-	profile.PUT("/:uuid/document/:document", handler.update)
-	profile.DELETE("/:uuid/document/:document", handler.delete)
+	profile.POST("/:uuid/document", documentHandler.store)
+	profile.GET("/:uuid/document", documentHandler.fetchAll)
+	profile.PUT("/:uuid/document/:document", documentHandler.update)
+	profile.DELETE("/:uuid/document/:document", documentHandler.delete)
 }
 
 func (h handler) store(c echo.Context) error {
@@ -30,7 +34,7 @@ func (h handler) store(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
 	}
 	userID := c.Param("uuid")
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	if decoded.RoleName == "user" {
 		userID = decoded.ID
 	}
@@ -44,7 +48,7 @@ func (h handler) store(c echo.Context) error {
 func (h handler) fetchAll(c echo.Context) error {
 	page, pageSize := tools.PaginationPageAndPageSize(c)
 	userID := c.Param("uuid")
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	if decoded.RoleName == "user" {
 		userID = decoded.ID
 	}
@@ -65,7 +69,7 @@ func (h handler) update(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
 	}
 	userID := c.Param("uuid")
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	if decoded.RoleName == "user" {
 		userID = decoded.ID
 	}
@@ -83,7 +87,7 @@ func (h handler) update(c echo.Context) error {
 
 func (h handler) delete(c echo.Context) error {
 	userID := c.Param("uuid")
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	if decoded.RoleName == "user" {
 		userID = decoded.ID
 	}

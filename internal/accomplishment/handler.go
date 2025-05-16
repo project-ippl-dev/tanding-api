@@ -9,16 +9,20 @@ import (
 )
 
 type handler struct {
-	usecase Usecase
+	usecase   Usecase
+	jwtClient tools.JWTClient
 }
 
-func RegisterHandler(usecase Usecase, profile *echo.Group) {
-	handler := handler{usecase: usecase}
+func RegisterHandler(usecase Usecase, jwtClient tools.JWTClient, profile *echo.Group) {
+	accomplishmentHandler := handler{
+		usecase:   usecase,
+		jwtClient: jwtClient,
+	}
 
-	profile.POST("/:uuid/accomplishment", handler.store)
-	profile.GET("/:uuid/accomplishment", handler.fetchAll)
-	profile.PUT("/:uuid/accomplishment/:accomplishment", handler.update)
-	profile.DELETE("/:uuid/accomplishment/:accomplishment", handler.delete)
+	profile.POST("/:uuid/accomplishment", accomplishmentHandler.store)
+	profile.GET("/:uuid/accomplishment", accomplishmentHandler.fetchAll)
+	profile.PUT("/:uuid/accomplishment/:accomplishment", accomplishmentHandler.update)
+	profile.DELETE("/:uuid/accomplishment/:accomplishment", accomplishmentHandler.delete)
 }
 
 func (h handler) store(c echo.Context) error {
@@ -29,7 +33,7 @@ func (h handler) store(c echo.Context) error {
 	if err := req.Validate(); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
 	}
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	userID := c.Param("uuid")
 	if decoded.RoleName == "user" {
 		userID = decoded.ID
@@ -42,7 +46,7 @@ func (h handler) store(c echo.Context) error {
 }
 
 func (h handler) fetchAll(c echo.Context) error {
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	userID := c.Param("uuid")
 	if decoded.RoleName == "user" {
 		userID = decoded.ID
@@ -64,7 +68,7 @@ func (h handler) update(c echo.Context) error {
 	if err := req.Validate(); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
 	}
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	userID := c.Param("uuid")
 	if decoded.RoleName == "user" {
 		userID = decoded.ID
@@ -82,7 +86,7 @@ func (h handler) update(c echo.Context) error {
 }
 
 func (h handler) delete(c echo.Context) error {
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	userID := c.Param("uuid")
 	if decoded.RoleName == "user" {
 		userID = decoded.ID

@@ -10,18 +10,22 @@ import (
 )
 
 type handler struct {
-	usecase Usecase
+	usecase   Usecase
+	jwtClient tools.JWTClient
 }
 
-func RegisterHandler(usecase Usecase, m middleware.Params, e *echo.Echo) {
-	handler := handler{usecase: usecase}
+func RegisterHandler(usecase Usecase, m middleware.Params, jwtClient tools.JWTClient, e *echo.Echo) {
+	userHandler := handler{
+		usecase:   usecase,
+		jwtClient: jwtClient,
+	}
 
-	e.GET("/user/search", handler.search, m.JWTMiddleware())
-	e.GET("/profile/:uuid/basic", handler.fetchOne, m.JWTMiddleware())
-	e.PUT("/profile/:uuid/basic", handler.update, m.JWTMiddleware())
+	e.GET("/user/search", userHandler.search, m.JWTMiddleware())
+	e.GET("/profile/:uuid/basic", userHandler.fetchOne, m.JWTMiddleware())
+	e.PUT("/profile/:uuid/basic", userHandler.update, m.JWTMiddleware())
 
-	e.GET("/user", handler.fetchAll, m.JWTMiddleware(), m.Middleware.RoleAdminOnly)
-	e.GET("/user/login", handler.fetchLastLogin, m.JWTMiddleware(), m.Middleware.RoleAdminOnly)
+	e.GET("/user", userHandler.fetchAll, m.JWTMiddleware(), m.Middleware.RoleAdminOnly)
+	e.GET("/user/login", userHandler.fetchLastLogin, m.JWTMiddleware(), m.Middleware.RoleAdminOnly)
 }
 
 func (h handler) search(c echo.Context) error {
@@ -33,7 +37,7 @@ func (h handler) search(c echo.Context) error {
 		args.Limit = 10
 	}
 	ctx := c.Request().Context()
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	users, err := h.usecase.search(ctx, args, decoded.ID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, tools.Response{Message: err.Error()})
@@ -42,7 +46,7 @@ func (h handler) search(c echo.Context) error {
 }
 
 func (h handler) fetchOne(c echo.Context) error {
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
 
 	userID := c.Param("uuid")
@@ -67,7 +71,7 @@ func (h handler) update(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
 	}
 
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
 
 	userID := c.Param("uuid")
