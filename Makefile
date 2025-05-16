@@ -1,5 +1,5 @@
 # Path to env file
-include .env
+#include .env ## WARNING: make sure your env is correct
 
 # Construct database URL
 DATABASE_URL='postgres://${DATABASE_USERNAME}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}?sslmode=disable'
