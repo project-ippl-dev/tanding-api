@@ -5,6 +5,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+
+	"github.com/project-ippl-dev/tanding-api/config"
 	"github.com/project-ippl-dev/tanding-api/internal/db"
 	"github.com/project-ippl-dev/tanding-api/internal/tools"
 )
@@ -12,19 +15,23 @@ import (
 type Middleware struct {
 	repository *db.Queries
 	jwtClient  tools.JWTClient
+	jwtConfig  config.JWTConfig
 }
 
 type Params struct {
 	Middleware Middleware
-	JWTClient  tools.JWTClient
 }
 
 func (p Params) JWTMiddleware() echo.MiddlewareFunc {
-	return p.JWTClient.Middleware()
+	return p.Middleware.JWTAuth()
 }
 
-func InitMiddleware(repository *db.Queries) Middleware {
-	return Middleware{repository: repository}
+func InitMiddleware(repository *db.Queries, jwtClient tools.JWTClient, jwtConfig config.JWTConfig) Middleware {
+	return Middleware{
+		repository: repository,
+		jwtClient:  jwtClient,
+		jwtConfig:  jwtConfig,
+	}
 }
 
 func (m Middleware) GrantCompetition(next echo.HandlerFunc) echo.HandlerFunc {
@@ -125,4 +132,12 @@ func (m Middleware) RoleAdminOnly(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 		return next(c)
 	}
+}
+
+func (m Middleware) JWTAuth() echo.MiddlewareFunc {
+	conf := middleware.JWTConfig{
+		SigningKey:  []byte(m.jwtConfig.SecretKey),
+		TokenLookup: "header:Authorization",
+	}
+	return middleware.JWTWithConfig(conf)
 }

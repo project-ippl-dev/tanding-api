@@ -32,6 +32,7 @@ jobs:
         uses: golangci/golangci-lint-action@v6
         with:
           version: v1.61
+          args: "--timeout=5m0s"
   tests:
     runs-on: ubuntu-24.04
     if: always()
@@ -51,4 +52,4 @@ jobs:
           go-version: ${{ matrix.go-version }}
       - name: Run test
         run: |
-          go test ./...
+          make unit-test

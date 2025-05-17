@@ -1,5 +1,7 @@
 package bracket
 
+//go:generate mockgen -source=./repository.go -destination=../../mocks/bracket/repository_mock.go
+
 import (
 	"context"
 	"database/sql"
@@ -9,12 +11,18 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/db"
 )
 
+type Repository interface {
+	OrderBracketFetchByClassEventID(ctx context.Context, classEventID uuid.UUID) ([]OrderBracketFetchByClassEventIDRow, error)
+	BracketParticipantFetchByEventBracketID(ctx context.Context, eventBracketID uuid.UUID) ([]BracketParticipantFetchByEventBracketIDRow, error)
+	RankFetchByClassEventID(ctx context.Context, classEventID uuid.UUID) ([]RankFetchByClassEventIDRow, error)
+}
+
 type RawRepository struct {
 	db *sql.DB
 }
 
-func NewRepository(db *sql.DB) RawRepository {
-	return RawRepository{db: db}
+func NewRepository(db *sql.DB) Repository {
+	return &RawRepository{db: db}
 }
 
 const orderBracketFetchByClassEventID = `-- name: OrderBracketFetchByClassEventID :many
@@ -85,7 +93,7 @@ ORDER BY CASE bp.type
              END
 `
 
-type bracketParticipantFetchByEventBracketIDRow struct {
+type BracketParticipantFetchByEventBracketIDRow struct {
 	ID                  int64              `json:"id"`
 	ClubID              uuid.UUID          `json:"club_id"`
 	ClubName            sql.NullString     `json:"club_name"`
@@ -95,15 +103,15 @@ type bracketParticipantFetchByEventBracketIDRow struct {
 	EventRegistrationID uuid.UUID          `json:"event_registration_id"`
 }
 
-func (r *RawRepository) BracketParticipantFetchByEventBracketID(ctx context.Context, eventBracketID uuid.UUID) ([]bracketParticipantFetchByEventBracketIDRow, error) {
+func (r *RawRepository) BracketParticipantFetchByEventBracketID(ctx context.Context, eventBracketID uuid.UUID) ([]BracketParticipantFetchByEventBracketIDRow, error) {
 	rows, err := r.db.QueryContext(ctx, bracketParticipantFetchByEventBracketID, eventBracketID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []bracketParticipantFetchByEventBracketIDRow{}
+	items := []BracketParticipantFetchByEventBracketIDRow{}
 	for rows.Next() {
-		var i bracketParticipantFetchByEventBracketIDRow
+		var i BracketParticipantFetchByEventBracketIDRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.ClubID,
