@@ -83,20 +83,6 @@ func (mr *MockJWTClientMockRecorder) Decode(c any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Decode", reflect.TypeOf((*MockJWTClient)(nil).Decode), c)
 }
 
-// Middleware mocks base method.
-func (m *MockJWTClient) Middleware() echo.MiddlewareFunc {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Middleware")
-	ret0, _ := ret[0].(echo.MiddlewareFunc)
-	return ret0
-}
-
-// Middleware indicates an expected call of Middleware.
-func (mr *MockJWTClientMockRecorder) Middleware() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Middleware", reflect.TypeOf((*MockJWTClient)(nil).Middleware))
-}
-
 // TokenParse mocks base method.
 func (m *MockJWTClient) TokenParse(accessToken string) (tools.JWT, error) {
 	m.ctrl.T.Helper()

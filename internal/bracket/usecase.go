@@ -322,20 +322,20 @@ func (u *usecase) FetchOne(ctx context.Context, arg GenerateParams) (FetchOneRes
 		if err != nil {
 			return FetchOneResponse{}, fmt.Errorf("brackets with specific classs event not found : %s", err.Error())
 		}
-		results := []fetchOneOrderResponse{}
+		results := []FetchOneOrderResponse{}
 		for _, bracket := range brackets {
 			score, _ := u.repository.OrderScoreFetchOneByBracketID(ctx, bracket.ID)
-			results = append(results, fetchOneOrderResponse{
+			results = append(results, FetchOneOrderResponse{
 				OrderBracketFetchByClassEventIDRow: bracket,
 				Scores:                             score,
 			})
 		}
 		result = results
 	case db.MatchTypeSingle:
-		response := []matchIndexData{}
+		response := []MatchIndexData{}
 		for index := classEvent.MatchIndex; index >= 1; index-- {
 			indexTitle := u.setIndexTitle(index)
-			matchIndexResult := matchIndexData{
+			matchIndexResult := MatchIndexData{
 				Title: indexTitle,
 				Seeds: nil,
 			}
@@ -355,9 +355,9 @@ func (u *usecase) FetchOne(ctx context.Context, arg GenerateParams) (FetchOneRes
 				if err != nil {
 					return FetchOneResponse{}, fmt.Errorf("error in fetch bracket participants : %s", err.Error())
 				}
-				var participants []bracketParticipantResponse
+				var participants []BracketParticipantResponse
 				for _, team := range teams {
-					var participant bracketParticipantResponse
+					var participant BracketParticipantResponse
 					participant.BracketParticipantFetchByEventBracketIDRow = team
 					club, _ := u.repository.ClubFetchOne(ctx, team.ClubID)
 					participant.ClubLogo = club.Logo
@@ -384,7 +384,7 @@ func (u *usecase) FetchOne(ctx context.Context, arg GenerateParams) (FetchOneRes
 						participants = append(participants, participant)
 					}
 				}
-				matchIndexResult.Seeds = append(matchIndexResult.Seeds, seedData{
+				matchIndexResult.Seeds = append(matchIndexResult.Seeds, SeedData{
 					ID:         bracket.ID,
 					EventTurn:  bracket.EventTurn,
 					MatchOrder: bracket.MatchOrder,
@@ -452,9 +452,9 @@ func (u *usecase) RoundDown(ctx context.Context, arg GenerateParams) (statusCode
 		u.r.Shuffle(len(brackets), func(i, j int) {
 			brackets[i], brackets[j] = brackets[j], brackets[i]
 		})
-		var result []orderRoundDownResponse
+		var result []OrderRoundDownResponse
 		for i, bracket := range brackets {
-			result = append(result, orderRoundDownResponse{
+			result = append(result, OrderRoundDownResponse{
 				OrderBracketFetchByClassEventIDRow: bracket,
 				Iteration:                          int16(i) + 1,
 			})
@@ -474,7 +474,7 @@ func (u *usecase) RoundDown(ctx context.Context, arg GenerateParams) (statusCode
 	}, nil
 }
 
-func (u *usecase) roundDownBracketSingle(ctx context.Context, classEvent db.ClassEventFetchOneRow) (statusCode int, result []matchIndexData, err error) {
+func (u *usecase) roundDownBracketSingle(ctx context.Context, classEvent db.ClassEventFetchOneRow) (statusCode int, result []MatchIndexData, err error) {
 	registrations, err := u.repository.EventRegistrationFetchByClassEventID(ctx, classEvent.ID)
 	if err != nil {
 		return http.StatusNotFound, nil, fmt.Errorf("registration data not found : %s", err.Error())
@@ -575,10 +575,10 @@ func (u *usecase) roundDownBracketSingle(ctx context.Context, classEvent db.Clas
 			})
 		}
 	}
-	result = []matchIndexData{}
+	result = []MatchIndexData{}
 	for index := classEvent.MatchIndex; index >= 1; index-- {
 		indexTitle := u.setIndexTitle(index)
-		matchIndexResult := matchIndexData{
+		matchIndexResult := MatchIndexData{
 			Title: indexTitle,
 			Seeds: nil,
 		}
@@ -590,17 +590,17 @@ func (u *usecase) roundDownBracketSingle(ctx context.Context, classEvent db.Clas
 			return http.StatusInternalServerError, nil, fmt.Errorf("error in fetch brackets : %s", err.Error())
 		}
 		for _, bracket := range brackets {
-			var teams []bracketParticipantResponse
+			var teams []BracketParticipantResponse
 			if index == classEvent.MatchIndex {
 				for i := 1; i <= 2; i++ {
 					teamIndex := (bracket.MatchOrder * 2) - 2
 					switch i {
 					case 1:
-						teams = append(teams, bracketParticipantResponse{
+						teams = append(teams, BracketParticipantResponse{
 							BracketParticipantFetchByEventBracketIDRow: randomTeams[teamIndex],
 						})
 					case 2:
-						teams = append(teams, bracketParticipantResponse{
+						teams = append(teams, BracketParticipantResponse{
 							BracketParticipantFetchByEventBracketIDRow: randomTeams[teamIndex+1],
 						})
 					}
@@ -611,12 +611,12 @@ func (u *usecase) roundDownBracketSingle(ctx context.Context, classEvent db.Clas
 					return http.StatusInternalServerError, nil, fmt.Errorf("error inf etch bracket participants : %s", err.Error())
 				}
 				for _, r := range result {
-					teams = append(teams, bracketParticipantResponse{
+					teams = append(teams, BracketParticipantResponse{
 						BracketParticipantFetchByEventBracketIDRow: r,
 					})
 				}
 			}
-			matchIndexResult.Seeds = append(matchIndexResult.Seeds, seedData{
+			matchIndexResult.Seeds = append(matchIndexResult.Seeds, SeedData{
 				ID:         bracket.ID,
 				EventTurn:  bracket.EventTurn,
 				MatchOrder: bracket.MatchOrder,
