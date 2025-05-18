@@ -101,6 +101,48 @@ func (ns NullAccountType) Value() (driver.Value, error) {
 	return string(ns.AccountType), nil
 }
 
+type BracketType string
+
+const (
+	BracketTypeBattle BracketType = "battle"
+	BracketTypeBye    BracketType = "bye"
+)
+
+func (e *BracketType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = BracketType(s)
+	case string:
+		*e = BracketType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for BracketType: %T", src)
+	}
+	return nil
+}
+
+type NullBracketType struct {
+	BracketType BracketType `json:"bracket_type"`
+	Valid       bool        `json:"valid"` // Valid is true if BracketType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullBracketType) Scan(value interface{}) error {
+	if value == nil {
+		ns.BracketType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.BracketType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullBracketType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.BracketType), nil
+}
+
 type ClassType string
 
 const (
@@ -143,6 +185,242 @@ func (ns NullClassType) Value() (driver.Value, error) {
 	return string(ns.ClassType), nil
 }
 
+type EventReceiptStatus string
+
+const (
+	EventReceiptStatusWaiting  EventReceiptStatus = "waiting"
+	EventReceiptStatusApproved EventReceiptStatus = "approved"
+	EventReceiptStatusRejected EventReceiptStatus = "rejected"
+	EventReceiptStatusRefund   EventReceiptStatus = "refund"
+)
+
+func (e *EventReceiptStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = EventReceiptStatus(s)
+	case string:
+		*e = EventReceiptStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for EventReceiptStatus: %T", src)
+	}
+	return nil
+}
+
+type NullEventReceiptStatus struct {
+	EventReceiptStatus EventReceiptStatus `json:"event_receipt_status"`
+	Valid              bool               `json:"valid"` // Valid is true if EventReceiptStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullEventReceiptStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.EventReceiptStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.EventReceiptStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullEventReceiptStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.EventReceiptStatus), nil
+}
+
+type EventRefundStatus string
+
+const (
+	EventRefundStatusWaiting  EventRefundStatus = "waiting"
+	EventRefundStatusApproved EventRefundStatus = "approved"
+	EventRefundStatusRejected EventRefundStatus = "rejected"
+)
+
+func (e *EventRefundStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = EventRefundStatus(s)
+	case string:
+		*e = EventRefundStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for EventRefundStatus: %T", src)
+	}
+	return nil
+}
+
+type NullEventRefundStatus struct {
+	EventRefundStatus EventRefundStatus `json:"event_refund_status"`
+	Valid             bool              `json:"valid"` // Valid is true if EventRefundStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullEventRefundStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.EventRefundStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.EventRefundStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullEventRefundStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.EventRefundStatus), nil
+}
+
+type EventRegistrationStatus string
+
+const (
+	EventRegistrationStatusPending  EventRegistrationStatus = "pending"
+	EventRegistrationStatusCanceled EventRegistrationStatus = "canceled"
+	EventRegistrationStatusWaiting  EventRegistrationStatus = "waiting"
+	EventRegistrationStatusApproved EventRegistrationStatus = "approved"
+	EventRegistrationStatusRejected EventRegistrationStatus = "rejected"
+)
+
+func (e *EventRegistrationStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = EventRegistrationStatus(s)
+	case string:
+		*e = EventRegistrationStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for EventRegistrationStatus: %T", src)
+	}
+	return nil
+}
+
+type NullEventRegistrationStatus struct {
+	EventRegistrationStatus EventRegistrationStatus `json:"event_registration_status"`
+	Valid                   bool                    `json:"valid"` // Valid is true if EventRegistrationStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullEventRegistrationStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.EventRegistrationStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.EventRegistrationStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullEventRegistrationStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.EventRegistrationStatus), nil
+}
+
+type EventRole string
+
+const (
+	EventRoleOwner       EventRole = "owner"
+	EventRoleReviewer    EventRole = "reviewer"
+	EventRoleContributor EventRole = "contributor"
+	EventRoleAdmin       EventRole = "admin"
+)
+
+func (e *EventRole) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = EventRole(s)
+	case string:
+		*e = EventRole(s)
+	default:
+		return fmt.Errorf("unsupported scan type for EventRole: %T", src)
+	}
+	return nil
+}
+
+type NullEventRole struct {
+	EventRole EventRole `json:"event_role"`
+	Valid     bool      `json:"valid"` // Valid is true if EventRole is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullEventRole) Scan(value interface{}) error {
+	if value == nil {
+		ns.EventRole, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.EventRole.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullEventRole) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.EventRole), nil
+}
+
+type EventType string
+
+const (
+	EventTypeCompetition EventType = "competition"
+	EventTypeEvent       EventType = "event"
+)
+
+func (e *EventType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = EventType(s)
+	case string:
+		*e = EventType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for EventType: %T", src)
+	}
+	return nil
+}
+
+type NullEventType struct {
+	EventType EventType `json:"event_type"`
+	Valid     bool      `json:"valid"` // Valid is true if EventType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullEventType) Scan(value interface{}) error {
+	if value == nil {
+		ns.EventType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.EventType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullEventType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.EventType), nil
+}
+
+type MatchType string
+
+const (
+	MatchTypeSingle MatchType = "single"
+	MatchTypeOrder  MatchType = "order"
+)
+
+func (e *MatchType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = MatchType(s)
+	case string:
+		*e = MatchType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for MatchType: %T", src)
+	}
+	return nil
+}
 
 type NullMatchType struct {
 	MatchType MatchType `json:"match_type"`
@@ -165,6 +443,48 @@ func (ns NullMatchType) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.MatchType), nil
+}
+
+type ParticipantType string
+
+const (
+	ParticipantTypeHome ParticipantType = "home"
+	ParticipantTypeAway ParticipantType = "away"
+)
+
+func (e *ParticipantType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = ParticipantType(s)
+	case string:
+		*e = ParticipantType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for ParticipantType: %T", src)
+	}
+	return nil
+}
+
+type NullParticipantType struct {
+	ParticipantType ParticipantType `json:"participant_type"`
+	Valid           bool            `json:"valid"` // Valid is true if ParticipantType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullParticipantType) Scan(value interface{}) error {
+	if value == nil {
+		ns.ParticipantType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.ParticipantType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullParticipantType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.ParticipantType), nil
 }
 
 type PrivilegeType string
@@ -207,6 +527,53 @@ func (ns NullPrivilegeType) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.PrivilegeType), nil
+}
+
+type RemarkType string
+
+const (
+	RemarkTypeUnconfirmed RemarkType = "unconfirmed"
+	RemarkTypeSoon        RemarkType = "soon"
+	RemarkTypeOpen        RemarkType = "open"
+	RemarkTypeClosed      RemarkType = "closed"
+	RemarkTypeOngoing     RemarkType = "ongoing"
+	RemarkTypeDone        RemarkType = "done"
+	RemarkTypeRejected    RemarkType = "rejected"
+)
+
+func (e *RemarkType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = RemarkType(s)
+	case string:
+		*e = RemarkType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for RemarkType: %T", src)
+	}
+	return nil
+}
+
+type NullRemarkType struct {
+	RemarkType RemarkType `json:"remark_type"`
+	Valid      bool       `json:"valid"` // Valid is true if RemarkType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullRemarkType) Scan(value interface{}) error {
+	if value == nil {
+		ns.RemarkType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.RemarkType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullRemarkType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.RemarkType), nil
 }
 
 type Role string
@@ -320,6 +687,16 @@ type Account struct {
 	UpdatedAt sql.NullTime `json:"updated_at"`
 }
 
+type BracketParticipant struct {
+	ID                  int64           `json:"id"`
+	EventBracketID      uuid.UUID       `json:"event_bracket_id"`
+	EventRegistrationID uuid.UUID       `json:"event_registration_id"`
+	Type                ParticipantType `json:"type"`
+	IsBye               bool            `json:"is_bye"`
+	CreatedAt           time.Time       `json:"created_at"`
+	UpdatedAt           sql.NullTime    `json:"updated_at"`
+}
+
 type Class struct {
 	ID                     uuid.UUID    `json:"id"`
 	SportID                uuid.UUID    `json:"sport_id"`
@@ -339,6 +716,19 @@ type ClassCompetitionRule struct {
 	Total     int16        `json:"total"`
 	CreatedAt time.Time    `json:"created_at"`
 	UpdatedAt sql.NullTime `json:"updated_at"`
+}
+
+type ClassEvent struct {
+	ID              uuid.UUID    `json:"id"`
+	EventID         uuid.UUID    `json:"event_id"`
+	ClassID         uuid.UUID    `json:"class_id"`
+	Price           int32        `json:"price"`
+	BracketGenerate bool         `json:"bracket_generate"`
+	BracketLock     bool         `json:"bracket_lock"`
+	ScoreLock       bool         `json:"score_lock"`
+	MatchIndex      int16        `json:"match_index"`
+	CreatedAt       time.Time    `json:"created_at"`
+	UpdatedAt       sql.NullTime `json:"updated_at"`
 }
 
 type Club struct {
@@ -388,11 +778,147 @@ type Document struct {
 	UpdatedAt             sql.NullTime `json:"updated_at"`
 }
 
+type Event struct {
+	ID           uuid.UUID    `json:"id"`
+	UserID       uuid.UUID    `json:"user_id"`
+	Type         EventType    `json:"type"`
+	Name         string       `json:"name"`
+	Description  string       `json:"description"`
+	PrizePool    string       `json:"prize_pool"`
+	Location     string       `json:"location"`
+	Province     string       `json:"province"`
+	City         string       `json:"city"`
+	Thumbnail    string       `json:"thumbnail"`
+	StartDate    time.Time    `json:"start_date"`
+	EndDate      time.Time    `json:"end_date"`
+	Deadline     time.Time    `json:"deadline"`
+	SportID      uuid.UUID    `json:"sport_id"`
+	Rules        string       `json:"rules"`
+	Quota        int32        `json:"quota"`
+	ProposalLink string       `json:"proposal_link"`
+	Status       sql.NullBool `json:"status"`
+	Remark       RemarkType   `json:"remark"`
+	IsGenerate   bool         `json:"is_generate"`
+	Open         time.Time    `json:"open"`
+	OrderNumber  int64        `json:"order_number"`
+	CreatedAt    time.Time    `json:"created_at"`
+	UpdatedAt    sql.NullTime `json:"updated_at"`
+	DeletedAt    sql.NullTime `json:"deleted_at"`
+}
+
+type EventBracket struct {
+	ID           uuid.UUID    `json:"id"`
+	EventID      uuid.UUID    `json:"event_id"`
+	ClassEventID uuid.UUID    `json:"class_event_id"`
+	EventTurn    int16        `json:"event_turn"`
+	MatchIndex   int16        `json:"match_index"`
+	MatchOrder   int16        `json:"match_order"`
+	NextMatchID  uuid.UUID    `json:"next_match_id"`
+	Status       BracketType  `json:"status"`
+	IsActive     int16        `json:"is_active"`
+	CreatedAt    time.Time    `json:"created_at"`
+	UpdatedAt    sql.NullTime `json:"updated_at"`
+}
+
+type EventParticipant struct {
+	ID                  int64        `json:"id"`
+	EventRegistrationID uuid.UUID    `json:"event_registration_id"`
+	UserID              uuid.UUID    `json:"user_id"`
+	CreatedAt           time.Time    `json:"created_at"`
+	UpdatedAt           sql.NullTime `json:"updated_at"`
+}
+
+type EventPaymentReceipt struct {
+	ID           uuid.UUID          `json:"id"`
+	EventID      uuid.UUID          `json:"event_id"`
+	UniqueNumber int16              `json:"unique_number"`
+	PaymentLink  string             `json:"payment_link"`
+	UserID       uuid.UUID          `json:"user_id"`
+	AdminID      uuid.UUID          `json:"admin_id"`
+	Total        int32              `json:"total"`
+	Status       EventReceiptStatus `json:"status"`
+	CreatedAt    time.Time          `json:"created_at"`
+	UpdatedAt    sql.NullTime       `json:"updated_at"`
+	DeletedAt    sql.NullTime       `json:"deleted_at"`
+}
+
+type EventPrivilege struct {
+	ID        int64        `json:"id"`
+	EventID   uuid.UUID    `json:"event_id"`
+	UserID    uuid.UUID    `json:"user_id"`
+	Role      EventRole    `json:"role"`
+	CreatedAt time.Time    `json:"created_at"`
+	UpdatedAt sql.NullTime `json:"updated_at"`
+}
+
+type EventRefund struct {
+	ID                    uuid.UUID         `json:"id"`
+	EventID               uuid.UUID         `json:"event_id"`
+	EventPaymentReceiptID uuid.UUID         `json:"event_payment_receipt_id"`
+	Note                  string            `json:"note"`
+	Status                EventRefundStatus `json:"status"`
+	AdminID               uuid.UUID         `json:"admin_id"`
+	CreatedAt             time.Time         `json:"created_at"`
+	UpdatedAt             sql.NullTime      `json:"updated_at"`
+}
+
+type EventRegistration struct {
+	ID                    uuid.UUID               `json:"id"`
+	EventID               uuid.UUID               `json:"event_id"`
+	ClassEventID          uuid.UUID               `json:"class_event_id"`
+	ClubID                uuid.UUID               `json:"club_id"`
+	Status                EventRegistrationStatus `json:"status"`
+	EventPaymentReceiptID uuid.UUID               `json:"event_payment_receipt_id"`
+	CreatedAt             time.Time               `json:"created_at"`
+	UpdatedAt             sql.NullTime            `json:"updated_at"`
+}
+
+type EventScore struct {
+	ID             uuid.UUID    `json:"id"`
+	EventBracketID uuid.UUID    `json:"event_bracket_id"`
+	HomeRound1     int16        `json:"home_round1"`
+	HomeRound2     int16        `json:"home_round2"`
+	HomeRound3     int16        `json:"home_round3"`
+	HomeExtra      int16        `json:"home_extra"`
+	HomeTotal      int16        `json:"home_total"`
+	AwayRound1     int16        `json:"away_round1"`
+	AwayRound2     int16        `json:"away_round2"`
+	AwayRound3     int16        `json:"away_round3"`
+	AwayExtra      int16        `json:"away_extra"`
+	AwayTotal      int16        `json:"away_total"`
+	CreatedAt      time.Time    `json:"created_at"`
+	UpdatedAt      sql.NullTime `json:"updated_at"`
+}
+
 type LoginDetail struct {
 	ID        int64        `json:"id"`
 	UserID    uuid.UUID    `json:"user_id"`
 	CreatedAt time.Time    `json:"created_at"`
 	UpdatedAt sql.NullTime `json:"updated_at"`
+}
+
+type OrderBracket struct {
+	ID                  uuid.UUID    `json:"id"`
+	EventID             uuid.UUID    `json:"event_id"`
+	ClassEventID        uuid.UUID    `json:"class_event_id"`
+	ClubID              uuid.UUID    `json:"club_id"`
+	EventRegistrationID uuid.UUID    `json:"event_registration_id"`
+	OrderBy             int16        `json:"order_by"`
+	Rank                int16        `json:"rank"`
+	CreatedAt           time.Time    `json:"created_at"`
+	UpdatedAt           sql.NullTime `json:"updated_at"`
+}
+
+type OrderScore struct {
+	ID             uuid.UUID    `json:"id"`
+	OrderBracketID uuid.UUID    `json:"order_bracket_id"`
+	Round1         int16        `json:"round1"`
+	Round2         int16        `json:"round2"`
+	Round3         int16        `json:"round3"`
+	Extra          int16        `json:"extra"`
+	Total          int16        `json:"total"`
+	CreatedAt      time.Time    `json:"created_at"`
+	UpdatedAt      sql.NullTime `json:"updated_at"`
 }
 
 type Privilege struct {
@@ -410,6 +936,19 @@ type PrivilegeUser struct {
 	UserID      uuid.UUID    `json:"user_id"`
 	CreatedAt   sql.NullTime `json:"created_at"`
 	UpdatedAt   sql.NullTime `json:"updated_at"`
+}
+
+type Rank struct {
+	ID                  uuid.UUID    `json:"id"`
+	ClubID              uuid.UUID    `json:"club_id"`
+	EventID             uuid.UUID    `json:"event_id"`
+	ClassEventID        uuid.UUID    `json:"class_event_id"`
+	EventRegistrationID uuid.UUID    `json:"event_registration_id"`
+	SportID             uuid.UUID    `json:"sport_id"`
+	Rank                int16        `json:"rank"`
+	Point               int32        `json:"point"`
+	CreatedAt           time.Time    `json:"created_at"`
+	UpdatedAt           sql.NullTime `json:"updated_at"`
 }
 
 type Sport struct {
@@ -446,180 +985,4 @@ type User struct {
 	CanParticipate bool         `json:"can_participate"`
 	CreatedAt      time.Time    `json:"created_at"`
 	UpdatedAt      sql.NullTime `json:"updated_at"`
-}
-
-type EventPrivilege struct {
-	ID        int64        `json:"id"`
-	EventID   uuid.UUID    `json:"event_id"`
-	UserID    uuid.UUID    `json:"user_id"`
-	Role      EventRole    `json:"role"`
-	CreatedAt time.Time    `json:"created_at"`
-	UpdatedAt sql.NullTime `json:"updated_at"`
-}
-
-
-
-type EventRole string
-
-const (
-	EventRoleOwner       EventRole = "owner"
-	EventRoleReviewer    EventRole = "reviewer"
-	EventRoleContributor EventRole = "contributor"
-	EventRoleAdmin       EventRole = "admin"
-)
-
-func (e *EventRole) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = EventRole(s)
-	case string:
-		*e = EventRole(s)
-	default:
-		return fmt.Errorf("unsupported scan type for EventRole: %T", src)
-	}
-	return nil
-}
-
-type EventType string
-
-const (
-	EventTypeCompetition EventType = "competition"
-	EventTypeEvent       EventType = "event"
-)
-
-func (e *EventType) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = EventType(s)
-	case string:
-		*e = EventType(s)
-	default:
-		return fmt.Errorf("unsupported scan type for EventType: %T", src)
-	}
-	return nil
-}
-
-type RemarkType string
-
-const (
-	RemarkTypeUnconfirmed RemarkType = "unconfirmed"
-	RemarkTypeSoon        RemarkType = "soon"
-	RemarkTypeOpen        RemarkType = "open"
-	RemarkTypeClosed      RemarkType = "closed"
-	RemarkTypeOngoing     RemarkType = "ongoing"
-	RemarkTypeDone        RemarkType = "done"
-	RemarkTypeRejected    RemarkType = "rejected"
-)
-
-func (e *RemarkType) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = RemarkType(s)
-	case string:
-		*e = RemarkType(s)
-	default:
-		return fmt.Errorf("unsupported scan type for RemarkType: %T", src)
-	}
-	return nil
-}
-
-type MatchType string
-
-const (
-	MatchTypeSingle MatchType = "single"
-	MatchTypeOrder  MatchType = "order"
-)
-
-func (e *MatchType) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = MatchType(s)
-	case string:
-		*e = MatchType(s)
-	default:
-		return fmt.Errorf("unsupported scan type for MatchType: %T", src)
-	}
-	return nil
-}
-
-
-
-type EventRegistrationStatus string
-
-const (
-	EventRegistrationStatusPending  EventRegistrationStatus = "pending"
-	EventRegistrationStatusCanceled EventRegistrationStatus = "canceled"
-	EventRegistrationStatusWaiting  EventRegistrationStatus = "waiting"
-	EventRegistrationStatusApproved EventRegistrationStatus = "approved"
-	EventRegistrationStatusRejected EventRegistrationStatus = "rejected"
-)
-
-func (e *EventRegistrationStatus) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = EventRegistrationStatus(s)
-	case string:
-		*e = EventRegistrationStatus(s)
-	default:
-		return fmt.Errorf("unsupported scan type for EventRegistrationStatus: %T", src)
-	}
-	return nil
-}
-type EventReceiptStatus string
-
-const (
-	EventReceiptStatusWaiting  EventReceiptStatus = "waiting"
-	EventReceiptStatusApproved EventReceiptStatus = "approved"
-	EventReceiptStatusRejected EventReceiptStatus = "rejected"
-	EventReceiptStatusRefund   EventReceiptStatus = "refund"
-)
-
-func (e *EventReceiptStatus) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = EventReceiptStatus(s)
-	case string:
-		*e = EventReceiptStatus(s)
-	default:
-		return fmt.Errorf("unsupported scan type for EventReceiptStatus: %T", src)
-	}
-	return nil
-}
-
-type ParticipantType string
-
-const (
-	ParticipantTypeHome ParticipantType = "home"
-	ParticipantTypeAway ParticipantType = "away"
-)
-
-func (e *ParticipantType) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = ParticipantType(s)
-	case string:
-		*e = ParticipantType(s)
-	default:
-		return fmt.Errorf("unsupported scan type for ParticipantType: %T", src)
-	}
-	return nil
-}
-
-type BracketType string
-
-const (
-	BracketTypeBattle BracketType = "battle"
-	BracketTypeBye    BracketType = "bye"
-)
-
-func (e *BracketType) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = BracketType(s)
-	case string:
-		*e = BracketType(s)
-	default:
-		return fmt.Errorf("unsupported scan type for BracketType: %T", src)
-	}
-	return nil
 }

@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"github.com/project-ippl-dev/tanding-api/internal/middleware"
 	"net/http"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
@@ -17,7 +18,7 @@ type handler struct {
 	serverConf config.ServerConfig
 }
 
-func RegisterHandler(usecase Usecase, jwtClient tools.JWTClient, serverConf config.ServerConfig, e *echo.Echo) {
+func RegisterHandler(usecase Usecase, jwtClient tools.JWTClient, m middleware.Params, serverConf config.ServerConfig, e *echo.Echo) {
 	authHandler := handler{
 		usecase:    usecase,
 		jwtClient:  jwtClient,
@@ -33,7 +34,7 @@ func RegisterHandler(usecase Usecase, jwtClient tools.JWTClient, serverConf conf
 	auth.GET("/forgot-password/:username", authHandler.forgot)
 	auth.POST("/reset-password/:token", authHandler.reset)
 	auth.GET("/resend-token/:type/:username", authHandler.resend)
-	auth.POST("/bind/:type", authHandler.binding, jwtClient.Middleware())
+	auth.POST("/bind/:type", authHandler.binding, m.JWTMiddleware())
 }
 
 func (h handler) register(c echo.Context) error {
