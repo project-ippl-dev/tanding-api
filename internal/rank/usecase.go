@@ -298,10 +298,8 @@ func (u *Usecase) setRewardCertificateCommitteeName(role db.EventRole) string {
 	switch role {
 	case db.EventRoleOwner:
 		rewardAs = "Event Organizer"
-		break
 	case db.EventRoleAdmin, db.EventRoleContributor:
 		rewardAs = "Event Committee"
-		break
 	}
 	return rewardAs
 }
@@ -311,13 +309,10 @@ func (u Usecase) setRankPoint(rank int16) int32 {
 	switch rank {
 	case 1:
 		point = 10
-		break
 	case 2:
 		point = 5
-		break
 	case 3, 4:
 		point = 3
-		break
 	}
 	return int32(point)
 }
@@ -438,13 +433,10 @@ func (u Usecase) setCertificateClubName(rank int) string {
 	switch rank {
 	case 1:
 		result = "Juara Umum 1"
-		break
 	case 2:
 		result = "Juara Umum 2"
-		break
 	case 3:
 		result = "Juara Umum 3"
-		break
 	}
 	return result
 }
