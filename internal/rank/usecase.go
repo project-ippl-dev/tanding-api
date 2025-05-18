@@ -224,7 +224,6 @@ func (u Usecase) summary(ctx context.Context, eventID uuid.UUID) (statusCode int
 							excludedRegistrationID = append(excludedRegistrationID, bracketParticipant.EventRegistrationID)
 						}
 					}
-					break
 				}
 			}
 		}
@@ -284,16 +283,12 @@ func (u Usecase) setRewardCertificateName(rank int16, className string) string {
 	switch rank {
 	case 1:
 		rewardAs = "Juara 1"
-		break
 	case 2:
 		rewardAs = "Juara 2"
-		break
 	case 3, 4:
 		rewardAs = "Juara 3"
-		break
 	default:
 		rewardAs = "Peserta"
-		break
 	}
 	return fmt.Sprintf("%s (%s)", rewardAs, className)
 }
