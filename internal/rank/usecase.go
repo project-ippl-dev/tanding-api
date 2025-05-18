@@ -93,7 +93,6 @@ func (u Usecase) summary(ctx context.Context, eventID uuid.UUID) (statusCode int
 
 				excludedRegistrationID = append(excludedRegistrationID, orderBrackets[i].EventRegistrationID)
 			}
-			break
 		case db.MatchTypeSingle:
 			//Fetch Based on Match Index
 			for i := 1; i <= 2; i++ {
@@ -178,7 +177,6 @@ func (u Usecase) summary(ctx context.Context, eventID uuid.UUID) (statusCode int
 						}
 						excludedRegistrationID = append(excludedRegistrationID, bracketParticipants[1].EventRegistrationID)
 					}
-					break
 				case 2:
 					for j := 0; j < 2; j++ {
 						if j+1 > len(brackets) {
@@ -229,7 +227,6 @@ func (u Usecase) summary(ctx context.Context, eventID uuid.UUID) (statusCode int
 					break
 				}
 			}
-			break
 		}
 
 		//Store Certificate For Participant
