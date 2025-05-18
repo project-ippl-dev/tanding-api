@@ -80,11 +80,10 @@ func routing(conf config.Config, postgresDB *sql.DB, rdb *redis.Client, s3Client
 	repository := db.New(postgresDB)
 
 	//Init Middleware
-	m := middlewareApp.InitMiddleware(repository)
+	m := middlewareApp.InitMiddleware(repository, jwtClient, conf.JWT)
 
 	middlewareArgs := middlewareApp.Params{
 		Middleware: m,
-		JWTClient:  jwtClient,
 	}
 
 	//Init new group route
@@ -111,11 +110,11 @@ func routing(conf config.Config, postgresDB *sql.DB, rdb *redis.Client, s3Client
 	clubUsecase := club.NewUsecase(repository, clubRepository)
 	rankUsecase := rank.NewUsecase(repository, rankRepository)
 	eventUsecase := event.NewUsecase(repository, eventRepository)
-	bracketUsecase := bracket.NewUsecase(repository, bracketRepository, r)
+	bracketUsecase := bracket.NewUsecase(repository, bracketRepository, r, postgresDB)
 	certificateUsecase := certificate.NewUsecase(repository)
 
 	//Declare Handlers
-	auth.RegisterHandler(authUsecase, jwtClient, conf.ServerConfig, e)
+	auth.RegisterHandler(authUsecase, jwtClient, middlewareArgs, conf.ServerConfig, e)
 	accomplishment.RegisterHandler(accomplishmentUsecase, jwtClient, profileRoute)
 	bracket.RegisterHandler(bracketUsecase, middlewareArgs, e)
 	user.RegisterHandler(userUsecase, middlewareArgs, jwtClient, e)

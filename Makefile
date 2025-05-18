@@ -1,5 +1,5 @@
 # Path to env file
-include .env
+#include .env ## WARNING: make sure your env is correct
 
 # Construct database URL
 DATABASE_URL='postgres://${DATABASE_USERNAME}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}?sslmode=disable'
@@ -34,3 +34,19 @@ restart:
 
 gcloud-login:
 	gcloud auth application-default login
+
+mock-generate:
+	mockgen \
+      -destination=./mocks/db/db_mock.go \
+      -package=mock_db \
+      -source=./internal/db/db.go DBTX
+	go generate ./...; \
+    go mod tidy
+
+unit-test:
+	go test ./... \
+	  -race \
+      -coverpkg=./... \
+      -covermode=atomic \
+      -coverprofile=coverage.out \
+    go tool cover -func=coverage.out
