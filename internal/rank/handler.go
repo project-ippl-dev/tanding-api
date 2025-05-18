@@ -10,17 +10,21 @@ import (
 )
 
 type handler struct {
-	usecase Usecase
+	usecase   Usecase
+	jwtClient tools.JWTClient
 }
 
-func RegisterHandler(usecase Usecase, m middleware.Params, e *echo.Echo) {
-	handler := handler{usecase: usecase}
+func RegisterHandler(usecase Usecase, m middleware.Params, jwtClient tools.JWTClient, e *echo.Echo) {
+	rankHandler := handler{
+		usecase:   usecase,
+		jwtClient: jwtClient,
+	}
 
-	e.POST("/event/:event/summary", handler.summary, m.JWTMiddleware(), m.Middleware.EventPrivilegeAdmin)
-	e.GET("/rank/point/own", handler.fetchOwnPoint, m.JWTMiddleware())
-	e.GET("/rank/point/club/:club", handler.fetchByClubID, m.JWTMiddleware())
-	e.GET("/rank/club", handler.rank, m.JWTMiddleware())
-	e.GET("/rank/user", handler.userRank, m.JWTMiddleware())
+	e.POST("/event/:event/summary", rankHandler.summary, m.JWTMiddleware(), m.Middleware.EventPrivilegeAdmin)
+	e.GET("/rank/point/own", rankHandler.fetchOwnPoint, m.JWTMiddleware())
+	e.GET("/rank/point/club/:club", rankHandler.fetchByClubID, m.JWTMiddleware())
+	e.GET("/rank/club", rankHandler.rank, m.JWTMiddleware())
+	e.GET("/rank/user", rankHandler.userRank, m.JWTMiddleware())
 }
 
 func (h handler) summary(c echo.Context) error {
@@ -38,7 +42,7 @@ func (h handler) summary(c echo.Context) error {
 }
 
 func (h handler) fetchOwnPoint(c echo.Context) error {
-	decoded := tools.JWTDecode(c)
+	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
 	point, err := h.usecase.fetchOwnPoint(ctx, decoded.ID)
 	if err != nil {

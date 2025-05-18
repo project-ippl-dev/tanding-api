@@ -90,7 +90,7 @@ func routing(conf config.Config, postgresDB *sql.DB, rdb *redis.Client, s3Client
 	profileRoute := e.Group("/profile", middlewareArgs.JWTMiddleware())
 
 	//Declare Raw Repository
-	clubRepository := club.NewRepository(dbConn)
+	clubRepository := club.NewRepository(postgresDB)
 	rankRepository := rank.NewRepository(postgresDB)
 	eventRegistrationRepository := eventRegistration.NewRepository(postgresDB)
 	sportRepository := sport.NewRepository(postgresDB)
@@ -124,7 +124,7 @@ func routing(conf config.Config, postgresDB *sql.DB, rdb *redis.Client, s3Client
 	file.RegisterHandler(fileUsecase, middlewareArgs, e)
 	storage.RegisterHandler(storageUsecase, middlewareArgs, e)
 	club.RegisterHandler(clubUsecase, middlewareArgs, jwtClient, e)
-	rank.RegisterHandler(rankUsecase, middlewareArgs, e)
+	rank.RegisterHandler(rankUsecase, middlewareArgs, jwtClient, e)
 	event.RegisterHandler(eventUsecase, middlewareArgs, jwtClient, e)
 	certificate.RegisterHandler(certificateUsecase, middlewareArgs, e)
 }
