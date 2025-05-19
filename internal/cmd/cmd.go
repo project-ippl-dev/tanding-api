@@ -15,6 +15,7 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/accomplishment"
 	"github.com/project-ippl-dev/tanding-api/internal/auth"
 	"github.com/project-ippl-dev/tanding-api/internal/bracket"
+	"github.com/project-ippl-dev/tanding-api/internal/certificate"
 	"github.com/project-ippl-dev/tanding-api/internal/club"
 	"github.com/project-ippl-dev/tanding-api/internal/db"
 	"github.com/project-ippl-dev/tanding-api/internal/document"
@@ -23,6 +24,7 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/file"
 	"github.com/project-ippl-dev/tanding-api/internal/mail"
 	middlewareApp "github.com/project-ippl-dev/tanding-api/internal/middleware"
+	"github.com/project-ippl-dev/tanding-api/internal/rank"
 	"github.com/project-ippl-dev/tanding-api/internal/sport"
 	"github.com/project-ippl-dev/tanding-api/internal/storage"
 	"github.com/project-ippl-dev/tanding-api/internal/tools"
@@ -88,10 +90,11 @@ func routing(conf config.Config, postgresDB *sql.DB, rdb *redis.Client, s3Client
 	profileRoute := e.Group("/profile", middlewareArgs.JWTMiddleware())
 
 	//Declare Raw Repository
-	userRepository := user.NewRepository(postgresDB)
+	clubRepository := club.NewRepository(postgresDB)
+	rankRepository := rank.NewRepository(postgresDB)
 	eventRegistrationRepository := eventRegistration.NewRepository(postgresDB)
 	sportRepository := sport.NewRepository(postgresDB)
-	clubRepository := club.NewRepository(postgresDB)
+	userRepository := user.NewRepository(postgresDB)
 	eventRepository := event.NewRepository(postgresDB)
 	bracketRepository := bracket.NewRepository(postgresDB)
 
@@ -105,8 +108,10 @@ func routing(conf config.Config, postgresDB *sql.DB, rdb *redis.Client, s3Client
 	fileUsecase := file.NewUsecase(s3Client)
 	storageUsecase := storage.NewUsecase(storageClient)
 	clubUsecase := club.NewUsecase(repository, clubRepository)
+	rankUsecase := rank.NewUsecase(repository, rankRepository)
 	eventUsecase := event.NewUsecase(repository, eventRepository)
 	bracketUsecase := bracket.NewUsecase(repository, bracketRepository, r, postgresDB)
+	certificateUsecase := certificate.NewUsecase(repository)
 
 	//Declare Handlers
 	auth.RegisterHandler(authUsecase, jwtClient, middlewareArgs, conf.ServerConfig, e)
@@ -119,5 +124,7 @@ func routing(conf config.Config, postgresDB *sql.DB, rdb *redis.Client, s3Client
 	file.RegisterHandler(fileUsecase, middlewareArgs, e)
 	storage.RegisterHandler(storageUsecase, middlewareArgs, e)
 	club.RegisterHandler(clubUsecase, middlewareArgs, jwtClient, e)
+	rank.RegisterHandler(rankUsecase, middlewareArgs, jwtClient, e)
 	event.RegisterHandler(eventUsecase, middlewareArgs, jwtClient, e)
+	certificate.RegisterHandler(certificateUsecase, middlewareArgs, e)
 }

@@ -213,7 +213,7 @@ func (u Usecase) fetchParticipant(ctx context.Context, eventID uuid.UUID) ([]fet
 		return nil, fmt.Errorf("error in fetch clubs : %s", err.Error())
 	}
 	for _, club := range clubs {
-		// totalPoint, _ := u.repository.RankFetchPointByClubID(ctx, club.ID) // temporary comment
+		totalPoint, _ := u.repository.RankFetchPointByClubID(ctx, club.ID)
 		totalUser, _ := u.repository.EventRegistrationCountByEventIDAndClubID(ctx, db.EventRegistrationCountByEventIDAndClubIDParams{
 			EventID: eventID,
 			ClubID:  club.ID,
@@ -227,9 +227,9 @@ func (u Usecase) fetchParticipant(ctx context.Context, eventID uuid.UUID) ([]fet
 		}
 		results = append(results, fetchParticipantRow{
 			EventRegistrationFetchClubByEventIDRow: club,
-			// TotalPoint:                             totalPoint, // temporary comment
-			TotalUser: totalUser,
-			Members:   members,
+			TotalPoint:                             totalPoint,
+			TotalUser:                              totalUser,
+			Members:                                members,
 		})
 	}
 

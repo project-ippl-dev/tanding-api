@@ -81,34 +81,34 @@ type response struct {
 }
 
 type responseFetchOne struct {
-	ID            uuid.UUID                    `json:"id"`
-	UserID        uuid.UUID                    `json:"user_id"`
-	UserName      string                       `json:"user_name"`
-	UserImage     string                       `json:"user_image"`
-	Type          db.EventType                 `json:"type"`
-	Name          string                       `json:"name"`
-	Description   string                       `json:"description"`
-	PrizePool     string                       `json:"prize_pool"`
-	Location      string                       `json:"location"`
-	Province      string                       `json:"province"`
-	City          string                       `json:"city"`
-	Thumbnail     string                       `json:"thumbnail"`
-	StartDate     string                       `json:"start_date"`
-	EndDate       string                       `json:"end_date"`
-	Deadline      time.Time                    `json:"deadline"`
-	SportID       uuid.UUID                    `json:"sport_id"`
-	SportName     string                       `json:"sport_name"`
-	Rules         string                       `json:"rules"`
-	ProposalLink  string                       `json:"proposal_link"`
-	Status        bool                         `json:"status"`
-	Quota         int32                        `json:"quota"`
-	Open          string                       `json:"open"`
-	Remark        string                       `json:"remark"`
-	ClassEvents   []classEventSummaryRow       `json:"class_events"`
-	Participants  int64                        `json:"participants"`
-	Privilege     db.EventPrivilegeFetchOneRow `json:"user_privilege"`
-	EventTurnLock bool                         `json:"event_turn_lock"`
-	// GeneralChampions []db.RankClubFetchByEventIDRow `json:"general_champions"`
+	ID               uuid.UUID                      `json:"id"`
+	UserID           uuid.UUID                      `json:"user_id"`
+	UserName         string                         `json:"user_name"`
+	UserImage        string                         `json:"user_image"`
+	Type             db.EventType                   `json:"type"`
+	Name             string                         `json:"name"`
+	Description      string                         `json:"description"`
+	PrizePool        string                         `json:"prize_pool"`
+	Location         string                         `json:"location"`
+	Province         string                         `json:"province"`
+	City             string                         `json:"city"`
+	Thumbnail        string                         `json:"thumbnail"`
+	StartDate        string                         `json:"start_date"`
+	EndDate          string                         `json:"end_date"`
+	Deadline         time.Time                      `json:"deadline"`
+	SportID          uuid.UUID                      `json:"sport_id"`
+	SportName        string                         `json:"sport_name"`
+	Rules            string                         `json:"rules"`
+	ProposalLink     string                         `json:"proposal_link"`
+	Status           bool                           `json:"status"`
+	Quota            int32                          `json:"quota"`
+	Open             string                         `json:"open"`
+	Remark           string                         `json:"remark"`
+	ClassEvents      []classEventSummaryRow         `json:"class_events"`
+	Participants     int64                          `json:"participants"`
+	Privilege        db.EventPrivilegeFetchOneRow   `json:"user_privilege"`
+	EventTurnLock    bool                           `json:"event_turn_lock"`
+	GeneralChampions []db.RankClubFetchByEventIDRow `json:"general_champions"`
 }
 
 type classEventSummaryRow struct {
