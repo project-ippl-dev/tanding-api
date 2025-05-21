@@ -41,6 +41,7 @@ jobs:
         go-version: ['1.23']
     permissions:
       contents: read
+      actions: write
     defaults:
       run:
         shell: bash -euxo pipefail {0}
