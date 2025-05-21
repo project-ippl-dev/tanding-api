@@ -53,3 +53,7 @@ jobs:
       - name: Run test
         run: |
           make unit-test
+      - name: Run Cover
+        run: |
+          echo '## Unit Test Coverage Summary' >> $GITHUB_STEP_SUMMARY
+          make cover >> $GITHUB_STEP_SUMMARY

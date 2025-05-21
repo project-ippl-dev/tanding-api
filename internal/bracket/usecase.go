@@ -69,8 +69,8 @@ func (u *usecase) Store(ctx context.Context, arg GenerateParams) (statusCode int
 		MatchIndex:      int16(matchIndex),
 		ID:              classEvent.ID,
 	}); err != nil {
-		if err = tx.Rollback(); err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update class event : %s", err.Error())
+		if errTx := tx.Rollback(); errTx != nil {
+			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update class event : %s", errTx.Error())
 		}
 		return http.StatusInternalServerError, fmt.Errorf("error in update class event : %s", err.Error())
 	}
@@ -83,8 +83,8 @@ func (u *usecase) Store(ctx context.Context, arg GenerateParams) (statusCode int
 				EventRegistrationID: registration.ID,
 				ClubID:              registration.ClubID,
 			}); err != nil {
-				if err = tx.Rollback(); err != nil {
-					return http.StatusInternalServerError, fmt.Errorf("error in rollback tx generate bracket order : %s", err.Error())
+				if errTx := tx.Rollback(); errTx != nil {
+					return http.StatusInternalServerError, fmt.Errorf("error in rollback tx generate bracket order : %s", errTx.Error())
 				}
 				return http.StatusInternalServerError, fmt.Errorf("error in generate bracket order : %s", err.Error())
 			}
@@ -118,8 +118,8 @@ func (u *usecase) Store(ctx context.Context, arg GenerateParams) (statusCode int
 				ClassEventID: classEvent.ID,
 			})
 			if err != nil {
-				if err = tx.Rollback(); err != nil {
-					return http.StatusInternalServerError, fmt.Errorf("error in rollback tx fetch event brackets : %s", err.Error())
+				if errTx := tx.Rollback(); errTx != nil {
+					return http.StatusInternalServerError, fmt.Errorf("error in rollback tx fetch event brackets : %s", errTx.Error())
 				}
 				return http.StatusInternalServerError, fmt.Errorf("error in fetch event brackets : %s", err.Error())
 			}
@@ -131,8 +131,8 @@ func (u *usecase) Store(ctx context.Context, arg GenerateParams) (statusCode int
 					MatchIndex:   int16(i) + 1,
 					MatchOrder:   nextMatchOrder,
 				}); err != nil {
-					if err = tx.Rollback(); err != nil {
-						return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update event next match : %s", err.Error())
+					if errTx := tx.Rollback(); errTx != nil {
+						return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update event next match : %s", errTx.Error())
 					}
 					return http.StatusInternalServerError, fmt.Errorf("error in update event next match : %s", err.Error())
 				}
@@ -142,8 +142,8 @@ func (u *usecase) Store(ctx context.Context, arg GenerateParams) (statusCode int
 					MatchIndex:   int16(i) + 1,
 					MatchOrder:   nextMatchOrder - 1,
 				}); err != nil {
-					if err := tx.Rollback(); err != nil {
-						return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update event next match : %s", err.Error())
+					if errTx := tx.Rollback(); errTx != nil {
+						return http.StatusInternalServerError, fmt.Errorf("error in rollback tx update event next match : %s", errTx.Error())
 					}
 					return http.StatusInternalServerError, fmt.Errorf("error in update event next match : %s", err.Error())
 				}
@@ -169,8 +169,8 @@ func (u *usecase) storeBracketDirectWinner(arg storeBracketParams) (statusCode i
 		Status:       db.BracketTypeBattle,
 	})
 	if err != nil {
-		if err := arg.Tx.Rollback(); err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx create event bracket : %s", err.Error())
+		if errTx := arg.Tx.Rollback(); errTx != nil {
+			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx create event bracket : %s", errTx.Error())
 		}
 		return http.StatusInternalServerError, fmt.Errorf("error in create event bracket : %s", err.Error())
 	}
@@ -180,8 +180,8 @@ func (u *usecase) storeBracketDirectWinner(arg storeBracketParams) (statusCode i
 		Type:                db.ParticipantTypeHome,
 		IsBye:               false,
 	}); err != nil {
-		if err := arg.Tx.Rollback(); err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx create bracket participant : %s", err.Error())
+		if errTx := arg.Tx.Rollback(); errTx != nil {
+			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx create bracket participant : %s", errTx.Error())
 		}
 		return http.StatusInternalServerError, fmt.Errorf("error in create bracket participant : %s", err.Error())
 	}
@@ -191,8 +191,8 @@ func (u *usecase) storeBracketDirectWinner(arg storeBracketParams) (statusCode i
 		Type:                db.ParticipantTypeAway,
 		IsBye:               false,
 	}); err != nil {
-		if err := arg.Tx.Rollback(); err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx create bracket participant : %s", err.Error())
+		if errTx := arg.Tx.Rollback(); errTx != nil {
+			return http.StatusInternalServerError, fmt.Errorf("error in rollback tx create bracket participant : %s", errTx.Error())
 		}
 		return http.StatusInternalServerError, fmt.Errorf("error in create bracket participant : %s", err.Error())
 	}
