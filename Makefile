@@ -36,6 +36,10 @@ gcloud-login:
 	gcloud auth application-default login
 
 mock-generate:
+	mockgen \
+          -destination=./mocks/db/db_mock.go \
+          -package=mock_db \
+          -source=./internal/db/db.go DBTX
 	go generate ./...; \
     go mod tidy
 
