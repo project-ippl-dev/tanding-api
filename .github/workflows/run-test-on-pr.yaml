@@ -41,6 +41,7 @@ jobs:
         go-version: ['1.23']
     permissions:
       contents: read
+      actions: write
     defaults:
       run:
         shell: bash -euxo pipefail {0}
@@ -53,3 +54,7 @@ jobs:
       - name: Run test
         run: |
           make unit-test
+      - name: Run Cover
+        run: |
+          echo '## Unit Test Coverage Summary' >> $GITHUB_STEP_SUMMARY
+          make cover >> $GITHUB_STEP_SUMMARY
