@@ -10,4 +10,4 @@ SELECT c.id, cl.name, e.name as event_name, e.thumbnail, c.reward_as, c.created_
 INNER JOIN clubs as cl ON cl.id = c.club_id
 INNER JOIN events as e ON e.id = c.event_id
 WHERE c.club_id = $1
-ORDER BY created_at DESC LIMIT $2 OFFSET $3;
+ORDER BY c.created_at DESC LIMIT $2 OFFSET $3;
