@@ -37,16 +37,19 @@ gcloud-login:
 
 mock-generate:
 	mockgen \
-      -destination=./mocks/db/db_mock.go \
-      -package=mock_db \
-      -source=./internal/db/db.go DBTX
+          -destination=./mocks/db/db_mock.go \
+          -package=mock_db \
+          -source=./internal/db/db.go DBTX
 	go generate ./...; \
     go mod tidy
 
 unit-test:
-	go test ./... \
+	@PACKAGES="$$(go list ./... | grep -Ev '/(mocks|testutils|cmd|config|postgresql|db)(/|$$)')"; \
+	go test $$PACKAGES \
 	  -race \
-      -coverpkg=./... \
+	  -coverpkg=$$COVERPKGS \
       -covermode=atomic \
-      -coverprofile=coverage.out \
-    go tool cover -func=coverage.out
+      -coverprofile=coverage.out
+
+cover:
+	go tool cover -func coverage.out

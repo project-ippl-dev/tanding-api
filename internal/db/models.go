@@ -697,6 +697,16 @@ type BracketParticipant struct {
 	UpdatedAt           sql.NullTime    `json:"updated_at"`
 }
 
+type Certificate struct {
+	ID           uuid.UUID    `json:"id"`
+	UserID       uuid.UUID    `json:"user_id"`
+	EventID      uuid.UUID    `json:"event_id"`
+	ClassEventID uuid.UUID    `json:"class_event_id"`
+	RewardAs     string       `json:"reward_as"`
+	CreatedAt    time.Time    `json:"created_at"`
+	UpdatedAt    sql.NullTime `json:"updated_at"`
+}
+
 type Class struct {
 	ID                     uuid.UUID    `json:"id"`
 	SportID                uuid.UUID    `json:"sport_id"`
@@ -741,6 +751,15 @@ type Club struct {
 	CreatedAt time.Time    `json:"created_at"`
 	UpdatedAt sql.NullTime `json:"updated_at"`
 	DeletedAt sql.NullTime `json:"deleted_at"`
+}
+
+type ClubCertificate struct {
+	ID        uuid.UUID    `json:"id"`
+	ClubID    uuid.UUID    `json:"club_id"`
+	EventID   uuid.UUID    `json:"event_id"`
+	RewardAs  string       `json:"reward_as"`
+	CreatedAt time.Time    `json:"created_at"`
+	UpdatedAt sql.NullTime `json:"updated_at"`
 }
 
 type ClubParticipant struct {

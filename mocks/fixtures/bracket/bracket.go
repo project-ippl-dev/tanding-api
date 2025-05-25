@@ -2,14 +2,14 @@ package bracketFixtures
 
 import (
 	"github.com/google/uuid"
-	eventRegistrationFixtures "github.com/project-ippl-dev/tanding-api/mocks/fixtures/eventRegistration"
-
 	"github.com/project-ippl-dev/tanding-api/internal/bracket"
 	"github.com/project-ippl-dev/tanding-api/internal/db"
+	eventRegistrationFixtures "github.com/project-ippl-dev/tanding-api/mocks/fixtures/eventRegistration"
 	"github.com/project-ippl-dev/tanding-api/utils/pointer"
 )
 
 var (
+	BracketID                 = uuid.New()
 	ClassEventID              = uuid.New()
 	OrderBracketID            = uuid.New()
 	ClubID                    = uuid.New()
