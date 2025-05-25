@@ -14,6 +14,10 @@ type handler struct {
 	jwtClient tools.JWTClient
 }
 
+func NewHandler(usecase Usecase, jwtClient tools.JWTClient) handler {
+	return handler{usecase: usecase, jwtClient: jwtClient}
+}
+
 func RegisterHandler(usecase Usecase, m middleware.Params, jwtClient tools.JWTClient, e *echo.Echo) {
 	rankHandler := handler{
 		usecase:   usecase,
