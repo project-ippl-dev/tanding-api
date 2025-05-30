@@ -1,5 +1,7 @@
 package sport
 
+//go:generate mockgen -source=./usecase.go -destination=../../mocks/sport/usecase_mock.go
+
 import (
 	"context"
 	"fmt"
@@ -9,16 +11,23 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/tools"
 )
 
-type Usecase struct {
+type Usecase interface {
+	Store(ctx context.Context, req Request) error
+	FetchAll(ctx context.Context, page int32, pageSize int32, queries FetchAllQueryParams) (tools.Pagination, error)
+	Update(ctx context.Context, req Request, sportID string) error
+	Delete(ctx context.Context, sportID string) error
+}
+
+type usecase struct {
 	repository    *db.Queries
 	rawRepository RawRepository
 }
 
 func NewUsecase(repository *db.Queries, rawRepository RawRepository) Usecase {
-	return Usecase{repository: repository, rawRepository: rawRepository}
+	return &usecase{repository: repository, rawRepository: rawRepository}
 }
 
-func (u Usecase) store(ctx context.Context, req request) error {
+func (u usecase) Store(ctx context.Context, req Request) error {
 	return u.repository.SportCreate(ctx, db.SportCreateParams{
 		Name:        req.Name,
 		Description: req.Description,
@@ -27,7 +36,7 @@ func (u Usecase) store(ctx context.Context, req request) error {
 	})
 }
 
-func (u Usecase) fetchAll(ctx context.Context, page int32, pageSize int32, queries fetchAllQueryParams) (tools.Pagination, error) {
+func (u usecase) FetchAll(ctx context.Context, page int32, pageSize int32, queries FetchAllQueryParams) (tools.Pagination, error) {
 	skip := tools.PaginationSkip(page, pageSize)
 	sports, err := u.rawRepository.SportFetchAll(ctx, fetchAllParams{
 		Limit:    pageSize,
@@ -53,7 +62,7 @@ func (u Usecase) fetchAll(ctx context.Context, page int32, pageSize int32, queri
 	}, nil
 }
 
-func (u Usecase) update(ctx context.Context, req request, sportID string) error {
+func (u usecase) Update(ctx context.Context, req Request, sportID string) error {
 	sportUUID, err := uuid.Parse(sportID)
 	if err != nil {
 		return fmt.Errorf("error parsing sport id : %s", err.Error())
@@ -70,7 +79,7 @@ func (u Usecase) update(ctx context.Context, req request, sportID string) error 
 	})
 }
 
-func (u Usecase) delete(ctx context.Context, sportID string) error {
+func (u usecase) Delete(ctx context.Context, sportID string) error {
 	sportUUID, err := uuid.Parse(sportID)
 	if err != nil {
 		return fmt.Errorf("error parsing sport id : %s", err.Error())

@@ -9,27 +9,31 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/tools"
 )
 
-type handler struct {
+type Handler struct {
 	usecase   Usecase
 	jwtClient tools.JWTClient
 }
 
-func RegisterHandler(usecase Usecase, m middleware.Params, jwtClient tools.JWTClient, e *echo.Echo) {
-	userHandler := handler{
+func NewHandler(usecase Usecase, jwtClient tools.JWTClient) Handler {
+	return Handler{
 		usecase:   usecase,
 		jwtClient: jwtClient,
 	}
-
-	e.GET("/user/search", userHandler.search, m.JWTMiddleware())
-	e.GET("/profile/:uuid/basic", userHandler.fetchOne, m.JWTMiddleware())
-	e.PUT("/profile/:uuid/basic", userHandler.update, m.JWTMiddleware())
-
-	e.GET("/user", userHandler.fetchAll, m.JWTMiddleware(), m.Middleware.RoleAdminOnly)
-	e.GET("/user/login", userHandler.fetchLastLogin, m.JWTMiddleware(), m.Middleware.RoleAdminOnly)
 }
 
-func (h handler) search(c echo.Context) error {
-	var args searchParams
+func RegisterHandler(usecase Usecase, m middleware.Params, jwtClient tools.JWTClient, e *echo.Echo) {
+	userHandler := NewHandler(usecase, jwtClient)
+
+	e.GET("/user/search", userHandler.Search, m.JWTMiddleware())
+	e.GET("/profile/:uuid/basic", userHandler.FetchOne, m.JWTMiddleware())
+	e.PUT("/profile/:uuid/basic", userHandler.Update, m.JWTMiddleware())
+
+	e.GET("/user", userHandler.FetchAll, m.JWTMiddleware(), m.Middleware.RoleAdminOnly)
+	e.GET("/user/login", userHandler.FetchLastLogin, m.JWTMiddleware(), m.Middleware.RoleAdminOnly)
+}
+
+func (h Handler) Search(c echo.Context) error {
+	var args SearchParams
 	if err := c.Bind(&args); err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
@@ -38,14 +42,14 @@ func (h handler) search(c echo.Context) error {
 	}
 	ctx := c.Request().Context()
 	decoded := h.jwtClient.Decode(c)
-	users, err := h.usecase.search(ctx, args, decoded.ID)
+	users, err := h.usecase.Search(ctx, args, decoded.ID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(http.StatusOK, tools.ResponseData{Message: "fetch user by search success", Data: users})
 }
 
-func (h handler) fetchOne(c echo.Context) error {
+func (h Handler) FetchOne(c echo.Context) error {
 	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
 
@@ -54,7 +58,7 @@ func (h handler) fetchOne(c echo.Context) error {
 		userID = decoded.ID
 	}
 
-	basic, err := h.usecase.fetchOne(ctx, userID)
+	basic, err := h.usecase.FetchOne(ctx, userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, tools.Response{Message: err.Error()})
 	}
@@ -62,8 +66,8 @@ func (h handler) fetchOne(c echo.Context) error {
 	return c.JSON(http.StatusOK, tools.ResponseData{Message: "fetch one basic information success", Data: basic})
 }
 
-func (h handler) update(c echo.Context) error {
-	var arg updateBasicInformationParams
+func (h Handler) Update(c echo.Context) error {
+	var arg UpdateBasicInformationParams
 	if err := c.Bind(&arg); err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
@@ -79,26 +83,26 @@ func (h handler) update(c echo.Context) error {
 		userID = decoded.ID
 	}
 
-	if err := h.usecase.update(ctx, arg, userID); err != nil {
+	if err := h.usecase.Update(ctx, arg, userID); err != nil {
 		return c.JSON(http.StatusInternalServerError, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(http.StatusOK, tools.Response{Message: "update biodata success"})
 }
 
-func (h handler) fetchAll(c echo.Context) error {
+func (h Handler) FetchAll(c echo.Context) error {
 	page, pageSize := tools.PaginationPageAndPageSize(c)
 	ctx := c.Request().Context()
-	pagination, err := h.usecase.fetchAll(ctx, page, pageSize)
+	pagination, err := h.usecase.FetchAll(ctx, page, pageSize)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(http.StatusOK, tools.PaginationGetResponse("fetch all user success", pagination))
 }
 
-func (h handler) fetchLastLogin(c echo.Context) error {
+func (h Handler) FetchLastLogin(c echo.Context) error {
 	page, pageSize := tools.PaginationPageAndPageSize(c)
 	ctx := c.Request().Context()
-	pagination, err := h.usecase.fetchLastLogin(ctx, page, pageSize)
+	pagination, err := h.usecase.FetchLastLogin(ctx, page, pageSize)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, tools.Response{Message: err.Error()})
 	}

@@ -1,5 +1,7 @@
 package classCompetitionRule
 
+//go:generate mockgen -source=./usecase.go -destination=../../mocks/classCompetitionRule/usecase_mock.go
+
 import (
 	"context"
 	"fmt"
@@ -8,15 +10,23 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/tools"
 )
 
-type Usecase struct {
+type Usecase interface {
+	Store(ctx context.Context, req Request) error
+	FetchAll(ctx context.Context, page int32, pageSize int32) (tools.Pagination, error)
+	FetchOne(ctx context.Context, ruleID int64) (db.ClassRuleFetchOneRow, error)
+	Update(ctx context.Context, req Request, ruleID int64) error
+	Delete(ctx context.Context, ruleID int64) error
+}
+
+type usecase struct {
 	repository *db.Queries
 }
 
 func NewUsecase(repository *db.Queries) Usecase {
-	return Usecase{repository: repository}
+	return &usecase{repository: repository}
 }
 
-func (u Usecase) store(ctx context.Context, req request) error {
+func (u usecase) Store(ctx context.Context, req Request) error {
 	return u.repository.ClassRuleCreate(ctx, db.ClassRuleCreateParams{
 		Name:   req.Name,
 		Male:   req.Male,
@@ -25,7 +35,7 @@ func (u Usecase) store(ctx context.Context, req request) error {
 	})
 }
 
-func (u Usecase) fetchAll(ctx context.Context, page int32, pageSize int32) (tools.Pagination, error) {
+func (u usecase) FetchAll(ctx context.Context, page int32, pageSize int32) (tools.Pagination, error) {
 	skip := tools.PaginationSkip(page, pageSize)
 	rules, err := u.repository.ClassRuleFetchAll(ctx, db.ClassRuleFetchAllParams{
 		Limit:  pageSize,
@@ -46,11 +56,11 @@ func (u Usecase) fetchAll(ctx context.Context, page int32, pageSize int32) (tool
 	}, nil
 }
 
-func (u Usecase) fetchOne(ctx context.Context, ruleID int64) (db.ClassRuleFetchOneRow, error) {
+func (u usecase) FetchOne(ctx context.Context, ruleID int64) (db.ClassRuleFetchOneRow, error) {
 	return u.repository.ClassRuleFetchOne(ctx, ruleID)
 }
 
-func (u Usecase) update(ctx context.Context, req request, ruleID int64) error {
+func (u usecase) Update(ctx context.Context, req Request, ruleID int64) error {
 	if _, err := u.repository.ClassRuleFetchOne(ctx, ruleID); err != nil {
 		return fmt.Errorf("error in check class rules : %s", err.Error())
 	}
@@ -63,7 +73,7 @@ func (u Usecase) update(ctx context.Context, req request, ruleID int64) error {
 	})
 }
 
-func (u Usecase) delete(ctx context.Context, ruleID int64) error {
+func (u usecase) Delete(ctx context.Context, ruleID int64) error {
 	if _, err := u.repository.ClassRuleFetchOne(ctx, ruleID); err != nil {
 		return fmt.Errorf("error in check class rules : %s", err.Error())
 	}

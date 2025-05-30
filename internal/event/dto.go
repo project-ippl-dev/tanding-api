@@ -9,7 +9,7 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/db"
 )
 
-type request struct {
+type Request struct {
 	Name         string       `json:"name"`
 	Type         db.EventType `json:"type"`
 	Description  string       `json:"description"`
@@ -28,7 +28,7 @@ type request struct {
 	ProposalLink string       `json:"proposal_link"`
 }
 
-func (r request) Validate() error {
+func (r Request) Validate() error {
 	return validation.ValidateStruct(&r,
 		validation.Field(&r.Name, validation.Required),
 		validation.Field(&r.Type, validation.Required),
@@ -46,7 +46,7 @@ func (r request) Validate() error {
 	)
 }
 
-type statusReq struct {
+type StatusReq struct {
 	Status *bool `json:"status"`
 }
 
@@ -80,7 +80,7 @@ type response struct {
 	EventTurnLock bool                             `json:"event_turn_lock"`
 }
 
-type responseFetchOne struct {
+type ResponseFetchOne struct {
 	ID               uuid.UUID                      `json:"id"`
 	UserID           uuid.UUID                      `json:"user_id"`
 	UserName         string                         `json:"user_name"`
@@ -116,7 +116,7 @@ type classEventSummaryRow struct {
 	Summary []RankFetchByClassEventIDRow `json:"summary"`
 }
 
-type fetchInfiniteQueryParams struct {
+type FetchInfiniteQueryParams struct {
 	SportID  string        `query:"sport_id"`
 	Name     string        `query:"name"`
 	Category db.SportType  `query:"category"`
@@ -124,13 +124,13 @@ type fetchInfiniteQueryParams struct {
 	Remark   db.RemarkType `query:"remark"`
 }
 
-type responseInfinite struct {
+type ResponseInfinite struct {
 	Message   string                `json:"message"`
-	Data      []responseInfiniteRow `json:"data"`
+	Data      []ResponseInfiniteRow `json:"data"`
 	TotalItem int64                 `json:"total_item"`
 }
 
-type responseInfiniteRow struct {
+type ResponseInfiniteRow struct {
 	ID           uuid.UUID    `json:"id"`
 	UserID       uuid.UUID    `json:"user_id"`
 	UserImage    string       `json:"user_image"`
@@ -155,47 +155,47 @@ type responseInfiniteRow struct {
 	Participants int64        `json:"participants"`
 }
 
-type assignRequest struct {
-	Data    []assignDataRequest `json:"data"`
+type AssignRequest struct {
+	Data    []AssignDataRequest `json:"data"`
 	EventID string              `param:"event"`
 }
 
-func (a assignRequest) Validate() error {
+func (a AssignRequest) Validate() error {
 	return validation.ValidateStruct(&a,
 		validation.Field(&a.Data, validation.Required),
 		validation.Field(&a.EventID, validation.Required, is.UUID),
 	)
 }
 
-type assignDataRequest struct {
+type AssignDataRequest struct {
 	UserID string       `json:"user_id"`
 	Role   db.EventRole `json:"role"`
 }
 
-func (a assignDataRequest) Validate() error {
+func (a AssignDataRequest) Validate() error {
 	return validation.ValidateStruct(&a,
 		validation.Field(&a.Role, validation.Required),
 		validation.Field(&a.UserID, validation.Required, is.UUID),
 	)
 }
 
-type updateCommitteeParams struct {
+type UpdateCommitteeParams struct {
 	EventID     uuid.UUID    `param:"event"`
 	CommitteeID uuid.UUID    `param:"committee"`
 	Role        db.EventRole `json:"role"`
 }
 
-type deleteCommitteeParams struct {
+type DeleteCommitteeParams struct {
 	EventID     uuid.UUID `param:"event"`
 	CommitteeID uuid.UUID `param:"committee"`
 }
 
-type updateRemarkParams struct {
+type UpdateRemarkParams struct {
 	EventID uuid.UUID     `param:"event"`
 	Remark  db.RemarkType `json:"remark"`
 }
 
-func (u updateRemarkParams) Validate() error {
+func (u UpdateRemarkParams) Validate() error {
 	return validation.ValidateStruct(&u,
 		validation.Field(&u.Remark, validation.Required),
 	)

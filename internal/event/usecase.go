@@ -1,5 +1,7 @@
 package event
 
+//go:generate mockgen -source=./usecase.go -destination=../../mocks/event/usecase_mock.go
+
 import (
 	"context"
 	"database/sql"
@@ -12,16 +14,32 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/tools"
 )
 
-type Usecase struct {
+type Usecase interface {
+	Store(ctx context.Context, req Request, decoded tools.JWT) (statusCode int, eventID uuid.UUID, err error)
+	FetchAll(ctx context.Context, page int32, pageSize int32) (tools.Pagination, error)
+	Update(ctx context.Context, req Request, eventID uuid.UUID) (statusCode int, err error)
+	Delete(ctx context.Context, eventID uuid.UUID) error
+	FetchByUser(ctx context.Context, page int32, pageSize int32, userID string) (tools.Pagination, error)
+	FetchOne(ctx context.Context, eventID uuid.UUID, userID string) (ResponseFetchOne, error)
+	FetchInfinite(ctx context.Context, limit int32, args FetchInfiniteQueryParams) (ResponseInfinite, error)
+	UpdateStatus(ctx context.Context, req StatusReq, eventID uuid.UUID) error
+	Assign(ctx context.Context, req AssignRequest) error
+	CommitteeFetchAll(ctx context.Context, eventID uuid.UUID) ([]db.EventPrivilegeFetchAllRow, error)
+	CommitteeUpdate(ctx context.Context, arg UpdateCommitteeParams, userID string) (statusCode int, err error)
+	CommitteeDelete(ctx context.Context, arg DeleteCommitteeParams, userID string) (statusCode int, err error)
+	UpdateRemark(ctx context.Context, arg UpdateRemarkParams) error
+}
+
+type usecase struct {
 	repository    *db.Queries
 	rawRepository RawRepository
 }
 
 func NewUsecase(repository *db.Queries, rawRepository RawRepository) Usecase {
-	return Usecase{repository: repository, rawRepository: rawRepository}
+	return &usecase{repository: repository, rawRepository: rawRepository}
 }
 
-func (u Usecase) store(ctx context.Context, req request, decoded tools.JWT) (statusCode int, eventID uuid.UUID, err error) {
+func (u usecase) Store(ctx context.Context, req Request, decoded tools.JWT) (statusCode int, eventID uuid.UUID, err error) {
 	startDate, err := time.Parse("2006-01-02", req.StartDate)
 	if err != nil {
 		return http.StatusBadRequest, uuid.UUID{}, fmt.Errorf("error in parsing time : %s", err.Error())
@@ -92,7 +110,7 @@ func (u Usecase) store(ctx context.Context, req request, decoded tools.JWT) (sta
 	return http.StatusCreated, eventID, nil
 }
 
-func (u Usecase) fetchAll(ctx context.Context, page int32, pageSize int32) (tools.Pagination, error) {
+func (u usecase) FetchAll(ctx context.Context, page int32, pageSize int32) (tools.Pagination, error) {
 	skip := tools.PaginationSkip(page, pageSize)
 	events, err := u.repository.EventFetchAll(ctx, db.EventFetchAllParams{
 		Limit:  pageSize,
@@ -148,7 +166,7 @@ func (u Usecase) fetchAll(ctx context.Context, page int32, pageSize int32) (tool
 	}, nil
 }
 
-func (u Usecase) update(ctx context.Context, req request, eventID uuid.UUID) (statusCode int, err error) {
+func (u usecase) Update(ctx context.Context, req Request, eventID uuid.UUID) (statusCode int, err error) {
 	event, err := u.repository.EventFetchOne(ctx, eventID)
 	if err != nil {
 		return http.StatusNotFound, fmt.Errorf("error in check event : %s", err.Error())
@@ -228,14 +246,14 @@ func (u Usecase) update(ctx context.Context, req request, eventID uuid.UUID) (st
 	return http.StatusOK, nil
 }
 
-func (u Usecase) delete(ctx context.Context, eventID uuid.UUID) error {
+func (u usecase) Delete(ctx context.Context, eventID uuid.UUID) error {
 	if _, err := u.repository.EventCheckOne(ctx, eventID); err != nil {
 		return fmt.Errorf("error in check event : %s", err.Error())
 	}
 	return u.repository.EventDelete(ctx, eventID)
 }
 
-func (u Usecase) fetchByUser(ctx context.Context, page int32, pageSize int32, userID string) (tools.Pagination, error) {
+func (u usecase) FetchByUser(ctx context.Context, page int32, pageSize int32, userID string) (tools.Pagination, error) {
 	skip := tools.PaginationSkip(page, pageSize)
 	events, err := u.repository.EventFetchByUserID(ctx, db.EventFetchByUserIDParams{
 		UserID: uuid.MustParse(userID),
@@ -293,22 +311,22 @@ func (u Usecase) fetchByUser(ctx context.Context, page int32, pageSize int32, us
 	}, nil
 }
 
-func (u Usecase) fetchOne(ctx context.Context, eventID uuid.UUID, userID string) (responseFetchOne, error) {
+func (u usecase) FetchOne(ctx context.Context, eventID uuid.UUID, userID string) (ResponseFetchOne, error) {
 	event, err := u.repository.EventFetchOne(ctx, eventID)
 	if err != nil {
-		return responseFetchOne{}, fmt.Errorf("error in fetch one : %s", err.Error())
+		return ResponseFetchOne{}, fmt.Errorf("error in fetch one : %s", err.Error())
 	}
 
 	classes, err := u.repository.ClassEventFetchByEventID(ctx, event.ID)
 	if err != nil {
-		return responseFetchOne{}, fmt.Errorf("error in fetch class events : %s", err.Error())
+		return ResponseFetchOne{}, fmt.Errorf("error in fetch class events : %s", err.Error())
 	}
 
 	classEvents := []classEventSummaryRow{}
 	for _, class := range classes {
 		ranks, err := u.rawRepository.RankFetchByClassEventID(ctx, class.ID)
 		if err != nil {
-			return responseFetchOne{}, fmt.Errorf("error in fetch ranks : %s", err.Error())
+			return ResponseFetchOne{}, fmt.Errorf("error in fetch ranks : %s", err.Error())
 		}
 		classEvents = append(classEvents, classEventSummaryRow{
 			ClassEventFetchByEventIDRow: class,
@@ -318,7 +336,7 @@ func (u Usecase) fetchOne(ctx context.Context, eventID uuid.UUID, userID string)
 
 	clubRanks, err := u.repository.RankClubFetchByEventID(ctx, eventID)
 	if err != nil {
-		return responseFetchOne{}, fmt.Errorf("error fetch in club ranks : %s", err.Error())
+		return ResponseFetchOne{}, fmt.Errorf("error fetch in club ranks : %s", err.Error())
 	}
 
 	generalChampions := []db.RankClubFetchByEventIDRow{}
@@ -331,7 +349,7 @@ func (u Usecase) fetchOne(ctx context.Context, eventID uuid.UUID, userID string)
 
 	totalParticipants, err := u.repository.EventRegistrationCountAllByStatusApproved(ctx, event.ID)
 	if err != nil {
-		return responseFetchOne{}, fmt.Errorf("error in count all participants : %s", err.Error())
+		return ResponseFetchOne{}, fmt.Errorf("error in count all participants : %s", err.Error())
 	}
 
 	privilege, _ := u.repository.EventPrivilegeFetchOne(ctx, db.EventPrivilegeFetchOneParams{
@@ -339,7 +357,7 @@ func (u Usecase) fetchOne(ctx context.Context, eventID uuid.UUID, userID string)
 		UserID:  uuid.MustParse(userID),
 	})
 
-	return responseFetchOne{
+	return ResponseFetchOne{
 		ID:               event.ID,
 		UserID:           event.UserID,
 		UserName:         event.UserName,
@@ -371,7 +389,7 @@ func (u Usecase) fetchOne(ctx context.Context, eventID uuid.UUID, userID string)
 	}, nil
 }
 
-func (u Usecase) fetchInfinite(ctx context.Context, limit int32, args fetchInfiniteQueryParams) (responseInfinite, error) {
+func (u usecase) FetchInfinite(ctx context.Context, limit int32, args FetchInfiniteQueryParams) (ResponseInfinite, error) {
 	if args.Order == 0 {
 		latestOrder, _ := u.rawRepository.EventFetchLatestOrder(ctx, fetchQueryParams{
 			SportID:  args.SportID,
@@ -392,21 +410,21 @@ func (u Usecase) fetchInfinite(ctx context.Context, limit int32, args fetchInfin
 		},
 	})
 	if err != nil {
-		return responseInfinite{}, fmt.Errorf("error in fetch events : %s", err.Error())
+		return ResponseInfinite{}, fmt.Errorf("error in fetch events : %s", err.Error())
 	}
 
 	total, err := u.repository.EventCountInfinite(ctx)
 	if err != nil {
-		return responseInfinite{}, fmt.Errorf("error in count infinite : %s", err.Error())
+		return ResponseInfinite{}, fmt.Errorf("error in count infinite : %s", err.Error())
 	}
 
-	data := []responseInfiniteRow{}
+	data := []ResponseInfiniteRow{}
 	for _, event := range events {
 		totalParticipants, err := u.repository.EventRegistrationCountAllByStatusApproved(ctx, event.ID)
 		if err != nil {
-			return responseInfinite{}, fmt.Errorf("error in count all participants : %s", err.Error())
+			return ResponseInfinite{}, fmt.Errorf("error in count all participants : %s", err.Error())
 		}
-		data = append(data, responseInfiniteRow{
+		data = append(data, ResponseInfiniteRow{
 			ID:           event.ID,
 			UserID:       event.UserID,
 			UserName:     event.UserName,
@@ -431,14 +449,14 @@ func (u Usecase) fetchInfinite(ctx context.Context, limit int32, args fetchInfin
 			UserImage:    event.UserImage,
 		})
 	}
-	return responseInfinite{
+	return ResponseInfinite{
 		Message:   "fetch infinite scroll for event success",
 		Data:      data,
 		TotalItem: total,
 	}, nil
 }
 
-func (u Usecase) updateStatus(ctx context.Context, req statusReq, eventID uuid.UUID) error {
+func (u usecase) UpdateStatus(ctx context.Context, req StatusReq, eventID uuid.UUID) error {
 	event, err := u.repository.EventFetchOne(ctx, eventID)
 	if err != nil {
 		return fmt.Errorf("error in fetch one event : %s", err.Error())
@@ -480,7 +498,7 @@ func (u Usecase) updateStatus(ctx context.Context, req statusReq, eventID uuid.U
 	return nil
 }
 
-func (u Usecase) assign(ctx context.Context, req assignRequest) error {
+func (u usecase) Assign(ctx context.Context, req AssignRequest) error {
 	tx, err := u.rawRepository.db.Begin()
 	if err != nil {
 		return fmt.Errorf("error in start tx : %s", err.Error())
@@ -504,11 +522,11 @@ func (u Usecase) assign(ctx context.Context, req assignRequest) error {
 	return nil
 }
 
-func (u Usecase) committeeFetchAll(ctx context.Context, eventID uuid.UUID) ([]db.EventPrivilegeFetchAllRow, error) {
+func (u usecase) CommitteeFetchAll(ctx context.Context, eventID uuid.UUID) ([]db.EventPrivilegeFetchAllRow, error) {
 	return u.repository.EventPrivilegeFetchAll(ctx, eventID)
 }
 
-func (u Usecase) committeeUpdate(ctx context.Context, arg updateCommitteeParams, userID string) (statusCode int, err error) {
+func (u usecase) CommitteeUpdate(ctx context.Context, arg UpdateCommitteeParams, userID string) (statusCode int, err error) {
 	authPrivilege, _ := u.repository.EventPrivilegeFetchOne(ctx, db.EventPrivilegeFetchOneParams{
 		EventID: arg.EventID,
 		UserID:  uuid.MustParse(userID),
@@ -538,7 +556,7 @@ func (u Usecase) committeeUpdate(ctx context.Context, arg updateCommitteeParams,
 	return http.StatusOK, nil
 }
 
-func (u Usecase) committeeDelete(ctx context.Context, arg deleteCommitteeParams, userID string) (statusCode int, err error) {
+func (u usecase) CommitteeDelete(ctx context.Context, arg DeleteCommitteeParams, userID string) (statusCode int, err error) {
 	authPrivilege, _ := u.repository.EventPrivilegeFetchOne(ctx, db.EventPrivilegeFetchOneParams{
 		EventID: arg.EventID,
 		UserID:  uuid.MustParse(userID),
@@ -568,7 +586,7 @@ func (u Usecase) committeeDelete(ctx context.Context, arg deleteCommitteeParams,
 	return http.StatusOK, nil
 }
 
-func (u Usecase) updateRemark(ctx context.Context, arg updateRemarkParams) error {
+func (u usecase) UpdateRemark(ctx context.Context, arg UpdateRemarkParams) error {
 	event, err := u.repository.EventCheckOne(ctx, arg.EventID)
 	if err != nil {
 		return fmt.Errorf("event not found : %s", err.Error())

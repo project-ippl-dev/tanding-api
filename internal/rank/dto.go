@@ -23,16 +23,16 @@ type storeCertificateExcludeRegistrationIDParams struct {
 	ClassName           string
 }
 
-type fetchByClubIDResponse struct {
+type FetchByClubIDResponse struct {
 	TotalPoint   int64                             `json:"total_point"`
 	Participants []db.RankFetchAllPointByClubIDRow `json:"participants"`
 }
 
-type rankParams struct {
+type RankParams struct {
 	SportID string `query:"sport_id"`
 }
 
-func (r rankParams) Validate() error {
+func (r RankParams) Validate() error {
 	return validation.ValidateStruct(&r,
 		validation.Field(&r.SportID, is.UUID),
 	)

@@ -1,5 +1,7 @@
 package rank
 
+//go:generate mockgen -source=./usecase.go -destination=../../mocks/rank/usecase_mock.go
+
 import (
 	"context"
 	"database/sql"
@@ -11,16 +13,24 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/tools"
 )
 
-type Usecase struct {
+type Usecase interface {
+	Summary(ctx context.Context, eventID uuid.UUID) (statusCode int, err error)
+	FetchOwnPoint(ctx context.Context, userID string) (int32, error)
+	FetchByClubID(ctx context.Context, clubID uuid.UUID) (FetchByClubIDResponse, error)
+	Rank(ctx context.Context, page, pageSize int32, arg RankParams) (tools.Pagination, error)
+	UserRank(ctx context.Context, page, pageSize int32, arg RankParams) (tools.Pagination, error)
+}
+
+type usecase struct {
 	repository    *db.Queries
 	rawRepository RawRepository
 }
 
 func NewUsecase(repository *db.Queries, rawRepository RawRepository) Usecase {
-	return Usecase{repository: repository, rawRepository: rawRepository}
+	return &usecase{repository: repository, rawRepository: rawRepository}
 }
 
-func (u Usecase) summary(ctx context.Context, eventID uuid.UUID) (statusCode int, err error) {
+func (u usecase) Summary(ctx context.Context, eventID uuid.UUID) (statusCode int, err error) {
 	event, err := u.repository.EventFetchOne(ctx, eventID)
 	if err != nil {
 		return http.StatusNotFound, fmt.Errorf("event not found : %s", err.Error())
@@ -278,7 +288,7 @@ func (u Usecase) summary(ctx context.Context, eventID uuid.UUID) (statusCode int
 	return http.StatusCreated, nil
 }
 
-func (u Usecase) setRewardCertificateName(rank int16, className string) string {
+func (u usecase) setRewardCertificateName(rank int16, className string) string {
 	var rewardAs string
 	switch rank {
 	case 1:
@@ -293,7 +303,7 @@ func (u Usecase) setRewardCertificateName(rank int16, className string) string {
 	return fmt.Sprintf("%s (%s)", rewardAs, className)
 }
 
-func (u *Usecase) setRewardCertificateCommitteeName(role db.EventRole) string {
+func (u usecase) setRewardCertificateCommitteeName(role db.EventRole) string {
 	var rewardAs string
 	switch role {
 	case db.EventRoleOwner:
@@ -304,7 +314,7 @@ func (u *Usecase) setRewardCertificateCommitteeName(role db.EventRole) string {
 	return rewardAs
 }
 
-func (u Usecase) setRankPoint(rank int16) int32 {
+func (u usecase) setRankPoint(rank int16) int32 {
 	var point int
 	switch rank {
 	case 1:
@@ -317,7 +327,7 @@ func (u Usecase) setRankPoint(rank int16) int32 {
 	return int32(point)
 }
 
-func (u *Usecase) storeCertificateByRegistrationID(ctx context.Context, tx *sql.Tx, txQuery *db.Queries, arg storeCertificateByRegistrationIDParams) (statusCode int, err error) {
+func (u usecase) storeCertificateByRegistrationID(ctx context.Context, tx *sql.Tx, txQuery *db.Queries, arg storeCertificateByRegistrationIDParams) (statusCode int, err error) {
 	participants, err := txQuery.EventParticipantFetchByRegistrationID(ctx, arg.EventRegistrationID)
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
@@ -345,7 +355,7 @@ func (u *Usecase) storeCertificateByRegistrationID(ctx context.Context, tx *sql.
 	return http.StatusOK, nil
 }
 
-func (u Usecase) storeCertificateExcludeRegistrationID(ctx context.Context, tx *sql.Tx, txQuery *db.Queries, arg storeCertificateExcludeRegistrationIDParams) (statusCode int, err error) {
+func (u usecase) storeCertificateExcludeRegistrationID(ctx context.Context, tx *sql.Tx, txQuery *db.Queries, arg storeCertificateExcludeRegistrationIDParams) (statusCode int, err error) {
 	participants, err := u.rawRepository.EventParticipantFetchExcludeRegistrationID(ctx, EventParticipantFetchExcludeRegistrationIDParams{
 		EventRegistrationID: arg.EventRegistrationID,
 		ClassEventID:        arg.ClassEventID,
@@ -373,7 +383,7 @@ func (u Usecase) storeCertificateExcludeRegistrationID(ctx context.Context, tx *
 	return http.StatusOK, nil
 }
 
-func (u Usecase) storeCertificateEventCommittee(ctx context.Context, tx *sql.Tx, txQuery *db.Queries, eventID uuid.UUID) (statusCode int, err error) {
+func (u usecase) storeCertificateEventCommittee(ctx context.Context, tx *sql.Tx, txQuery *db.Queries, eventID uuid.UUID) (statusCode int, err error) {
 	committees, err := txQuery.EventPrivilegeFetchByEventID(ctx, eventID)
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
@@ -400,7 +410,7 @@ func (u Usecase) storeCertificateEventCommittee(ctx context.Context, tx *sql.Tx,
 	return http.StatusOK, nil
 }
 
-func (u Usecase) storeCertificateClubs(ctx context.Context, tx *sql.Tx, txQuery *db.Queries, eventID uuid.UUID) (statusCode int, err error) {
+func (u usecase) storeCertificateClubs(ctx context.Context, tx *sql.Tx, txQuery *db.Queries, eventID uuid.UUID) (statusCode int, err error) {
 	clubs, err := txQuery.RankClubFetchByEventID(ctx, eventID)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("error in fetch clubs : %s", err.Error())
@@ -428,7 +438,7 @@ func (u Usecase) storeCertificateClubs(ctx context.Context, tx *sql.Tx, txQuery 
 	return http.StatusOK, nil
 }
 
-func (u Usecase) setCertificateClubName(rank int) string {
+func (u usecase) setCertificateClubName(rank int) string {
 	var result string
 	switch rank {
 	case 1:
@@ -441,23 +451,23 @@ func (u Usecase) setCertificateClubName(rank int) string {
 	return result
 }
 
-func (u Usecase) fetchOwnPoint(ctx context.Context, userID string) (int32, error) {
+func (u usecase) FetchOwnPoint(ctx context.Context, userID string) (int32, error) {
 	return u.repository.RankFetchPointByUserID(ctx, uuid.MustParse(userID))
 }
 
-func (u Usecase) fetchByClubID(ctx context.Context, clubID uuid.UUID) (fetchByClubIDResponse, error) {
+func (u usecase) FetchByClubID(ctx context.Context, clubID uuid.UUID) (FetchByClubIDResponse, error) {
 	total, _ := u.repository.RankFetchPointByClubID(ctx, clubID)
 	participants, err := u.repository.RankFetchAllPointByClubID(ctx, clubID)
 	if err != nil {
-		return fetchByClubIDResponse{}, fmt.Errorf("error in fetch all point by club : %s", err.Error())
+		return FetchByClubIDResponse{}, fmt.Errorf("error in fetch all point by club : %s", err.Error())
 	}
-	return fetchByClubIDResponse{
+	return FetchByClubIDResponse{
 		TotalPoint:   total,
 		Participants: participants,
 	}, nil
 }
 
-func (u Usecase) rank(ctx context.Context, page, pageSize int32, arg rankParams) (tools.Pagination, error) {
+func (u usecase) Rank(ctx context.Context, page, pageSize int32, arg RankParams) (tools.Pagination, error) {
 	skip := tools.PaginationSkip(page, pageSize)
 
 	count, err := u.rawRepository.RankCountPowerList(ctx, arg.SportID)
@@ -481,7 +491,7 @@ func (u Usecase) rank(ctx context.Context, page, pageSize int32, arg rankParams)
 	}, nil
 }
 
-func (u Usecase) userRank(ctx context.Context, page, pageSize int32, arg rankParams) (tools.Pagination, error) {
+func (u usecase) UserRank(ctx context.Context, page, pageSize int32, arg RankParams) (tools.Pagination, error) {
 	skip := tools.PaginationSkip(page, pageSize)
 
 	count, err := u.rawRepository.RankCountAllPointUser(ctx, arg.SportID)

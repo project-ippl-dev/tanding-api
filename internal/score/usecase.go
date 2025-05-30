@@ -1,5 +1,7 @@
 package score
 
+//go:generate mockgen -source=./usecase.go -destination=../../mocks/score/usecase_mock.go
+
 import (
 	"context"
 	"fmt"
@@ -8,16 +10,24 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/db"
 )
 
-type Usecase struct {
+type Usecase interface {
+	StoreOrUpdateOrder(ctx context.Context, arg OrderStoreOrUpdateParams) (statusCode int, err error)
+	FetchOneOrder(ctx context.Context, arg FetchOneParams) (db.OrderScoreFetchOneByBracketIDRow, error)
+	Lock(ctx context.Context, arg LockParams) (statusCode int, err error)
+	StoreOrUpdateSingle(ctx context.Context, arg SingleStoreOrUpdateParams) (statusCode int, err error)
+	FetchOneSingle(ctx context.Context, arg FetchOneParams) (db.EventScoreFetchOneByBracketIDRow, error)
+}
+
+type usecase struct {
 	repository    *db.Queries
 	rawRepository RawRepository
 }
 
 func NewUsecase(repository *db.Queries, rawRepository RawRepository) Usecase {
-	return Usecase{repository: repository, rawRepository: rawRepository}
+	return &usecase{repository: repository, rawRepository: rawRepository}
 }
 
-func (u Usecase) storeOrUpdateOrder(ctx context.Context, arg orderStoreOrUpdateParams) (statusCode int, err error) {
+func (u usecase) StoreOrUpdateOrder(ctx context.Context, arg OrderStoreOrUpdateParams) (statusCode int, err error) {
 	orderBracket, err := u.repository.OrderBracketCheckOne(ctx, arg.OrderBracketID)
 	if err != nil {
 		return http.StatusNotFound, fmt.Errorf("order bracket not found : %s", err.Error())
@@ -51,11 +61,11 @@ func (u Usecase) storeOrUpdateOrder(ctx context.Context, arg orderStoreOrUpdateP
 	return http.StatusOK, nil
 }
 
-func (u Usecase) fetchOneOrder(ctx context.Context, arg fetchOneParams) (db.OrderScoreFetchOneByBracketIDRow, error) {
+func (u usecase) FetchOneOrder(ctx context.Context, arg FetchOneParams) (db.OrderScoreFetchOneByBracketIDRow, error) {
 	return u.repository.OrderScoreFetchOneByBracketID(ctx, arg.BracketID)
 }
 
-func (u Usecase) lock(ctx context.Context, arg lockParams) (statusCode int, err error) {
+func (u usecase) Lock(ctx context.Context, arg LockParams) (statusCode int, err error) {
 	classEvent, err := u.repository.ClassEventFetchOne(ctx, arg.ClassEventID)
 	if err != nil {
 		return http.StatusNotFound, fmt.Errorf("class event not found : %s", err.Error())
@@ -75,7 +85,7 @@ func (u Usecase) lock(ctx context.Context, arg lockParams) (statusCode int, err 
 	return http.StatusOK, nil
 }
 
-func (u Usecase) storeOrUpdateSingle(ctx context.Context, arg singleStoreOrUpdateParams) (statusCode int, err error) {
+func (u usecase) StoreOrUpdateSingle(ctx context.Context, arg SingleStoreOrUpdateParams) (statusCode int, err error) {
 	eventBracket, err := u.repository.EventBracketCheckOne(ctx, arg.EventBracketID)
 	if err != nil {
 		return http.StatusNotFound, fmt.Errorf("single bracket not found : %s", err.Error())
@@ -187,6 +197,6 @@ func (u Usecase) storeOrUpdateSingle(ctx context.Context, arg singleStoreOrUpdat
 	return http.StatusOK, nil
 }
 
-func (u Usecase) fetchOneSingle(ctx context.Context, arg fetchOneParams) (db.EventScoreFetchOneByBracketIDRow, error) {
+func (u usecase) FetchOneSingle(ctx context.Context, arg FetchOneParams) (db.EventScoreFetchOneByBracketIDRow, error) {
 	return u.repository.EventScoreFetchOneByBracketID(ctx, arg.BracketID)
 }
