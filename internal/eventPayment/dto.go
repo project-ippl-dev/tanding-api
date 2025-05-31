@@ -7,7 +7,7 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/db"
 )
 
-type request struct {
+type Request struct {
 	EventID       uuid.UUID   `param:"event"`
 	UniqueNumber  int16       `json:"unique_number"`
 	Link          string      `json:"link"`
@@ -15,7 +15,7 @@ type request struct {
 	Registrations []uuid.UUID `json:"registrations"`
 }
 
-func (r request) Validate() error {
+func (r Request) Validate() error {
 	return validation.ValidateStruct(&r,
 		validation.Field(&r.Link, validation.Required, is.URL),
 		validation.Field(&r.UniqueNumber, validation.Required),
@@ -24,7 +24,7 @@ func (r request) Validate() error {
 	)
 }
 
-type fetchAllParams struct {
+type FetchAllParams struct {
 	EventID string                `query:"event_id"`
 	Status  db.EventReceiptStatus `query:"status"`
 	Clubs   []string              `query:"clubs"`
@@ -32,13 +32,13 @@ type fetchAllParams struct {
 	End     string                `query:"end"`
 }
 
-type updateParams struct {
+type UpdateParams struct {
 	EventID   uuid.UUID             `param:"event"`
 	PaymentID uuid.UUID             `param:"payment"`
 	Status    db.EventReceiptStatus `json:"status"`
 }
 
-func (u updateParams) Validate() error {
+func (u UpdateParams) Validate() error {
 	return validation.ValidateStruct(&u,
 		validation.Field(&u.EventID, validation.Required, is.UUID),
 		validation.Field(&u.PaymentID, validation.Required, is.UUID),
@@ -48,14 +48,14 @@ func (u updateParams) Validate() error {
 	)
 }
 
-type fetchByUserIDParams struct {
+type FetchByUserIDParams struct {
 	EventID uuid.UUID             `param:"event"`
 	Status  db.EventReceiptStatus `query:"status"`
 	Start   string                `query:"start"`
 	End     string                `query:"end"`
 }
 
-type fetchByEventPrivilegeParams struct {
+type FetchByEventPrivilegeParams struct {
 	EventID string                `param:"event"`
 	Status  db.EventReceiptStatus `query:"status"`
 	Clubs   []string              `query:"clubs"`
@@ -68,28 +68,28 @@ type response struct {
 	ClassEvents []db.ClassEventFetchByPaymentIDRow `json:"class_events"`
 }
 
-type cartDetailResponse struct {
+type CartDetailResponse struct {
 	Results      []EventRegistrationFetchCartDetailsRow `json:"results"`
 	Event        db.EventFetchForCartRow                `json:"event"`
-	UniqueNumber uniqueNumberData                       `json:"unique_number"`
+	UniqueNumber UniqueNumberData                       `json:"unique_number"`
 }
 
-type uniqueNumberData struct {
+type UniqueNumberData struct {
 	Number string `json:"number"`
 	Time   string `json:"time"`
 }
 
-type detailPaymentResponse struct {
+type DetailPaymentResponse struct {
 	Detail      db.EventPaymentFetchOneForAdminRow     `json:"detail"`
 	ClassEvents []EventRegistrationFetchCartDetailsRow `json:"class_events"`
 }
 
-type summaryParams struct {
+type SummaryParams struct {
 	EventID string                     `param:"event" query:"event_id"`
 	Status  db.EventRegistrationStatus `query:"status"`
 }
 
-type summaryResponse struct {
+type SummaryResponse struct {
 	TotalApproved int64 `json:"approved"`
 	TotalWaiting  int64 `json:"waiting"`
 	TotalRefund   int64 `json:"refund"`

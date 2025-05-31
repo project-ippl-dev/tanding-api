@@ -7,26 +7,26 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 
-type params struct {
-	FileInformation fileInformation
+type Params struct {
+	FileInformation FileInformation
 	File            *multipart.FileHeader
 }
 
-type base64Params struct {
+type Base64Params struct {
 	Data            string `json:"data"`
 	Dir             string `json:"dir"`
 	File            *bytes.Reader
-	FileInformation fileInformation
+	FileInformation FileInformation
 }
 
-func (b base64Params) Validate() error {
+func (b Base64Params) Validate() error {
 	return validation.ValidateStruct(&b,
 		validation.Field(&b.Data, validation.Required),
 		validation.Field(&b.Dir, validation.Required),
 	)
 }
 
-type fileInformation struct {
+type FileInformation struct {
 	//Validation validationRule
 	FileName string
 	Size     int64
@@ -35,7 +35,7 @@ type fileInformation struct {
 	Dir      string `json:"dir"`
 }
 
-func (f fileInformation) Validate() error {
+func (f FileInformation) Validate() error {
 	return validation.ValidateStruct(&f,
 		validation.Field(&f.Size, validation.Max(5*1024*1024)),
 		validation.Field(&f.Dir, validation.Required),

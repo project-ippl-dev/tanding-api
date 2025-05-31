@@ -44,12 +44,17 @@ mock-generate:
     go mod tidy
 
 unit-test:
-	@PACKAGES="$$(go list ./... | grep -Ev '/(mocks|testutils|cmd|config|postgresql|db)(/|$$)')"; \
-	go test $$PACKAGES \
-	  -race \
-	  -coverpkg=$$COVERPKGS \
-      -covermode=atomic \
-      -coverprofile=coverage.out
+	@PKGS=$$(go list ./internal/... \
+    	    | grep -Ev '/(mocks|testutils|cmd|config|postgresql|db)(/|$$)'); \
+    COVERPKGS=$$(echo $$PKGS | tr ' ' ','); \
+    echo "→ running tests on: $$PKGS"; \
+    go test $$PKGS \
+    	-race \
+    	-coverpkg=$$COVERPKGS \
+    	-covermode=atomic \
+    	-coverprofile=coverage.out
 
 cover:
-	go tool cover -func coverage.out
+	grep '^mode:' coverage.out > coverage.handlers.out
+	grep -E '/handler\.go:' coverage.out >> coverage.handlers.out
+	go tool cover -func coverage.handlers.out

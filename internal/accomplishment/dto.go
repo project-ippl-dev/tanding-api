@@ -6,7 +6,7 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/db"
 )
 
-type request struct {
+type Request struct {
 	Title       string                 `json:"title"`
 	Level       db.AccomplishmentLevel `json:"level"`
 	Ranking     string                 `json:"ranking"`
@@ -18,7 +18,7 @@ type request struct {
 	Year        int16                  `json:"year"`
 }
 
-func (r request) Validate() error {
+func (r Request) Validate() error {
 	return validation.ValidateStruct(&r,
 		validation.Field(&r.Title, validation.Required),
 		validation.Field(&r.Level, validation.Required),
@@ -30,7 +30,7 @@ func (r request) Validate() error {
 
 }
 
-type response struct {
+type Response struct {
 	Title       string                 `json:"title"`
 	Level       db.AccomplishmentLevel `json:"level"`
 	Ranking     string                 `json:"ranking"`

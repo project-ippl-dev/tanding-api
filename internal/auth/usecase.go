@@ -1,5 +1,7 @@
 package auth
 
+//go:generate mockgen -source=./usecase.go -destination=../../mocks/auth/usecase_mock.go
+
 import (
 	"context"
 	"database/sql"
@@ -16,7 +18,19 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/tools"
 )
 
-type Usecase struct {
+type Usecase interface {
+	Register(ctx context.Context, req RegisterRequest, host string, feHost string) (statusCode int, err error)
+	Verify(ctx context.Context, kind string, decoded tools.JWT, token string) (statusCode int, email string, err error)
+	Login(ctx context.Context, req LoginReq) (statusCode int, response LoginResponse, err error)
+	Callback(ctx context.Context, kind string, accessToken string) (statusCode int, response LoginResponse, err error)
+	Check(ctx context.Context, kind string, username string) (db.UserFetchOneRow, error)
+	Forgot(ctx context.Context, username string, host string, feHost string) (statusCode int, err error)
+	Reset(ctx context.Context, req ResetRequest, decoded tools.JWT, token string) (statusCode int, err error)
+	Resend(ctx context.Context, username string, kind string) (statusCode int, err error)
+	Binding(ctx context.Context, arg BindingParams) (statusCode int, err error)
+}
+
+type usecase struct {
 	repository *db.Queries
 	db         *sql.DB
 	rdb        *redis.Client
@@ -25,7 +39,7 @@ type Usecase struct {
 }
 
 func NewUsecase(repository *db.Queries, db *sql.DB, rdb *redis.Client, mailClient mail.MailClient, jwtClient tools.JWTClient) Usecase {
-	return Usecase{
+	return &usecase{
 		repository: repository,
 		db:         db,
 		rdb:        rdb,
@@ -34,7 +48,7 @@ func NewUsecase(repository *db.Queries, db *sql.DB, rdb *redis.Client, mailClien
 	}
 }
 
-func (u Usecase) register(ctx context.Context, req registerRequest, host string, feHost string) (statusCode int, err error) {
+func (u usecase) Register(ctx context.Context, req RegisterRequest, host string, feHost string) (statusCode int, err error) {
 	if _, err = u.repository.AccountFetchUserIDByUsername(ctx, db.AccountFetchUserIDByUsernameParams{
 		Username: req.Email,
 		Type:     "manual",
@@ -125,7 +139,7 @@ func (u Usecase) register(ctx context.Context, req registerRequest, host string,
 	return http.StatusCreated, nil
 }
 
-func (u Usecase) verify(ctx context.Context, kind string, decoded tools.JWT, token string) (statusCode int, email string, err error) {
+func (u usecase) Verify(ctx context.Context, kind string, decoded tools.JWT, token string) (statusCode int, email string, err error) {
 	email, err = u.repository.AccountFetchEmailByID(ctx, db.AccountFetchEmailByIDParams{
 		ID:   decoded.AccountID,
 		Type: db.AccountTypeManual,
@@ -149,7 +163,7 @@ func (u Usecase) verify(ctx context.Context, kind string, decoded tools.JWT, tok
 	return http.StatusOK, email, nil
 }
 
-func (u Usecase) login(ctx context.Context, req loginReq) (statusCode int, response loginResponse, err error) {
+func (u usecase) Login(ctx context.Context, req LoginReq) (statusCode int, response LoginResponse, err error) {
 	account, err := u.repository.AccountFetchOneByEmail(ctx, db.AccountFetchOneByEmailParams{
 		Username: req.Username,
 		Type:     db.AccountTypeManual,
@@ -182,8 +196,8 @@ func (u Usecase) login(ctx context.Context, req loginReq) (statusCode int, respo
 		return http.StatusInternalServerError, response, fmt.Errorf("error in fetch user privilege : %s", err.Error())
 	}
 
-	return http.StatusOK, loginResponse{
-		Data: loginDataResponse{
+	return http.StatusOK, LoginResponse{
+		Data: LoginDataResponse{
 			Name:  account.Name,
 			Photo: account.Photo,
 		},
@@ -195,7 +209,7 @@ func (u Usecase) login(ctx context.Context, req loginReq) (statusCode int, respo
 	}, nil
 }
 
-func (u Usecase) storeLoginDetail(ctx context.Context, userID uuid.UUID) error {
+func (u usecase) storeLoginDetail(ctx context.Context, userID uuid.UUID) error {
 	//var response userIPDetail
 	//url := fmt.Sprintf("https://ipgeolocation.abstractapi.com/v1/?api_key=%s&ip_address=%s", config.Configuration().Location, clientIP)
 	//if _, err := tools.HTTPRequest(tools.HTTPParams{
@@ -214,7 +228,7 @@ func (u Usecase) storeLoginDetail(ctx context.Context, userID uuid.UUID) error {
 	return nil
 }
 
-func (u Usecase) callback(ctx context.Context, kind string, accessToken string) (statusCode int, response loginResponse, err error) {
+func (u usecase) Callback(ctx context.Context, kind string, accessToken string) (statusCode int, response LoginResponse, err error) {
 	var profile profileData
 	statusCode, err = u.hitSocialAuth(kind, accessToken, &profile)
 	if err != nil {
@@ -261,8 +275,8 @@ func (u Usecase) callback(ctx context.Context, kind string, accessToken string) 
 		}
 	}
 
-	return http.StatusOK, loginResponse{
-		Data:           loginDataResponse{Name: account.Name, Photo: account.Photo},
+	return http.StatusOK, LoginResponse{
+		Data:           LoginDataResponse{Name: account.Name, Photo: account.Photo},
 		Token:          token,
 		Role:           account.Role,
 		Privileges:     privileges,
@@ -271,7 +285,7 @@ func (u Usecase) callback(ctx context.Context, kind string, accessToken string) 
 	}, nil
 }
 
-func (u Usecase) hitSocialAuth(kind string, token string, response *profileData) (statusCode int, err error) {
+func (u usecase) hitSocialAuth(kind string, token string, response *profileData) (statusCode int, err error) {
 	switch kind {
 	case string(db.AccountTypeGoogle):
 		statusCode, err = tools.HTTPRequest(tools.HTTPParams{
@@ -309,7 +323,7 @@ func (u Usecase) hitSocialAuth(kind string, token string, response *profileData)
 	return
 }
 
-func (u Usecase) storeFromCallback(ctx context.Context, req profileData, kind string) (statusCode int, response storeFromCallbackResponse, err error) {
+func (u usecase) storeFromCallback(ctx context.Context, req profileData, kind string) (statusCode int, response storeFromCallbackResponse, err error) {
 	tx, err := u.db.Begin()
 	if err != nil {
 		return http.StatusInternalServerError, response, fmt.Errorf("error in start transaction : %s", err.Error())
@@ -357,7 +371,7 @@ func (u Usecase) storeFromCallback(ctx context.Context, req profileData, kind st
 	}, nil
 }
 
-func (u Usecase) check(ctx context.Context, kind string, username string) (db.UserFetchOneRow, error) {
+func (u usecase) Check(ctx context.Context, kind string, username string) (db.UserFetchOneRow, error) {
 	switch kind {
 	case string(db.AccountTypeManual):
 		return u.repository.UserFetchOne(ctx, username)
@@ -390,7 +404,7 @@ func (u Usecase) check(ctx context.Context, kind string, username string) (db.Us
 	}
 }
 
-func (u Usecase) forgot(ctx context.Context, username string, host string, feHost string) (statusCode int, err error) {
+func (u usecase) Forgot(ctx context.Context, username string, host string, feHost string) (statusCode int, err error) {
 	user, err := u.repository.UserFetchOneTypeManual(ctx, username)
 	if err != nil {
 		return http.StatusNotFound, fmt.Errorf("error in fetch user : %s", err.Error())
@@ -429,7 +443,7 @@ func (u Usecase) forgot(ctx context.Context, username string, host string, feHos
 	return http.StatusOK, nil
 }
 
-func (u Usecase) reset(ctx context.Context, req resetRequest, decoded tools.JWT, token string) (statusCode int, err error) {
+func (u usecase) Reset(ctx context.Context, req ResetRequest, decoded tools.JWT, token string) (statusCode int, err error) {
 	if req.Password != req.ConfirmPassword {
 		return http.StatusUnprocessableEntity, fmt.Errorf("password not matched")
 	}
@@ -466,7 +480,7 @@ func (u Usecase) reset(ctx context.Context, req resetRequest, decoded tools.JWT,
 	return http.StatusOK, nil
 }
 
-func (u Usecase) resend(ctx context.Context, username string, kind string) (statusCode int, err error) {
+func (u usecase) Resend(ctx context.Context, username string, kind string) (statusCode int, err error) {
 	switch kind {
 	case "verify", "forgot", "binding":
 		break
@@ -491,7 +505,7 @@ func (u Usecase) resend(ctx context.Context, username string, kind string) (stat
 	return http.StatusOK, nil
 }
 
-func (u Usecase) binding(ctx context.Context, arg bindingParams) (statusCode int, err error) {
+func (u usecase) Binding(ctx context.Context, arg BindingParams) (statusCode int, err error) {
 	switch arg.Kind {
 	case string(db.AccountTypeFacebook), string(db.AccountTypeGoogle):
 		var profile profileData

@@ -6,12 +6,12 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/db"
 )
 
-type searchParams struct {
+type SearchParams struct {
 	Keyword string `query:"keyword"`
 	Limit   int32  `query:"limit"`
 }
 
-type updateBasicInformationParams struct {
+type UpdateBasicInformationParams struct {
 	UserID         string `param:"uuid"`
 	Name           string `json:"name"`
 	BornAt         string `json:"born_at"`
@@ -23,7 +23,7 @@ type updateBasicInformationParams struct {
 	About          string `json:"about"`
 }
 
-func (u updateBasicInformationParams) Validate() error {
+func (u UpdateBasicInformationParams) Validate() error {
 	return validation.ValidateStruct(&u,
 		validation.Field(&u.Name, validation.Required),
 		validation.Field(&u.Photo, is.URL),
@@ -33,7 +33,7 @@ func (u updateBasicInformationParams) Validate() error {
 	)
 }
 
-type basicInformationResponse struct {
+type BasicInformationResponse struct {
 	db.UserFetchBasicInformationRow
 	EventPrivilege bool
 }

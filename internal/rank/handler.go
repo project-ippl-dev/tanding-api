@@ -9,68 +9,68 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/tools"
 )
 
-type handler struct {
+type Handler struct {
 	usecase   Usecase
 	jwtClient tools.JWTClient
 }
 
-func NewHandler(usecase Usecase, jwtClient tools.JWTClient) handler {
-	return handler{usecase: usecase, jwtClient: jwtClient}
-}
-
-func RegisterHandler(usecase Usecase, m middleware.Params, jwtClient tools.JWTClient, e *echo.Echo) {
-	rankHandler := handler{
+func NewHandler(usecase Usecase, jwtClient tools.JWTClient) Handler {
+	return Handler{
 		usecase:   usecase,
 		jwtClient: jwtClient,
 	}
-
-	e.POST("/event/:event/summary", rankHandler.summary, m.JWTMiddleware(), m.Middleware.EventPrivilegeAdmin)
-	e.GET("/rank/point/own", rankHandler.fetchOwnPoint, m.JWTMiddleware())
-	e.GET("/rank/point/club/:club", rankHandler.fetchByClubID, m.JWTMiddleware())
-	e.GET("/rank/club", rankHandler.rank, m.JWTMiddleware())
-	e.GET("/rank/user", rankHandler.userRank, m.JWTMiddleware())
 }
 
-func (h handler) summary(c echo.Context) error {
+func RegisterHandler(usecase Usecase, m middleware.Params, jwtClient tools.JWTClient, e *echo.Echo) {
+	rankHandler := NewHandler(usecase, jwtClient)
+
+	e.POST("/event/:event/summary", rankHandler.Summary, m.JWTMiddleware(), m.Middleware.EventPrivilegeAdmin)
+	e.GET("/rank/point/own", rankHandler.FetchOwnPoint, m.JWTMiddleware())
+	e.GET("/rank/point/club/:club", rankHandler.FetchByClubID, m.JWTMiddleware())
+	e.GET("/rank/club", rankHandler.Rank, m.JWTMiddleware())
+	e.GET("/rank/user", rankHandler.UserRank, m.JWTMiddleware())
+}
+
+func (h Handler) Summary(c echo.Context) error {
 	eventIDParam := c.Param("event")
 	eventID, err := uuid.Parse(eventIDParam)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
 	ctx := c.Request().Context()
-	statusCode, err := h.usecase.summary(ctx, eventID)
+	statusCode, err := h.usecase.Summary(ctx, eventID)
 	if err != nil {
 		return c.JSON(statusCode, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(statusCode, tools.Response{Message: "generate summary event success"})
 }
 
-func (h handler) fetchOwnPoint(c echo.Context) error {
+func (h Handler) FetchOwnPoint(c echo.Context) error {
 	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
-	point, err := h.usecase.fetchOwnPoint(ctx, decoded.ID)
+	point, err := h.usecase.FetchOwnPoint(ctx, decoded.ID)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(http.StatusOK, tools.ResponseData{Message: "fetch point by auth user success", Data: point})
 }
 
-func (h handler) fetchByClubID(c echo.Context) error {
+func (h Handler) FetchByClubID(c echo.Context) error {
 	clubIDParam := c.Param("club")
 	clubID, err := uuid.Parse(clubIDParam)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
 	ctx := c.Request().Context()
-	result, err := h.usecase.fetchByClubID(ctx, clubID)
+	result, err := h.usecase.FetchByClubID(ctx, clubID)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(http.StatusOK, tools.ResponseData{Message: "fetch point by club id success", Data: result})
 }
 
-func (h handler) rank(c echo.Context) error {
-	var arg rankParams
+func (h Handler) Rank(c echo.Context) error {
+	var arg RankParams
 	if err := c.Bind(&arg); err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
@@ -79,15 +79,15 @@ func (h handler) rank(c echo.Context) error {
 	}
 	page, pageSize := tools.PaginationPageAndPageSize(c)
 	ctx := c.Request().Context()
-	pagination, err := h.usecase.rank(ctx, page, pageSize, arg)
+	pagination, err := h.usecase.Rank(ctx, page, pageSize, arg)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(http.StatusOK, tools.PaginationGetResponse("fetch all rank success", pagination))
 }
 
-func (h handler) userRank(c echo.Context) error {
-	var arg rankParams
+func (h Handler) UserRank(c echo.Context) error {
+	var arg RankParams
 	if err := c.Bind(&arg); err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
@@ -96,7 +96,7 @@ func (h handler) userRank(c echo.Context) error {
 	}
 	page, pageSize := tools.PaginationPageAndPageSize(c)
 	ctx := c.Request().Context()
-	pagination, err := h.usecase.userRank(ctx, page, pageSize, arg)
+	pagination, err := h.usecase.UserRank(ctx, page, pageSize, arg)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, tools.Response{Message: err.Error()})
 	}

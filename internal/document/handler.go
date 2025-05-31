@@ -8,25 +8,29 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/tools"
 )
 
-type handler struct {
+type Handler struct {
 	usecase   Usecase
 	jwtClient tools.JWTClient
 }
 
-func RegisterHandler(usecase Usecase, jwtClient tools.JWTClient, profile *echo.Group) {
-	documentHandler := handler{
+func NewHandler(usecase Usecase, jwtClient tools.JWTClient) Handler {
+	return Handler{
 		usecase:   usecase,
 		jwtClient: jwtClient,
 	}
-
-	profile.POST("/:uuid/document", documentHandler.store)
-	profile.GET("/:uuid/document", documentHandler.fetchAll)
-	profile.PUT("/:uuid/document/:document", documentHandler.update)
-	profile.DELETE("/:uuid/document/:document", documentHandler.delete)
 }
 
-func (h handler) store(c echo.Context) error {
-	var req request
+func RegisterHandler(usecase Usecase, jwtClient tools.JWTClient, profile *echo.Group) {
+	documentHandler := NewHandler(usecase, jwtClient)
+
+	profile.POST("/:uuid/document", documentHandler.Store)
+	profile.GET("/:uuid/document", documentHandler.FetchAll)
+	profile.PUT("/:uuid/document/:document", documentHandler.Update)
+	profile.DELETE("/:uuid/document/:document", documentHandler.Delete)
+}
+
+func (h Handler) Store(c echo.Context) error {
+	var req Request
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
@@ -39,13 +43,13 @@ func (h handler) store(c echo.Context) error {
 		userID = decoded.ID
 	}
 	ctx := c.Request().Context()
-	if err := h.usecase.store(ctx, req, userID); err != nil {
+	if err := h.usecase.Store(ctx, req, userID); err != nil {
 		return c.JSON(http.StatusInternalServerError, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(http.StatusCreated, tools.Response{Message: "store document to specific user success"})
 }
 
-func (h handler) fetchAll(c echo.Context) error {
+func (h Handler) FetchAll(c echo.Context) error {
 	page, pageSize := tools.PaginationPageAndPageSize(c)
 	userID := c.Param("uuid")
 	decoded := h.jwtClient.Decode(c)
@@ -53,15 +57,15 @@ func (h handler) fetchAll(c echo.Context) error {
 		userID = decoded.ID
 	}
 	ctx := c.Request().Context()
-	pagination, err := h.usecase.fetchAll(ctx, page, pageSize, userID)
+	pagination, err := h.usecase.FetchAll(ctx, page, pageSize, userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(http.StatusOK, tools.PaginationGetResponse("fetch document for specific user success", pagination))
 }
 
-func (h handler) update(c echo.Context) error {
-	var req request
+func (h Handler) Update(c echo.Context) error {
+	var req Request
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
@@ -79,13 +83,13 @@ func (h handler) update(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
 	ctx := c.Request().Context()
-	if err := h.usecase.update(ctx, req, userID, documentID); err != nil {
+	if err := h.usecase.Update(ctx, req, userID, documentID); err != nil {
 		return c.JSON(http.StatusNotFound, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(http.StatusOK, tools.Response{Message: "update document for specific user success"})
 }
 
-func (h handler) delete(c echo.Context) error {
+func (h Handler) Delete(c echo.Context) error {
 	userID := c.Param("uuid")
 	decoded := h.jwtClient.Decode(c)
 	if decoded.RoleName == "user" {
@@ -97,7 +101,7 @@ func (h handler) delete(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
 	ctx := c.Request().Context()
-	if err := h.usecase.delete(ctx, userID, documentID); err != nil {
+	if err := h.usecase.Delete(ctx, userID, documentID); err != nil {
 		return c.JSON(http.StatusNotFound, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(http.StatusOK, tools.Response{Message: "delete document for specific user success"})

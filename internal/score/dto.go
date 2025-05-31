@@ -5,7 +5,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type orderStoreOrUpdateParams struct {
+type OrderStoreOrUpdateParams struct {
 	OrderBracketID uuid.UUID `param:"bracket"`
 	Round1         int16     `json:"round_1"`
 	Round2         int16     `json:"round_2"`
@@ -14,24 +14,24 @@ type orderStoreOrUpdateParams struct {
 	Total          int16     `json:"total"`
 }
 
-func (o orderStoreOrUpdateParams) Validate() error {
+func (o OrderStoreOrUpdateParams) Validate() error {
 	return validation.ValidateStruct(&o,
 		validation.Field(&o.Total, validation.Min(0)),
 	)
 }
 
-type fetchOneParams struct {
+type FetchOneParams struct {
 	EventID   uuid.UUID `param:"event"`
 	BracketID uuid.UUID `param:"bracket"`
 }
 
-type lockParams struct {
+type LockParams struct {
 	EventID      uuid.UUID `param:"event"`
 	ClassEventID uuid.UUID `param:"class"`
 	Status       *bool     `json:"status"`
 }
 
-type singleStoreOrUpdateParams struct {
+type SingleStoreOrUpdateParams struct {
 	EventBracketID uuid.UUID `param:"bracket"`
 	HomeRound1     int16     `json:"home_round1"`
 	HomeRound2     int16     `json:"home_round2"`
@@ -45,7 +45,7 @@ type singleStoreOrUpdateParams struct {
 	AwayTotal      int16     `json:"away_total"`
 }
 
-func (o singleStoreOrUpdateParams) Validate() error {
+func (o SingleStoreOrUpdateParams) Validate() error {
 	return validation.ValidateStruct(&o,
 		validation.Field(&o.HomeTotal, validation.Min(0)),
 		validation.Field(&o.AwayTotal, validation.Min(0)),
