@@ -5,7 +5,7 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 )
 
-type request struct {
+type Request struct {
 	Name      string  `json:"name"`
 	Logo      string  `json:"logo"`
 	Phone     string  `json:"phone"`
@@ -17,7 +17,7 @@ type sport struct {
 	SportID string `json:"sport_id"`
 }
 
-func (r request) Validate() error {
+func (r Request) Validate() error {
 	return validation.ValidateStruct(&r,
 		validation.Field(&r.Name, validation.Required),
 		validation.Field(&r.Logo, validation.Required, is.URL),
@@ -33,12 +33,12 @@ func (s sport) Validate() error {
 	)
 }
 
-type participantReq struct {
+type ParticipantReq struct {
 	ClubID       string            `param:"club"`
 	Participants []participantData `json:"participants"`
 }
 
-func (p participantReq) Validate() error {
+func (p ParticipantReq) Validate() error {
 	return validation.ValidateStruct(&p,
 		validation.Field(&p.Participants, validation.Required),
 		validation.Field(&p.ClubID, validation.Required, is.UUID),
@@ -57,36 +57,36 @@ func (p participantData) Validate() error {
 	)
 }
 
-type updateJoinApprovalArgs struct {
+type UpdateJoinApprovalArgs struct {
 	ClubID     string `param:"club"`
 	Status     *bool  `json:"status"`
 	ApprovalID int64  `param:"approval"`
 }
 
-func (u updateJoinApprovalArgs) Validate() error {
+func (u UpdateJoinApprovalArgs) Validate() error {
 	return validation.ValidateStruct(&u,
 		validation.Field(&u.ClubID, validation.Required, is.UUID),
 		validation.Field(&u.ApprovalID, validation.Required),
 	)
 }
 
-type updateInviteApprovalArgs struct {
+type UpdateInviteApprovalArgs struct {
 	Status     *bool `json:"status"`
 	ApprovalID int64 `param:"approval"`
 }
 
-func (u updateInviteApprovalArgs) Validate() error {
+func (u UpdateInviteApprovalArgs) Validate() error {
 	return validation.ValidateStruct(&u,
 		validation.Field(&u.ApprovalID, validation.Required),
 	)
 }
 
-type joinParam struct {
+type JoinParam struct {
 	ClubID  string `param:"club"`
 	SportID string `json:"sport_id"`
 }
 
-func (j joinParam) Validate() error {
+func (j JoinParam) Validate() error {
 	return validation.ValidateStruct(&j,
 		validation.Field(&j.SportID, is.UUID),
 		validation.Field(&j.ClubID, validation.Required, is.UUID),

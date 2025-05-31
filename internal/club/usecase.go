@@ -1,5 +1,7 @@
 package club
 
+//go:generate mockgen -source=./usecase.go -destination=../../mocks/club/usecase_mock.go
+
 import (
 	"context"
 	"database/sql"
@@ -11,16 +13,28 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/db"
 )
 
-type Usecase struct {
+type Usecase interface {
+	Store(ctx context.Context, req Request, userID string) (uuid.UUID, error)
+	Update(ctx context.Context, req Request, userID string, clubID uuid.UUID) error
+	Delete(ctx context.Context, userID string, clubID uuid.UUID) error
+	Invite(ctx context.Context, req ParticipantReq, userID string) error
+	Join(ctx context.Context, req JoinParam, userID string) (statusCode int, err error)
+	FetchJoinApproval(ctx context.Context, limit int32, clubID uuid.UUID, ID int64) ([]db.ClubParticipantFetchJoinApprovalRow, error)
+	FetchInviteApproval(ctx context.Context, limit int32, userID string, ID int64) ([]db.ClubParticipantFetchInviteApprovalRow, error)
+	UpdateJoinApproval(ctx context.Context, userID string, req UpdateJoinApprovalArgs) (statusCode int, err error)
+	UpdateInviteApproval(ctx context.Context, userID string, req UpdateInviteApprovalArgs) error
+}
+
+type usecase struct {
 	repository    *db.Queries
 	rawRepository RawRepository
 }
 
 func NewUsecase(repository *db.Queries, rawRepository RawRepository) Usecase {
-	return Usecase{repository: repository, rawRepository: rawRepository}
+	return &usecase{repository: repository, rawRepository: rawRepository}
 }
 
-func (u Usecase) store(ctx context.Context, req request, userID string) (uuid.UUID, error) {
+func (u usecase) Store(ctx context.Context, req Request, userID string) (uuid.UUID, error) {
 	tx, err := u.rawRepository.db.Begin()
 	if err != nil {
 		return uuid.UUID{}, fmt.Errorf("error in start db transaction")
@@ -65,7 +79,7 @@ func (u Usecase) store(ctx context.Context, req request, userID string) (uuid.UU
 	return clubID, nil
 }
 
-func (u Usecase) update(ctx context.Context, req request, userID string, clubID uuid.UUID) error {
+func (u usecase) Update(ctx context.Context, req Request, userID string, clubID uuid.UUID) error {
 	ID, err := u.repository.ClubCheckOne(ctx, db.ClubCheckOneParams{
 		ID:     clubID,
 		UserID: uuid.MustParse(userID),
@@ -82,7 +96,7 @@ func (u Usecase) update(ctx context.Context, req request, userID string, clubID 
 	})
 }
 
-func (u Usecase) delete(ctx context.Context, userID string, clubID uuid.UUID) error {
+func (u usecase) Delete(ctx context.Context, userID string, clubID uuid.UUID) error {
 	ID, err := u.repository.ClubCheckOne(ctx, db.ClubCheckOneParams{
 		ID:     clubID,
 		UserID: uuid.MustParse(userID),
@@ -93,7 +107,7 @@ func (u Usecase) delete(ctx context.Context, userID string, clubID uuid.UUID) er
 	return u.repository.ClubDelete(ctx, ID)
 }
 
-func (u Usecase) invite(ctx context.Context, req participantReq, userID string) error {
+func (u usecase) Invite(ctx context.Context, req ParticipantReq, userID string) error {
 	ID, err := u.repository.ClubCheckOne(ctx, db.ClubCheckOneParams{
 		ID:     uuid.MustParse(req.ClubID),
 		UserID: uuid.MustParse(userID),
@@ -127,7 +141,7 @@ func (u Usecase) invite(ctx context.Context, req participantReq, userID string) 
 	return tx.Commit()
 }
 
-func (u Usecase) join(ctx context.Context, req joinParam, userID string) (statusCode int, err error) {
+func (u usecase) Join(ctx context.Context, req JoinParam, userID string) (statusCode int, err error) {
 	if _, err = u.repository.ClubCheckOneWithoutUserID(ctx, uuid.MustParse(req.ClubID)); err != nil {
 		return http.StatusNotFound, fmt.Errorf("error in check club : %s", err.Error())
 	}
@@ -147,7 +161,7 @@ func (u Usecase) join(ctx context.Context, req joinParam, userID string) (status
 	return http.StatusOK, nil
 }
 
-func (u Usecase) fetchJoinApproval(ctx context.Context, limit int32, clubID uuid.UUID, ID int64) ([]db.ClubParticipantFetchJoinApprovalRow, error) {
+func (u usecase) FetchJoinApproval(ctx context.Context, limit int32, clubID uuid.UUID, ID int64) ([]db.ClubParticipantFetchJoinApprovalRow, error) {
 	if ID == 0 {
 		LatestID, _ := u.repository.ClubParticipantFetchLatestIDJoinApproval(ctx, clubID)
 		ID = LatestID + 1
@@ -163,7 +177,7 @@ func (u Usecase) fetchJoinApproval(ctx context.Context, limit int32, clubID uuid
 	return data, nil
 }
 
-func (u Usecase) fetchInviteApproval(ctx context.Context, limit int32, userID string, ID int64) ([]db.ClubParticipantFetchInviteApprovalRow, error) {
+func (u usecase) FetchInviteApproval(ctx context.Context, limit int32, userID string, ID int64) ([]db.ClubParticipantFetchInviteApprovalRow, error) {
 	if ID == 0 {
 		LatestID, _ := u.repository.ClubParticipantFetchLatestIDInviteApproval(ctx, uuid.MustParse(userID))
 		ID = LatestID + 1
@@ -179,7 +193,7 @@ func (u Usecase) fetchInviteApproval(ctx context.Context, limit int32, userID st
 	return data, nil
 }
 
-func (u Usecase) updateJoinApproval(ctx context.Context, userID string, req updateJoinApprovalArgs) (statusCode int, err error) {
+func (u usecase) UpdateJoinApproval(ctx context.Context, userID string, req UpdateJoinApprovalArgs) (statusCode int, err error) {
 	clubID, err := u.repository.ClubCheckOne(ctx, db.ClubCheckOneParams{
 		ID:     uuid.MustParse(req.ClubID),
 		UserID: uuid.MustParse(userID),
@@ -206,7 +220,7 @@ func (u Usecase) updateJoinApproval(ctx context.Context, userID string, req upda
 	return http.StatusOK, nil
 }
 
-func (u Usecase) updateInviteApproval(ctx context.Context, userID string, req updateInviteApprovalArgs) error {
+func (u usecase) UpdateInviteApproval(ctx context.Context, userID string, req UpdateInviteApprovalArgs) error {
 	if _, err := u.repository.ClubParticipantCheckJoinApproval(ctx, db.ClubParticipantCheckJoinApprovalParams{
 		ID:     req.ApprovalID,
 		UserID: uuid.MustParse(userID),

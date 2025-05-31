@@ -10,7 +10,7 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/tools"
 )
 
-type registerRequest struct {
+type RegisterRequest struct {
 	Name            string `json:"name"`
 	Email           string `json:"email"`
 	Phone           string `json:"phone"`
@@ -18,7 +18,7 @@ type registerRequest struct {
 	ConfirmPassword string `json:"confirm_password"`
 }
 
-func (r registerRequest) Validate() error {
+func (r RegisterRequest) Validate() error {
 	return validation.ValidateStruct(&r,
 		validation.Field(&r.Name, validation.Required),
 		validation.Field(&r.Email, validation.Required, is.Email),
@@ -39,20 +39,20 @@ type bodyParam struct {
 	Host *string
 }
 
-type loginReq struct {
+type LoginReq struct {
 	Username string
 	Password string
 }
 
-func (l loginReq) Validate() error {
+func (l LoginReq) Validate() error {
 	return validation.ValidateStruct(&l,
 		validation.Field(&l.Username, validation.Required, is.Email),
 		validation.Field(&l.Password, validation.Required, validation.Length(8, 100)),
 	)
 }
 
-type loginResponse struct {
-	Data           loginDataResponse `json:"profile"`
+type LoginResponse struct {
+	Data           LoginDataResponse `json:"profile"`
 	Token          tools.JWTResponse `json:"token"`
 	Role           db.Role           `json:"role"`
 	Privileges     interface{}       `json:"privileges"`
@@ -62,7 +62,7 @@ type loginResponse struct {
 	Owners         interface{}       `json:"owners"`
 }
 
-type loginDataResponse struct {
+type LoginDataResponse struct {
 	Name  string `json:"name"`
 	Photo string `json:"photo"`
 }
@@ -100,12 +100,12 @@ type storeFromCallbackResponse struct {
 	Photo     string
 }
 
-type resetRequest struct {
+type ResetRequest struct {
 	Password        string `json:"password"`
 	ConfirmPassword string `json:"confirm_password"`
 }
 
-func (r resetRequest) Validate() error {
+func (r ResetRequest) Validate() error {
 	return validation.ValidateStruct(&r,
 		validation.Field(&r.Password, validation.Required, validation.Length(8, 100)),
 		validation.Field(&r.ConfirmPassword, validation.Required, validation.Length(8, 100)),
@@ -135,7 +135,7 @@ func (b bindingRequest) Validate(kind string) error {
 	return fmt.Errorf("error type, only validating request for manual, google, or facebook")
 }
 
-type bindingParams struct {
+type BindingParams struct {
 	Kind    string
 	Request bindingRequest
 	Decoded tools.JWT

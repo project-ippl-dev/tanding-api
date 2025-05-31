@@ -2,13 +2,13 @@ package certificate
 
 import "github.com/project-ippl-dev/tanding-api/internal/db"
 
-type response struct {
+type Response struct {
 	Certificate db.CertificateFetchOneRow `json:"certificate"`
-	Event       eventDetail               `json:"event"`
+	Event       EventDetail               `json:"event"`
 	Recipient   string                    `json:"recipient"`
 }
 
-type eventDetail struct {
+type EventDetail struct {
 	db.EventFetchOneInfiniteByIDRow
 	Participants int64 `json:"participants"`
 }

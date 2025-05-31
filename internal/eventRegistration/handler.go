@@ -9,26 +9,30 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/tools"
 )
 
-type handler struct {
+type Handler struct {
 	usecase   Usecase
 	jwtClient tools.JWTClient
 }
 
-func RegisterHandler(usecase Usecase, m middleware.Params, jwtClient tools.JWTClient, e *echo.Echo) {
-	eventRegistrationHandler := handler{
+func NewHandler(usecase Usecase, jwtClient tools.JWTClient) Handler {
+	return Handler{
 		usecase:   usecase,
 		jwtClient: jwtClient,
 	}
-
-	e.GET("/event/:event/register", eventRegistrationHandler.fetchAll, m.JWTMiddleware())
-	e.POST("/event/:event/register", eventRegistrationHandler.register, m.JWTMiddleware(), m.Middleware.EventManipulationRemarkOpen, m.Middleware.EventRegistrationOnlyClubOwner)
-	e.PATCH("/event/:event/register/:register", eventRegistrationHandler.update, m.JWTMiddleware())
-	e.PATCH("/event/:event/register/:register/rejected", eventRegistrationHandler.setReject, m.JWTMiddleware())
-	e.GET("/event/:event/participant", eventRegistrationHandler.fetchParticipant, m.JWTMiddleware())
 }
 
-func (h handler) register(c echo.Context) error {
-	var req registrationRequest
+func RegisterHandler(usecase Usecase, m middleware.Params, jwtClient tools.JWTClient, e *echo.Echo) {
+	eventRegistrationHandler := NewHandler(usecase, jwtClient)
+
+	e.GET("/event/:event/register", eventRegistrationHandler.FetchAll, m.JWTMiddleware())
+	e.POST("/event/:event/register", eventRegistrationHandler.Register, m.JWTMiddleware(), m.Middleware.EventManipulationRemarkOpen, m.Middleware.EventRegistrationOnlyClubOwner)
+	e.PATCH("/event/:event/register/:register", eventRegistrationHandler.Update, m.JWTMiddleware())
+	e.PATCH("/event/:event/register/:register/rejected", eventRegistrationHandler.SetReject, m.JWTMiddleware())
+	e.GET("/event/:event/participant", eventRegistrationHandler.FetchParticipant, m.JWTMiddleware())
+}
+
+func (h Handler) Register(c echo.Context) error {
+	var req RegistrationRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
@@ -36,15 +40,15 @@ func (h handler) register(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
 	}
 	ctx := c.Request().Context()
-	statusCode, err := h.usecase.register(ctx, req)
+	statusCode, err := h.usecase.Register(ctx, req)
 	if err != nil {
 		return c.JSON(statusCode, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(statusCode, tools.Response{Message: "register to specific event success"})
 }
 
-func (h handler) fetchAll(c echo.Context) error {
-	var args fetchAllParams
+func (h Handler) FetchAll(c echo.Context) error {
+	var args FetchAllParams
 	if err := c.Bind(&args); err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
@@ -56,15 +60,15 @@ func (h handler) fetchAll(c echo.Context) error {
 	}
 	ctx := c.Request().Context()
 
-	pagination, err := h.usecase.fetchAll(ctx, args, page, pageSize)
+	pagination, err := h.usecase.FetchAll(ctx, args, page, pageSize)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(http.StatusOK, tools.PaginationGetResponse("fetch all event registration by event id success", pagination))
 }
 
-func (h handler) update(c echo.Context) error {
-	var req updateRegistrationRequest
+func (h Handler) Update(c echo.Context) error {
+	var req UpdateRegistrationRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
@@ -75,36 +79,36 @@ func (h handler) update(c echo.Context) error {
 
 	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
-	statusCode, err := h.usecase.update(ctx, req, decoded.ID)
+	statusCode, err := h.usecase.Update(ctx, req, decoded.ID)
 	if err != nil {
 		return c.JSON(statusCode, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(statusCode, tools.Response{Message: "update event registration success"})
 }
 
-func (h handler) setReject(c echo.Context) error {
-	var arg setStatusRequest
+func (h Handler) SetReject(c echo.Context) error {
+	var arg SetStatusRequest
 	if err := c.Bind(&arg); err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
 
 	ctx := c.Request().Context()
 	decoded := h.jwtClient.Decode(c)
-	statusCode, err := h.usecase.setReject(ctx, arg, decoded.ID)
+	statusCode, err := h.usecase.SetReject(ctx, arg, decoded.ID)
 	if err != nil {
 		return c.JSON(statusCode, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(statusCode, tools.Response{Message: "set registration status reject success"})
 }
 
-func (h handler) fetchParticipant(c echo.Context) error {
+func (h Handler) FetchParticipant(c echo.Context) error {
 	eventIDParam := c.Param("event")
 	eventID, err := uuid.Parse(eventIDParam)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
 	ctx := c.Request().Context()
-	classParticipants, err := h.usecase.fetchParticipant(ctx, eventID)
+	classParticipants, err := h.usecase.FetchParticipant(ctx, eventID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, tools.Response{Message: err.Error()})
 	}

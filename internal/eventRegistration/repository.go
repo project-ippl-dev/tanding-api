@@ -163,7 +163,7 @@ ORDER BY er.created_at DESC LIMIT $6 OFFSET $7
 `
 
 type fetchQueryParams struct {
-	fetchAllParams
+	FetchAllParams
 }
 
 type fetchAllDBParams struct {

@@ -1,5 +1,7 @@
 package certificate
 
+//go:generate mockgen -source=./usecase.go -destination=../../mocks/certificate/usecase_mock.go
+
 import (
 	"context"
 	"fmt"
@@ -9,34 +11,39 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/tools"
 )
 
-type Usecase struct {
+type Usecase interface {
+	FetchOne(ctx context.Context, certificateID uuid.UUID) (Response, error)
+	FetchByUserID(ctx context.Context, page, pageSize int32, userID string) (tools.Pagination, error)
+	FetchByClubID(ctx context.Context, page, pageSize int32, clubID uuid.UUID) (tools.Pagination, error)
+}
+type usecase struct {
 	repository *db.Queries
 }
 
 func NewUsecase(repository *db.Queries) Usecase {
-	return Usecase{repository: repository}
+	return &usecase{repository: repository}
 }
 
-func (u Usecase) fetchOne(ctx context.Context, certificateID uuid.UUID) (response, error) {
+func (u usecase) FetchOne(ctx context.Context, certificateID uuid.UUID) (Response, error) {
 	result, err := u.repository.CertificateFetchOne(ctx, certificateID)
 	if err != nil {
-		return response{}, fmt.Errorf("certificate not found : %s", err.Error())
+		return Response{}, fmt.Errorf("certificate not found : %s", err.Error())
 	}
 	event, err := u.repository.EventFetchOneInfiniteByID(ctx, result.EventID)
 	if err != nil {
-		return response{}, fmt.Errorf("event not found : %s", err.Error())
+		return Response{}, fmt.Errorf("event not found : %s", err.Error())
 	}
 	participants, err := u.repository.EventRegistrationCountAllByStatusApproved(ctx, event.ID)
 	if err != nil {
-		return response{}, fmt.Errorf("event not found : %s", err.Error())
+		return Response{}, fmt.Errorf("event not found : %s", err.Error())
 	}
 	photo, err := u.repository.UserFetchPhotoByID(ctx, result.UserID)
 	if err != nil {
-		return response{}, fmt.Errorf("recipient not found : %s", err.Error())
+		return Response{}, fmt.Errorf("recipient not found : %s", err.Error())
 	}
-	return response{
+	return Response{
 		Certificate: result,
-		Event: eventDetail{
+		Event: EventDetail{
 			EventFetchOneInfiniteByIDRow: event,
 			Participants:                 participants,
 		},
@@ -44,7 +51,7 @@ func (u Usecase) fetchOne(ctx context.Context, certificateID uuid.UUID) (respons
 	}, nil
 }
 
-func (u Usecase) fetchByUserID(ctx context.Context, page, pageSize int32, userID string) (tools.Pagination, error) {
+func (u usecase) FetchByUserID(ctx context.Context, page, pageSize int32, userID string) (tools.Pagination, error) {
 	skip := tools.PaginationSkip(page, pageSize)
 
 	count, err := u.repository.CertificateCountAllByUserID(ctx, uuid.MustParse(userID))
@@ -65,7 +72,7 @@ func (u Usecase) fetchByUserID(ctx context.Context, page, pageSize int32, userID
 	}, nil
 }
 
-func (u Usecase) fetchByClubID(ctx context.Context, page, pageSize int32, clubID uuid.UUID) (tools.Pagination, error) {
+func (u usecase) FetchByClubID(ctx context.Context, page, pageSize int32, clubID uuid.UUID) (tools.Pagination, error) {
 	skip := tools.PaginationSkip(page, pageSize)
 
 	count, err := u.repository.ClubCertificateCountAllByClubID(ctx, clubID)

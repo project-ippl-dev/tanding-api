@@ -1,5 +1,7 @@
 package user
 
+//go:generate mockgen -source=./usecase.go -destination=../../mocks/user/usecase_mock.go
+
 import (
 	"context"
 	"database/sql"
@@ -11,16 +13,24 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/tools"
 )
 
-type Usecase struct {
+type Usecase interface {
+	Search(ctx context.Context, args SearchParams, userID string) ([]db.UserFetchByKeywordRow, error)
+	FetchOne(ctx context.Context, userID string) (BasicInformationResponse, error)
+	Update(ctx context.Context, arg UpdateBasicInformationParams, userID string) error
+	FetchAll(ctx context.Context, page, pageSize int32) (tools.Pagination, error)
+	FetchLastLogin(ctx context.Context, page, pageSize int32) (tools.Pagination, error)
+}
+
+type usecase struct {
 	repository    *db.Queries
 	rawRepository RawRepository
 }
 
 func NewUsecase(repository *db.Queries, rawRepository RawRepository) Usecase {
-	return Usecase{repository: repository, rawRepository: rawRepository}
+	return &usecase{repository: repository, rawRepository: rawRepository}
 }
 
-func (u Usecase) search(ctx context.Context, args searchParams, userID string) ([]db.UserFetchByKeywordRow, error) {
+func (u usecase) Search(ctx context.Context, args SearchParams, userID string) ([]db.UserFetchByKeywordRow, error) {
 	return u.repository.UserFetchByKeyword(ctx, db.UserFetchByKeywordParams{
 		Name:     "%" + args.Keyword + "%",
 		Username: "%" + args.Keyword + "%",
@@ -29,17 +39,17 @@ func (u Usecase) search(ctx context.Context, args searchParams, userID string) (
 	})
 }
 
-func (u Usecase) fetchOne(ctx context.Context, userID string) (basicInformationResponse, error) {
+func (u usecase) FetchOne(ctx context.Context, userID string) (BasicInformationResponse, error) {
 	basic, err := u.repository.UserFetchBasicInformation(ctx, uuid.MustParse(userID))
 	if err != nil {
-		return basicInformationResponse{}, fmt.Errorf("error in fetch basic information : %s", err.Error())
+		return BasicInformationResponse{}, fmt.Errorf("error in fetch basic information : %s", err.Error())
 	}
-	return basicInformationResponse{
+	return BasicInformationResponse{
 		UserFetchBasicInformationRow: basic,
 	}, nil
 }
 
-func (u Usecase) update(ctx context.Context, arg updateBasicInformationParams, userID string) error {
+func (u usecase) Update(ctx context.Context, arg UpdateBasicInformationParams, userID string) error {
 	bornOn, _ := time.Parse("2006-01-02", arg.BornOn)
 	var bornOnStatus bool
 	if !bornOn.IsZero() {
@@ -66,7 +76,7 @@ func (u Usecase) update(ctx context.Context, arg updateBasicInformationParams, u
 	return nil
 }
 
-func (u Usecase) fetchAll(ctx context.Context, page, pageSize int32) (tools.Pagination, error) {
+func (u usecase) FetchAll(ctx context.Context, page, pageSize int32) (tools.Pagination, error) {
 	skip := tools.PaginationSkip(page, pageSize)
 	count, err := u.repository.UserCountAll(ctx)
 	if err != nil {
@@ -88,7 +98,7 @@ func (u Usecase) fetchAll(ctx context.Context, page, pageSize int32) (tools.Pagi
 	}, nil
 }
 
-func (u Usecase) fetchLastLogin(ctx context.Context, page, pageSize int32) (tools.Pagination, error) {
+func (u usecase) FetchLastLogin(ctx context.Context, page, pageSize int32) (tools.Pagination, error) {
 	skip := tools.PaginationSkip(page, pageSize)
 	count, err := u.repository.LoginDetailCount(ctx)
 	if err != nil {

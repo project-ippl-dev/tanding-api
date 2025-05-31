@@ -4,14 +4,14 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 
-type request struct {
+type Request struct {
 	Name   string `json:"name"`
 	Male   int16  `json:"male"`
 	Female int16  `json:"female"`
 	Total  int16  `json:"total"`
 }
 
-func (r request) Validate() error {
+func (r Request) Validate() error {
 	return validation.ValidateStruct(&r,
 		validation.Field(&r.Name, validation.Required),
 		validation.Field(&r.Male, validation.Min(0), validation.Max(20)),

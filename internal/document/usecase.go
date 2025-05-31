@@ -1,5 +1,7 @@
 package document
 
+//go:generate mockgen -source=./usecase.go -destination=../../mocks/document/usecase_mock.go
+
 import (
 	"context"
 	"fmt"
@@ -10,15 +12,22 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/tools"
 )
 
-type Usecase struct {
+type Usecase interface {
+	Store(ctx context.Context, req Request, userID string) error
+	FetchAll(ctx context.Context, page int32, pageSize int32, userID string) (tools.Pagination, error)
+	Update(ctx context.Context, req Request, userID string, documentID int64) error
+	Delete(ctx context.Context, userID string, documentID int64) error
+}
+
+type usecase struct {
 	repository *db.Queries
 }
 
 func NewUsecase(repository *db.Queries) Usecase {
-	return Usecase{repository: repository}
+	return &usecase{repository: repository}
 }
 
-func (u Usecase) store(ctx context.Context, req request, userID string) error {
+func (u usecase) Store(ctx context.Context, req Request, userID string) error {
 	return u.repository.DocumentCreate(ctx, db.DocumentCreateParams{
 		UserID:                uuid.MustParse(userID),
 		BirthCertificate:      req.BirthCertificate,
@@ -33,7 +42,7 @@ func (u Usecase) store(ctx context.Context, req request, userID string) error {
 	})
 }
 
-func (u Usecase) fetchAll(ctx context.Context, page int32, pageSize int32, userID string) (tools.Pagination, error) {
+func (u usecase) FetchAll(ctx context.Context, page int32, pageSize int32, userID string) (tools.Pagination, error) {
 	skip := tools.PaginationSkip(page, pageSize)
 	documents, err := u.repository.DocumentFetchAll(ctx, db.DocumentFetchAllParams{
 		UserID: uuid.MustParse(userID),
@@ -55,7 +64,7 @@ func (u Usecase) fetchAll(ctx context.Context, page int32, pageSize int32, userI
 	}, nil
 }
 
-func (u Usecase) update(ctx context.Context, req request, userID string, documentID int64) error {
+func (u usecase) Update(ctx context.Context, req Request, userID string, documentID int64) error {
 	docID, err := u.repository.DocumentCheckOne(ctx, db.DocumentCheckOneParams{
 		ID:     documentID,
 		UserID: uuid.MustParse(userID),
@@ -77,7 +86,7 @@ func (u Usecase) update(ctx context.Context, req request, userID string, documen
 	})
 }
 
-func (u Usecase) delete(ctx context.Context, userID string, documentID int64) error {
+func (u usecase) Delete(ctx context.Context, userID string, documentID int64) error {
 	docID, err := u.repository.DocumentCheckOne(ctx, db.DocumentCheckOneParams{
 		ID:     documentID,
 		UserID: uuid.MustParse(userID),

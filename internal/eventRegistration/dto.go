@@ -7,14 +7,14 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/db"
 )
 
-type registrationRequest struct {
+type RegistrationRequest struct {
 	EventID      string       `param:"event"`
 	ClassEventID string       `json:"class_event_id"`
 	ClubID       string       `json:"club_id"`
 	Members      []memberData `json:"members"`
 }
 
-func (r registrationRequest) Validate() error {
+func (r RegistrationRequest) Validate() error {
 	return validation.ValidateStruct(&r,
 		validation.Field(&r.EventID, validation.Required, is.UUID),
 		validation.Field(&r.ClubID, validation.Required, is.UUID),
@@ -33,7 +33,7 @@ func (m memberData) Validate() error {
 	)
 }
 
-type fetchAllParams struct {
+type FetchAllParams struct {
 	EventID      string                     `param:"event"`
 	ClubID       string                     `query:"club_id"`
 	ClassEventID string                     `query:"class_event_id"`
@@ -46,24 +46,24 @@ type fetchResponse struct {
 	Participants []db.EventParticipantFetchByRegistrationIDRow `json:"participants"`
 }
 
-type updateRegistrationRequest struct {
+type UpdateRegistrationRequest struct {
 	EventID      string    `param:"event"`
 	RegisterID   uuid.UUID `param:"register"`
 	ClassEventID string    `json:"class_event_id"`
 }
 
-func (u updateRegistrationRequest) Validate() error {
+func (u UpdateRegistrationRequest) Validate() error {
 	return validation.ValidateStruct(&u,
 		validation.Field(&u.ClassEventID, validation.Required, is.UUID),
 	)
 }
 
-type setStatusRequest struct {
+type SetStatusRequest struct {
 	EventID    string    `param:"event"`
 	RegisterID uuid.UUID `param:"register"`
 }
 
-type fetchParticipantRow struct {
+type FetchParticipantRow struct {
 	db.EventRegistrationFetchClubByEventIDRow
 	TotalPoint int64                                           `json:"total_point"`
 	TotalUser  int64                                           `json:"total_user"`

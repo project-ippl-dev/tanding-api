@@ -12,33 +12,37 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/tools"
 )
 
-type handler struct {
+type Handler struct {
 	usecase    Usecase
 	jwtClient  tools.JWTClient
 	serverConf config.ServerConfig
 }
 
-func RegisterHandler(usecase Usecase, jwtClient tools.JWTClient, m middleware.Params, serverConf config.ServerConfig, e *echo.Echo) {
-	authHandler := handler{
+func NewHandler(usecase Usecase, jwtClient tools.JWTClient, serverConf config.ServerConfig) Handler {
+	return Handler{
 		usecase:    usecase,
 		jwtClient:  jwtClient,
 		serverConf: serverConf,
 	}
-
-	auth := e.Group("/auth")
-	auth.POST("/register", authHandler.register)
-	auth.GET("/verification/:type/:token", authHandler.verify)
-	auth.POST("/login", authHandler.login)
-	auth.POST("/callback/:type/:token", authHandler.callback)
-	auth.GET("/check/:type/:request", authHandler.check)
-	auth.GET("/forgot-password/:username", authHandler.forgot)
-	auth.POST("/reset-password/:token", authHandler.reset)
-	auth.GET("/resend-token/:type/:username", authHandler.resend)
-	auth.POST("/bind/:type", authHandler.binding, m.JWTMiddleware())
 }
 
-func (h handler) register(c echo.Context) error {
-	var req registerRequest
+func RegisterHandler(usecase Usecase, jwtClient tools.JWTClient, m middleware.Params, serverConf config.ServerConfig, e *echo.Echo) {
+	authHandler := NewHandler(usecase, jwtClient, serverConf)
+
+	auth := e.Group("/auth")
+	auth.POST("/register", authHandler.Register)
+	auth.GET("/verification/:type/:token", authHandler.Verify)
+	auth.POST("/login", authHandler.Login)
+	auth.POST("/callback/:type/:token", authHandler.Callback)
+	auth.GET("/check/:type/:request", authHandler.Check)
+	auth.GET("/forgot-password/:username", authHandler.Forgot)
+	auth.POST("/reset-password/:token", authHandler.Reset)
+	auth.GET("/resend-token/:type/:username", authHandler.Resend)
+	auth.POST("/bind/:type", authHandler.Binding, m.JWTMiddleware())
+}
+
+func (h Handler) Register(c echo.Context) error {
+	var req RegisterRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
@@ -46,14 +50,14 @@ func (h handler) register(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
 	}
 	ctx := c.Request().Context()
-	statusCode, err := h.usecase.register(ctx, req, h.serverConf.Host, h.serverConf.FE)
+	statusCode, err := h.usecase.Register(ctx, req, h.serverConf.Host, h.serverConf.FE)
 	if err != nil {
 		return c.JSON(statusCode, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(statusCode, tools.Response{Message: "register success, check email for verify."})
 }
 
-func (h handler) verify(c echo.Context) error {
+func (h Handler) Verify(c echo.Context) error {
 	token := c.Param("token")
 	kind := c.Param("type")
 	decoded, err := h.jwtClient.TokenParse(token)
@@ -61,15 +65,15 @@ func (h handler) verify(c echo.Context) error {
 		return c.JSON(http.StatusForbidden, tools.Response{Message: "Token is not valid or expired, error : " + err.Error()})
 	}
 	ctx := c.Request().Context()
-	statusCode, email, err := h.usecase.verify(ctx, kind, decoded, token)
+	statusCode, email, err := h.usecase.Verify(ctx, kind, decoded, token)
 	if err != nil {
 		return c.JSON(statusCode, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(statusCode, tools.ResponseData{Message: kind + " account success", Data: email})
 }
 
-func (h handler) login(c echo.Context) error {
-	var req loginReq
+func (h Handler) Login(c echo.Context) error {
+	var req LoginReq
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: "error in binding request : " + err.Error()})
 	}
@@ -77,51 +81,51 @@ func (h handler) login(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error in validation", Errors: err.Error()})
 	}
 	ctx := c.Request().Context()
-	statusCode, response, err := h.usecase.login(ctx, req)
+	statusCode, response, err := h.usecase.Login(ctx, req)
 	if err != nil {
 		return c.JSON(statusCode, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(statusCode, tools.ResponseData{Message: "login success", Data: response})
 }
 
-func (h handler) callback(c echo.Context) error {
+func (h Handler) Callback(c echo.Context) error {
 	kind := c.Param("type")
 	accessToken := c.Param("token")
 	ctx := c.Request().Context()
-	statusCode, response, err := h.usecase.callback(ctx, kind, accessToken)
+	statusCode, response, err := h.usecase.Callback(ctx, kind, accessToken)
 	if err != nil {
 		return c.JSON(statusCode, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(statusCode, tools.ResponseData{Message: "login via " + kind + " success", Data: response})
 }
 
-func (h handler) check(c echo.Context) error {
+func (h Handler) Check(c echo.Context) error {
 	kind := c.Param("type")
 	request := c.Param("request")
 	ctx := c.Request().Context()
-	data, err := h.usecase.check(ctx, kind, request)
+	data, err := h.usecase.Check(ctx, kind, request)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(http.StatusOK, tools.ResponseData{Message: "fetch account success", Data: data})
 }
 
-func (h handler) forgot(c echo.Context) error {
+func (h Handler) Forgot(c echo.Context) error {
 	username := c.Param("username")
 	ctx := c.Request().Context()
 	if err := validation.Validate(&username, validation.Required, is.Email); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
 	}
-	statusCode, err := h.usecase.forgot(ctx, username, h.serverConf.Host, h.serverConf.FE)
+	statusCode, err := h.usecase.Forgot(ctx, username, h.serverConf.Host, h.serverConf.FE)
 	if err != nil {
 		return c.JSON(statusCode, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(statusCode, tools.Response{Message: "send forgot password mail success"})
 }
 
-func (h handler) reset(c echo.Context) error {
+func (h Handler) Reset(c echo.Context) error {
 	token := c.Param("token")
-	var req resetRequest
+	var req ResetRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: "error in binding request : " + err.Error()})
 	}
@@ -133,28 +137,28 @@ func (h handler) reset(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: "error in parsing token, token maybe expired or invalid : " + err.Error()})
 	}
 	ctx := c.Request().Context()
-	statusCode, err := h.usecase.reset(ctx, req, decoded, token)
+	statusCode, err := h.usecase.Reset(ctx, req, decoded, token)
 	if err != nil {
 		return c.JSON(statusCode, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(statusCode, tools.Response{Message: "reset password success"})
 }
 
-func (h handler) resend(c echo.Context) error {
+func (h Handler) Resend(c echo.Context) error {
 	kind := c.Param("type")
 	username := c.Param("username")
 	ctx := c.Request().Context()
 	if err := validation.Validate(&username, validation.Required, is.Email); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
 	}
-	statusCode, err := h.usecase.resend(ctx, username, kind)
+	statusCode, err := h.usecase.Resend(ctx, username, kind)
 	if err != nil {
 		return c.JSON(statusCode, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(statusCode, tools.Response{Message: "resend token success"})
 }
 
-func (h handler) binding(c echo.Context) error {
+func (h Handler) Binding(c echo.Context) error {
 	kind := c.Param("type")
 	decoded := h.jwtClient.Decode(c)
 
@@ -167,7 +171,7 @@ func (h handler) binding(c echo.Context) error {
 	}
 
 	ctx := c.Request().Context()
-	statusCode, err := h.usecase.binding(ctx, bindingParams{
+	statusCode, err := h.usecase.Binding(ctx, BindingParams{
 		Kind:    kind,
 		Request: req,
 		Decoded: decoded,
