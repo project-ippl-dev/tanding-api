@@ -10,26 +10,30 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/tools"
 )
 
-type handler struct {
+type Handler struct {
 	usecase   Usecase
 	jwtClient tools.JWTClient
 }
 
-func RegisterHandler(usecase Usecase, m middleware.Params, jwtClient tools.JWTClient, e *echo.Echo) {
-	classHandler := handler{
+func NewHandler(usecase Usecase, jwtClient tools.JWTClient) Handler {
+	return Handler{
 		usecase:   usecase,
 		jwtClient: jwtClient,
 	}
-
-	e.POST("/class", classHandler.store, m.JWTMiddleware())
-	e.GET("/class", classHandler.fetchAll, m.JWTMiddleware())
-	e.GET("/class/sport/:sport", classHandler.fetchBySportID, m.JWTMiddleware())
-	e.PUT("/class/:class", classHandler.update, m.JWTMiddleware())
-	e.DELETE("/class/:class", classHandler.delete, m.JWTMiddleware())
 }
 
-func (h handler) store(c echo.Context) error {
-	var req request
+func RegisterHandler(usecase Usecase, m middleware.Params, jwtClient tools.JWTClient, e *echo.Echo) {
+	classHandler := NewHandler(usecase, jwtClient)
+
+	e.POST("/class", classHandler.Store, m.JWTMiddleware())
+	e.GET("/class", classHandler.FetchAll, m.JWTMiddleware())
+	e.GET("/class/sport/:sport", classHandler.FetchBySportID, m.JWTMiddleware())
+	e.PUT("/class/:class", classHandler.Update, m.JWTMiddleware())
+	e.DELETE("/class/:class", classHandler.Delete, m.JWTMiddleware())
+}
+
+func (h Handler) Store(c echo.Context) error {
+	var req Request
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
@@ -41,23 +45,23 @@ func (h handler) store(c echo.Context) error {
 		return c.JSON(http.StatusForbidden, tools.Response{Message: "forbidden access"})
 	}
 	ctx := c.Request().Context()
-	if err := h.usecase.store(ctx, req); err != nil {
+	if err := h.usecase.Store(ctx, req); err != nil {
 		return c.JSON(http.StatusInternalServerError, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(http.StatusCreated, tools.Response{Message: "store class success"})
 }
 
-func (h handler) fetchAll(c echo.Context) error {
+func (h Handler) FetchAll(c echo.Context) error {
 	page, pageSize := tools.PaginationPageAndPageSize(c)
 	ctx := c.Request().Context()
-	pagination, err := h.usecase.fetchAll(ctx, page, pageSize)
+	pagination, err := h.usecase.FetchAll(ctx, page, pageSize)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(http.StatusOK, tools.PaginationGetResponse("fetch all class success", pagination))
 }
 
-func (h handler) fetchBySportID(c echo.Context) error {
+func (h Handler) FetchBySportID(c echo.Context) error {
 	page, pageSize := tools.PaginationPageAndPageSize(c)
 	sportIDParam := c.Param("sport")
 	sportID, err := uuid.Parse(sportIDParam)
@@ -65,15 +69,15 @@ func (h handler) fetchBySportID(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
 	ctx := c.Request().Context()
-	pagination, err := h.usecase.fetchBySportID(ctx, page, pageSize, sportID)
+	pagination, err := h.usecase.FetchBySportID(ctx, page, pageSize, sportID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(http.StatusOK, tools.PaginationGetResponse("fetch all based on sport id", pagination))
 }
 
-func (h handler) update(c echo.Context) error {
-	var req request
+func (h Handler) Update(c echo.Context) error {
+	var req Request
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
@@ -91,13 +95,13 @@ func (h handler) update(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
 	ctx := c.Request().Context()
-	if err := h.usecase.update(ctx, req, classID); err != nil {
+	if err := h.usecase.Update(ctx, req, classID); err != nil {
 		return c.JSON(http.StatusNotFound, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(http.StatusOK, tools.Response{Message: "update specific class success"})
 }
 
-func (h handler) delete(c echo.Context) error {
+func (h Handler) Delete(c echo.Context) error {
 	classIDParam := c.Param("class")
 	classID, err := uuid.Parse(classIDParam)
 	if err != nil {
@@ -105,7 +109,7 @@ func (h handler) delete(c echo.Context) error {
 	}
 	ctx := c.Request().Context()
 	decoded := h.jwtClient.Decode(c)
-	statusCode, err := h.usecase.delete(ctx, decoded, classID)
+	statusCode, err := h.usecase.Delete(ctx, decoded, classID)
 	if err != nil {
 		return c.JSON(statusCode, tools.Response{Message: err.Error()})
 	}

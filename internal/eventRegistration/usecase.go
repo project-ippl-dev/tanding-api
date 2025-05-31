@@ -1,5 +1,7 @@
 package eventRegistration
 
+//go:generate mockgen -source=./usecase.go -destination=../../mocks/eventRegistration/usecase_mock.go
+
 import (
 	"context"
 	"fmt"
@@ -11,16 +13,24 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/tools"
 )
 
-type Usecase struct {
+type Usecase interface {
+	Register(ctx context.Context, req RegistrationRequest) (statusCode int, err error)
+	FetchAll(ctx context.Context, args FetchAllParams, page, pageSize int32) (tools.Pagination, error)
+	Update(ctx context.Context, req UpdateRegistrationRequest, userID string) (int, error)
+	SetReject(ctx context.Context, arg SetStatusRequest, userID string) (int, error)
+	FetchParticipant(ctx context.Context, eventID uuid.UUID) ([]FetchParticipantRow, error)
+}
+
+type usecase struct {
 	repository    *db.Queries
 	rawRepository RawRepository
 }
 
 func NewUsecase(repository *db.Queries, rawRepository RawRepository) Usecase {
-	return Usecase{rawRepository: rawRepository, repository: repository}
+	return &usecase{rawRepository: rawRepository, repository: repository}
 }
 
-func (u Usecase) register(ctx context.Context, req registrationRequest) (statusCode int, err error) {
+func (u usecase) Register(ctx context.Context, req RegistrationRequest) (statusCode int, err error) {
 	//Class Rule Validation Based On Gender Event Registration
 	classEvent, err := u.repository.ClassEventFetchOne(ctx, uuid.MustParse(req.ClassEventID))
 	if err != nil {
@@ -119,7 +129,7 @@ func (u Usecase) register(ctx context.Context, req registrationRequest) (statusC
 	return http.StatusCreated, nil
 }
 
-func (u Usecase) fetchAll(ctx context.Context, args fetchAllParams, page, pageSize int32) (tools.Pagination, error) {
+func (u usecase) FetchAll(ctx context.Context, args FetchAllParams, page, pageSize int32) (tools.Pagination, error) {
 	skip := tools.PaginationSkip(page, pageSize)
 
 	count, err := u.rawRepository.EventRegistrationCountAll(ctx, fetchQueryParams{args})
@@ -154,7 +164,7 @@ func (u Usecase) fetchAll(ctx context.Context, args fetchAllParams, page, pageSi
 	}, nil
 }
 
-func (u Usecase) update(ctx context.Context, req updateRegistrationRequest, userID string) (int, error) {
+func (u usecase) Update(ctx context.Context, req UpdateRegistrationRequest, userID string) (int, error) {
 	registration, err := u.repository.EventRegistrationFetchOne(ctx, req.RegisterID)
 	if err != nil {
 		return http.StatusNotFound, fmt.Errorf("error in fetch registration : %s", err.Error())
@@ -186,7 +196,7 @@ func (u Usecase) update(ctx context.Context, req updateRegistrationRequest, user
 	return http.StatusOK, nil
 }
 
-func (u Usecase) setReject(ctx context.Context, arg setStatusRequest, userID string) (int, error) {
+func (u usecase) SetReject(ctx context.Context, arg SetStatusRequest, userID string) (int, error) {
 	registration, err := u.repository.EventRegistrationFetchOne(ctx, arg.RegisterID)
 	if err != nil {
 		return http.StatusNotFound, fmt.Errorf("error in fetch registration : %s", err.Error())
@@ -206,8 +216,8 @@ func (u Usecase) setReject(ctx context.Context, arg setStatusRequest, userID str
 	return http.StatusOK, nil
 }
 
-func (u Usecase) fetchParticipant(ctx context.Context, eventID uuid.UUID) ([]fetchParticipantRow, error) {
-	results := []fetchParticipantRow{}
+func (u usecase) FetchParticipant(ctx context.Context, eventID uuid.UUID) ([]FetchParticipantRow, error) {
+	results := []FetchParticipantRow{}
 	clubs, err := u.repository.EventRegistrationFetchClubByEventID(ctx, eventID)
 	if err != nil {
 		return nil, fmt.Errorf("error in fetch clubs : %s", err.Error())
@@ -225,7 +235,7 @@ func (u Usecase) fetchParticipant(ctx context.Context, eventID uuid.UUID) ([]fet
 		if err != nil {
 			return nil, fmt.Errorf("error in fetch members : %s", err.Error())
 		}
-		results = append(results, fetchParticipantRow{
+		results = append(results, FetchParticipantRow{
 			EventRegistrationFetchClubByEventIDRow: club,
 			TotalPoint:                             totalPoint,
 			TotalUser:                              totalUser,

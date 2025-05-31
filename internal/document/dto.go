@@ -5,7 +5,7 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 )
 
-type request struct {
+type Request struct {
 	BirthCertificate      string `json:"birth_certificate"`
 	FamilyCard            string `json:"family_card"`
 	UserIdentity          string `json:"user_identity"`
@@ -17,7 +17,7 @@ type request struct {
 	MasterCertificate     string `json:"master_certificate"`
 }
 
-func (r request) Validate() error {
+func (r Request) Validate() error {
 	return validation.ValidateStruct(&r,
 		validation.Field(&r.BirthCertificate, is.URL),
 		validation.Field(&r.FamilyCard, is.URL),

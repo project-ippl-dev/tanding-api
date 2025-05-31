@@ -11,30 +11,34 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/tools"
 )
 
-type handler struct {
+type Handler struct {
 	usecase   Usecase
 	jwtClient tools.JWTClient
 }
 
-func RegisterHandler(usecase Usecase, m middleware.Params, jwtClient tools.JWTClient, e *echo.Echo) {
-	clubHandler := handler{
+func NewHandler(usecase Usecase, jwtClient tools.JWTClient) Handler {
+	return Handler{
 		usecase:   usecase,
 		jwtClient: jwtClient,
 	}
-
-	e.POST("/club", clubHandler.store, m.JWTMiddleware())
-	e.PUT("/club/:club", clubHandler.update, m.JWTMiddleware())
-	e.DELETE("/club/:club", clubHandler.delete, m.JWTMiddleware())
-	e.POST("/club/:club/invite", clubHandler.invite, m.JWTMiddleware())
-	e.POST("/club/:club/join", clubHandler.join, m.JWTMiddleware())
-	e.GET("/club/:club/join/approval", clubHandler.fetchJoinApproval, m.JWTMiddleware())
-	e.GET("/club/invite/approval", clubHandler.fetchInviteApproval, m.JWTMiddleware())
-	e.PATCH("/club/:club/join/approval/:approval", clubHandler.updateJoinApproval, m.JWTMiddleware())
-	e.PATCH("/club/invite/approval/:approval", clubHandler.updateInviteApproval, m.JWTMiddleware())
 }
 
-func (h handler) store(c echo.Context) error {
-	var req request
+func RegisterHandler(usecase Usecase, m middleware.Params, jwtClient tools.JWTClient, e *echo.Echo) {
+	clubHandler := NewHandler(usecase, jwtClient)
+
+	e.POST("/club", clubHandler.Store, m.JWTMiddleware())
+	e.PUT("/club/:club", clubHandler.Update, m.JWTMiddleware())
+	e.DELETE("/club/:club", clubHandler.Delete, m.JWTMiddleware())
+	e.POST("/club/:club/invite", clubHandler.Invite, m.JWTMiddleware())
+	e.POST("/club/:club/join", clubHandler.Join, m.JWTMiddleware())
+	e.GET("/club/:club/join/approval", clubHandler.FetchJoinApproval, m.JWTMiddleware())
+	e.GET("/club/invite/approval", clubHandler.FetchInviteApproval, m.JWTMiddleware())
+	e.PATCH("/club/:club/join/approval/:approval", clubHandler.UpdateJoinApproval, m.JWTMiddleware())
+	e.PATCH("/club/invite/approval/:approval", clubHandler.UpdateInviteApproval, m.JWTMiddleware())
+}
+
+func (h Handler) Store(c echo.Context) error {
+	var req Request
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
@@ -43,20 +47,20 @@ func (h handler) store(c echo.Context) error {
 	}
 	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
-	clubID, err := h.usecase.store(ctx, req, decoded.ID)
+	clubID, err := h.usecase.Store(ctx, req, decoded.ID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(http.StatusCreated, tools.ResponseData{Message: "store club success", Data: clubID})
 }
 
-func (h handler) update(c echo.Context) error {
+func (h Handler) Update(c echo.Context) error {
 	clubParam := c.Param("club")
 	clubID, err := uuid.Parse(clubParam)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
-	var req request
+	var req Request
 	if err = c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
@@ -65,13 +69,13 @@ func (h handler) update(c echo.Context) error {
 	}
 	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
-	if err = h.usecase.update(ctx, req, decoded.ID, clubID); err != nil {
+	if err = h.usecase.Update(ctx, req, decoded.ID, clubID); err != nil {
 		return c.JSON(http.StatusNotFound, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(http.StatusOK, tools.Response{Message: "update club success"})
 }
 
-func (h handler) delete(c echo.Context) error {
+func (h Handler) Delete(c echo.Context) error {
 	clubParam := c.Param("club")
 	clubID, err := uuid.Parse(clubParam)
 	if err != nil {
@@ -79,14 +83,14 @@ func (h handler) delete(c echo.Context) error {
 	}
 	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
-	if err = h.usecase.delete(ctx, decoded.ID, clubID); err != nil {
+	if err = h.usecase.Delete(ctx, decoded.ID, clubID); err != nil {
 		return c.JSON(http.StatusNotFound, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(http.StatusOK, tools.Response{Message: "delete club success"})
 }
 
-func (h handler) invite(c echo.Context) error {
-	var req participantReq
+func (h Handler) Invite(c echo.Context) error {
+	var req ParticipantReq
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
@@ -95,14 +99,14 @@ func (h handler) invite(c echo.Context) error {
 	}
 	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
-	if err := h.usecase.invite(ctx, req, decoded.ID); err != nil {
+	if err := h.usecase.Invite(ctx, req, decoded.ID); err != nil {
 		return c.JSON(http.StatusInternalServerError, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(http.StatusOK, tools.Response{Message: "success invite participant to club"})
 }
 
-func (h handler) join(c echo.Context) error {
-	var req joinParam
+func (h Handler) Join(c echo.Context) error {
+	var req JoinParam
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
@@ -111,14 +115,14 @@ func (h handler) join(c echo.Context) error {
 	}
 	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
-	statusCode, err := h.usecase.join(ctx, req, decoded.ID)
+	statusCode, err := h.usecase.Join(ctx, req, decoded.ID)
 	if err != nil {
 		return c.JSON(statusCode, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(statusCode, tools.Response{Message: "apply join club success"})
 }
 
-func (h handler) fetchJoinApproval(c echo.Context) error {
+func (h Handler) FetchJoinApproval(c echo.Context) error {
 	clubIDParam := c.Param("club")
 	clubID, err := uuid.Parse(clubIDParam)
 	if err != nil {
@@ -128,28 +132,28 @@ func (h handler) fetchJoinApproval(c echo.Context) error {
 	ctx := c.Request().Context()
 	IDParam := c.QueryParam("id")
 	ID, _ := strconv.ParseInt(IDParam, 10, 64)
-	data, err := h.usecase.fetchJoinApproval(ctx, limit, clubID, ID)
+	data, err := h.usecase.FetchJoinApproval(ctx, limit, clubID, ID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(http.StatusOK, tools.ResponseData{Message: "fetch join approval success", Data: data})
 }
 
-func (h handler) fetchInviteApproval(c echo.Context) error {
+func (h Handler) FetchInviteApproval(c echo.Context) error {
 	limit := tools.PaginationLimit(c)
 	IDParam := c.QueryParam("id")
 	ID, _ := strconv.ParseInt(IDParam, 10, 64)
 	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
-	data, err := h.usecase.fetchInviteApproval(ctx, limit, decoded.ID, ID)
+	data, err := h.usecase.FetchInviteApproval(ctx, limit, decoded.ID, ID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(http.StatusOK, tools.ResponseData{Message: "fetch invite approval success", Data: data})
 }
 
-func (h handler) updateJoinApproval(c echo.Context) error {
-	var req updateJoinApprovalArgs
+func (h Handler) UpdateJoinApproval(c echo.Context) error {
+	var req UpdateJoinApprovalArgs
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusNotFound, tools.Response{Message: err.Error()})
 	}
@@ -158,15 +162,15 @@ func (h handler) updateJoinApproval(c echo.Context) error {
 	}
 	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
-	statusCode, err := h.usecase.updateJoinApproval(ctx, decoded.ID, req)
+	statusCode, err := h.usecase.UpdateJoinApproval(ctx, decoded.ID, req)
 	if err != nil {
 		return c.JSON(statusCode, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(statusCode, tools.Response{Message: "update join approval success"})
 }
 
-func (h handler) updateInviteApproval(c echo.Context) error {
-	var req updateInviteApprovalArgs
+func (h Handler) UpdateInviteApproval(c echo.Context) error {
+	var req UpdateInviteApprovalArgs
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusNotFound, tools.Response{Message: err.Error()})
 	}
@@ -175,7 +179,7 @@ func (h handler) updateInviteApproval(c echo.Context) error {
 	}
 	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
-	if err := h.usecase.updateInviteApproval(ctx, decoded.ID, req); err != nil {
+	if err := h.usecase.UpdateInviteApproval(ctx, decoded.ID, req); err != nil {
 		return c.JSON(http.StatusNotFound, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(http.StatusOK, tools.Response{Message: "update invite approval success"})

@@ -1,5 +1,7 @@
 package eventPayment
 
+//go:generate mockgen -source=./usecase.go -destination=../../mocks/eventPayment/usecase_mock.go
+
 import (
 	"context"
 	"fmt"
@@ -13,7 +15,18 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/tools"
 )
 
-type Usecase struct {
+type Usecase interface {
+	Store(ctx context.Context, req Request, userID string) (statusCode int, err error)
+	FetchAll(ctx context.Context, page int32, pageSize int32, arg FetchAllParams) (tools.Pagination, error)
+	Update(ctx context.Context, arg UpdateParams, userID string) (statusCode int, err error)
+	FetchByUserID(ctx context.Context, page, pageSize int32, arg FetchByUserIDParams, userID string) (statusCode int, pagination tools.Pagination, err error)
+	Cart(ctx context.Context, page, pageSize int32, userID string) (tools.Pagination, error)
+	CartDetail(ctx context.Context, eventID uuid.UUID, userID string) (CartDetailResponse, error)
+	Detail(ctx context.Context, paymentID uuid.UUID) (DetailPaymentResponse, error)
+	Summary(ctx context.Context, arg SummaryParams) (SummaryResponse, error)
+}
+
+type usecase struct {
 	repository    *db.Queries
 	rawRepository RawRepository
 	rdb           *redis.Client
@@ -21,7 +34,7 @@ type Usecase struct {
 }
 
 func NewUsecase(repository *db.Queries, rawRepository RawRepository, rdb *redis.Client, r *rand.Rand) Usecase {
-	return Usecase{
+	return &usecase{
 		repository:    repository,
 		rawRepository: rawRepository,
 		rdb:           rdb,
@@ -29,7 +42,7 @@ func NewUsecase(repository *db.Queries, rawRepository RawRepository, rdb *redis.
 	}
 }
 
-func (u Usecase) store(ctx context.Context, req request, userID string) (statusCode int, err error) {
+func (u usecase) Store(ctx context.Context, req Request, userID string) (statusCode int, err error) {
 	event, err := u.repository.EventFetchOne(ctx, req.EventID)
 	if err != nil {
 		return http.StatusNotFound, fmt.Errorf("event not found : %s", err.Error())
@@ -101,7 +114,7 @@ func (u Usecase) store(ctx context.Context, req request, userID string) (statusC
 	return http.StatusOK, nil
 }
 
-func (u Usecase) fetchAll(ctx context.Context, page int32, pageSize int32, arg fetchAllParams) (tools.Pagination, error) {
+func (u usecase) FetchAll(ctx context.Context, page int32, pageSize int32, arg FetchAllParams) (tools.Pagination, error) {
 	skip := tools.PaginationSkip(page, pageSize)
 
 	start, _ := time.Parse(time.RFC3339, arg.Start)
@@ -149,7 +162,7 @@ func (u Usecase) fetchAll(ctx context.Context, page int32, pageSize int32, arg f
 
 }
 
-func (u Usecase) update(ctx context.Context, arg updateParams, userID string) (statusCode int, err error) {
+func (u usecase) Update(ctx context.Context, arg UpdateParams, userID string) (statusCode int, err error) {
 	paymentID, err := u.repository.EventPaymentCheckOne(ctx, db.EventPaymentCheckOneParams{
 		EventID: arg.EventID,
 		ID:      arg.PaymentID,
@@ -203,7 +216,7 @@ func (u Usecase) update(ctx context.Context, arg updateParams, userID string) (s
 	return http.StatusOK, nil
 }
 
-func (u Usecase) fetchByUserID(ctx context.Context, page, pageSize int32, arg fetchByUserIDParams, userID string) (statusCode int, pagination tools.Pagination, err error) {
+func (u usecase) FetchByUserID(ctx context.Context, page, pageSize int32, arg FetchByUserIDParams, userID string) (statusCode int, pagination tools.Pagination, err error) {
 	skip := tools.PaginationSkip(page, pageSize)
 
 	start, _ := time.Parse(time.RFC3339, arg.Start)
@@ -264,7 +277,7 @@ func (u Usecase) fetchByUserID(ctx context.Context, page, pageSize int32, arg fe
 	}, nil
 }
 
-func (u Usecase) cart(ctx context.Context, page, pageSize int32, userID string) (tools.Pagination, error) {
+func (u usecase) Cart(ctx context.Context, page, pageSize int32, userID string) (tools.Pagination, error) {
 	skip := tools.PaginationSkip(page, pageSize)
 
 	carts, err := u.repository.EventRegistrationFetchCart(ctx, db.EventRegistrationFetchCartParams{
@@ -289,17 +302,17 @@ func (u Usecase) cart(ctx context.Context, page, pageSize int32, userID string) 
 	}, nil
 }
 
-func (u Usecase) cartDetail(ctx context.Context, eventID uuid.UUID, userID string) (cartDetailResponse, error) {
+func (u usecase) CartDetail(ctx context.Context, eventID uuid.UUID, userID string) (CartDetailResponse, error) {
 	results, err := u.rawRepository.EventRegistrationFetchCartDetails(ctx, EventRegistrationFetchCartDetailsParams{
 		UserID:  uuid.MustParse(userID),
 		EventID: eventID,
 	})
 	if err != nil {
-		return cartDetailResponse{}, fmt.Errorf("error in fetch cart details : %s", err.Error())
+		return CartDetailResponse{}, fmt.Errorf("error in fetch cart details : %s", err.Error())
 	}
 	event, err := u.repository.EventFetchForCart(ctx, eventID)
 	if err != nil {
-		return cartDetailResponse{}, fmt.Errorf("error in fetch event : %s", err.Error())
+		return CartDetailResponse{}, fmt.Errorf("error in fetch event : %s", err.Error())
 	}
 	uniqueNumber, err := u.rdb.Get(ctx, "unique-"+userID).Result()
 	if err != nil {
@@ -307,47 +320,47 @@ func (u Usecase) cartDetail(ctx context.Context, eventID uuid.UUID, userID strin
 		min, max := 100, 999
 		uniqueNumber = fmt.Sprintf("%d", u.r.Intn(max-min+1)+min)
 		if err := u.rdb.Set(ctx, "unique-"+userID, uniqueNumber, 8*time.Hour).Err(); err != nil {
-			return cartDetailResponse{}, fmt.Errorf("error in set rdb unique key : %s", err.Error())
+			return CartDetailResponse{}, fmt.Errorf("error in set rdb unique key : %s", err.Error())
 		}
 	}
 	timestamp, err := u.rdb.Get(ctx, "timestamp-"+userID).Result()
 	if err != nil {
 		now := time.Now().Format("2006-01-02T15:04:05-07")
 		if err := u.rdb.Set(ctx, "timestamp-"+userID, now, 8*time.Hour).Err(); err != nil {
-			return cartDetailResponse{}, fmt.Errorf("error in set rdb timestamp key : %s", err.Error())
+			return CartDetailResponse{}, fmt.Errorf("error in set rdb timestamp key : %s", err.Error())
 		}
 		timestamp = now
 	}
 
-	return cartDetailResponse{
+	return CartDetailResponse{
 		Results: results,
 		Event:   event,
-		UniqueNumber: uniqueNumberData{
+		UniqueNumber: UniqueNumberData{
 			Number: uniqueNumber,
 			Time:   timestamp,
 		},
 	}, nil
 }
 
-func (u Usecase) detail(ctx context.Context, paymentID uuid.UUID) (detailPaymentResponse, error) {
+func (u usecase) Detail(ctx context.Context, paymentID uuid.UUID) (DetailPaymentResponse, error) {
 	payment, err := u.repository.EventPaymentFetchOneForAdmin(ctx, paymentID)
 	if err != nil {
-		return detailPaymentResponse{}, fmt.Errorf("payment not found : %s", err.Error())
+		return DetailPaymentResponse{}, fmt.Errorf("payment not found : %s", err.Error())
 	}
 	details, err := u.rawRepository.EventRegistrationFetchCartDetails(ctx, EventRegistrationFetchCartDetailsParams{
 		UserID:  uuid.UUID{},
 		EventID: payment.EventID,
 	})
 	if err != nil {
-		return detailPaymentResponse{}, fmt.Errorf("detail not found : %s", err.Error())
+		return DetailPaymentResponse{}, fmt.Errorf("detail not found : %s", err.Error())
 	}
-	return detailPaymentResponse{
+	return DetailPaymentResponse{
 		Detail:      payment,
 		ClassEvents: details,
 	}, nil
 }
 
-func (u Usecase) summary(ctx context.Context, arg summaryParams) (summaryResponse, error) {
+func (u usecase) Summary(ctx context.Context, arg SummaryParams) (SummaryResponse, error) {
 	approved, _ := u.rawRepository.EventPaymentSumAll(ctx, sumAllParams{
 		EventID: arg.EventID,
 		Status:  db.EventReceiptStatusApproved,
@@ -360,7 +373,7 @@ func (u Usecase) summary(ctx context.Context, arg summaryParams) (summaryRespons
 		EventID: arg.EventID,
 		Status:  db.EventReceiptStatusRefund,
 	})
-	return summaryResponse{
+	return SummaryResponse{
 		TotalApproved: approved,
 		TotalWaiting:  waiting,
 		TotalRefund:   refund,

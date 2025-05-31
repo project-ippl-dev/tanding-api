@@ -1,5 +1,7 @@
 package class
 
+//go:generate mockgen -source=./usecase.go -destination=../../mocks/class/usecase_mock.go
+
 import (
 	"context"
 	"fmt"
@@ -10,15 +12,23 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/tools"
 )
 
-type Usecase struct {
+type Usecase interface {
+	Store(ctx context.Context, req Request) error
+	FetchAll(ctx context.Context, page int32, pageSize int32) (tools.Pagination, error)
+	FetchBySportID(ctx context.Context, page int32, pageSize int32, sportID uuid.UUID) (tools.Pagination, error)
+	Update(ctx context.Context, req Request, classID uuid.UUID) error
+	Delete(ctx context.Context, decoded tools.JWT, classID uuid.UUID) (statusCode int, err error)
+}
+
+type usecase struct {
 	repository *db.Queries
 }
 
 func NewUsecase(repository *db.Queries) Usecase {
-	return Usecase{repository: repository}
+	return &usecase{repository: repository}
 }
 
-func (u Usecase) store(ctx context.Context, req request) error {
+func (u usecase) Store(ctx context.Context, req Request) error {
 	return u.repository.ClassCreate(ctx, db.ClassCreateParams{
 		SportID:                uuid.MustParse(req.SportID),
 		Name:                   req.Name,
@@ -28,7 +38,7 @@ func (u Usecase) store(ctx context.Context, req request) error {
 	})
 }
 
-func (u Usecase) fetchAll(ctx context.Context, page int32, pageSize int32) (tools.Pagination, error) {
+func (u usecase) FetchAll(ctx context.Context, page int32, pageSize int32) (tools.Pagination, error) {
 	skip := tools.PaginationSkip(page, pageSize)
 	classes, err := u.repository.ClassFetchAll(ctx, db.ClassFetchAllParams{
 		Limit:  pageSize,
@@ -49,7 +59,7 @@ func (u Usecase) fetchAll(ctx context.Context, page int32, pageSize int32) (tool
 	}, nil
 }
 
-func (u Usecase) fetchBySportID(ctx context.Context, page int32, pageSize int32, sportID uuid.UUID) (tools.Pagination, error) {
+func (u usecase) FetchBySportID(ctx context.Context, page int32, pageSize int32, sportID uuid.UUID) (tools.Pagination, error) {
 	skip := tools.PaginationSkip(page, pageSize)
 	classes, err := u.repository.ClassFetchBySportID(ctx, db.ClassFetchBySportIDParams{
 		SportID: sportID,
@@ -71,7 +81,7 @@ func (u Usecase) fetchBySportID(ctx context.Context, page int32, pageSize int32,
 	}, nil
 }
 
-func (u Usecase) update(ctx context.Context, req request, classID uuid.UUID) error {
+func (u usecase) Update(ctx context.Context, req Request, classID uuid.UUID) error {
 	if _, err := u.repository.ClassCheckOne(ctx, classID); err != nil {
 		return fmt.Errorf("error in check class : %s", err.Error())
 	}
@@ -85,7 +95,7 @@ func (u Usecase) update(ctx context.Context, req request, classID uuid.UUID) err
 	})
 }
 
-func (u Usecase) delete(ctx context.Context, decoded tools.JWT, classID uuid.UUID) (statusCode int, err error) {
+func (u usecase) Delete(ctx context.Context, decoded tools.JWT, classID uuid.UUID) (statusCode int, err error) {
 	class, err := u.repository.ClassCheckOne(ctx, classID)
 	if err != nil {
 		return http.StatusNotFound, fmt.Errorf("error in check class : %s", err.Error())

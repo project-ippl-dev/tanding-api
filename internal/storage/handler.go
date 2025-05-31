@@ -13,20 +13,26 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/tools"
 )
 
-type handler struct {
+type Handler struct {
 	usecase Usecase
 }
 
-func RegisterHandler(usecase Usecase, m middleware.Params, e *echo.Echo) {
-	storageHandler := handler{usecase: usecase}
-
-	e.POST("/storage/upload", storageHandler.upload, m.JWTMiddleware())
-	e.POST("/storage/upload/base64", storageHandler.base64, m.JWTMiddleware())
-	e.DELETE("/storage/delete/:dir/:file", storageHandler.delete)
+func NewHandler(usecase Usecase) Handler {
+	return Handler{
+		usecase: usecase,
+	}
 }
 
-func (h handler) upload(c echo.Context) error {
-	var req params
+func RegisterHandler(usecase Usecase, m middleware.Params, e *echo.Echo) {
+	storageHandler := NewHandler(usecase)
+
+	e.POST("/storage/upload", storageHandler.Upload, m.JWTMiddleware())
+	e.POST("/storage/upload/base64", storageHandler.Base64, m.JWTMiddleware())
+	e.DELETE("/storage/delete/:dir/:file", storageHandler.Delete)
+}
+
+func (h Handler) Upload(c echo.Context) error {
+	var req Params
 	dir := c.FormValue("dir")
 	file, err := c.FormFile("file")
 	if err != nil {
@@ -41,7 +47,7 @@ func (h handler) upload(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, tools.Response{Message: err.Error()})
 	}
-	if err := h.usecase.readMIMEType(src, &req.FileInformation); err != nil {
+	if err := h.usecase.ReadMIMEType(src, &req.FileInformation); err != nil {
 		return c.JSON(http.StatusInternalServerError, tools.Response{Message: err.Error()})
 	}
 	src.Close()
@@ -49,20 +55,20 @@ func (h handler) upload(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
 	}
 	ctx := c.Request().Context()
-	path, err := h.usecase.upload(ctx, req)
+	path, err := h.usecase.Upload(ctx, req)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(http.StatusOK, tools.ResponseData{Message: "upload success", Data: path})
 }
 
-func (h handler) base64(c echo.Context) error {
-	var req base64Params
+func (h Handler) Base64(c echo.Context) error {
+	var req Base64Params
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
 
-	unbased, err := h.usecase.base64ToFile(req.Data)
+	unbased, err := h.usecase.Base64ToFile(req.Data)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
@@ -78,14 +84,14 @@ func (h handler) base64(c echo.Context) error {
 	if err := req.Validate(); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
 	}
-	path, err := h.usecase.base64Upload(req)
+	path, err := h.usecase.Base64Upload(req)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, tools.Response{Message: err.Error()})
 	}
 	return c.JSON(http.StatusOK, tools.ResponseData{Message: "upload success", Data: path})
 }
 
-func (h handler) delete(c echo.Context) error {
+func (h Handler) Delete(c echo.Context) error {
 	dir := c.Param("dir")
 	path := c.Param("file")
 	statusCode, err := h.usecase.Delete(dir, path)

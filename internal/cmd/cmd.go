@@ -3,6 +3,10 @@ package cmd
 import (
 	"database/sql"
 	"fmt"
+	"github.com/project-ippl-dev/tanding-api/internal/class"
+	"github.com/project-ippl-dev/tanding-api/internal/classCompetitionRule"
+	"github.com/project-ippl-dev/tanding-api/internal/eventPayment"
+	"github.com/project-ippl-dev/tanding-api/internal/score"
 	"math/rand"
 	"net/http"
 	"time"
@@ -97,6 +101,8 @@ func routing(conf config.Config, postgresDB *sql.DB, rdb *redis.Client, s3Client
 	userRepository := user.NewRepository(postgresDB)
 	eventRepository := event.NewRepository(postgresDB)
 	bracketRepository := bracket.NewRepository(postgresDB)
+	eventPaymentRepository := eventPayment.NewRepository(postgresDB)
+	scoreRepository := score.NewRepository(postgresDB)
 
 	//Declare Usecase
 	authUsecase := auth.NewUsecase(repository, postgresDB, rdb, mailClient, jwtClient)
@@ -112,6 +118,10 @@ func routing(conf config.Config, postgresDB *sql.DB, rdb *redis.Client, s3Client
 	eventUsecase := event.NewUsecase(repository, eventRepository)
 	bracketUsecase := bracket.NewUsecase(repository, bracketRepository, r, postgresDB)
 	certificateUsecase := certificate.NewUsecase(repository)
+	classUsecase := class.NewUsecase(repository)
+	classCompetitionRuleUsecase := classCompetitionRule.NewUsecase(repository)
+	eventPaymentUsecase := eventPayment.NewUsecase(repository, eventPaymentRepository, rdb, r)
+	scoreUsecase := score.NewUsecase(repository, scoreRepository)
 
 	//Declare Handlers
 	auth.RegisterHandler(authUsecase, jwtClient, middlewareArgs, conf.ServerConfig, e)
@@ -127,4 +137,8 @@ func routing(conf config.Config, postgresDB *sql.DB, rdb *redis.Client, s3Client
 	rank.RegisterHandler(rankUsecase, middlewareArgs, jwtClient, e)
 	event.RegisterHandler(eventUsecase, middlewareArgs, jwtClient, e)
 	certificate.RegisterHandler(certificateUsecase, middlewareArgs, e)
+	class.RegisterHandler(classUsecase, middlewareArgs, jwtClient, e)
+	classCompetitionRule.RegisterHandler(classCompetitionRuleUsecase, middlewareArgs, e)
+	eventPayment.RegisterHandler(eventPaymentUsecase, middlewareArgs, jwtClient, e)
+	score.RegisterHandler(scoreUsecase, middlewareArgs, e)
 }
