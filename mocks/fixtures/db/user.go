@@ -18,4 +18,14 @@ var (
 			Username: Username,
 		},
 	}
+
+	USerFetchOneRow = db.UserFetchOneRow{
+		ID:        uuid.New(),
+		AccountID: 1,
+		Name:      "name",
+		Photo:     "https://google.com",
+		Username:  "name@email.com",
+		Type:      db.AccountTypeGoogle,
+		Role:      db.RoleUser,
+	}
 )
