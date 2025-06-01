@@ -20,8 +20,6 @@ import (
 	"github.com/project-ippl-dev/tanding-api/testutils"
 )
 
-var fakePagination = tools.Pagination{TotalItem: 1, PageSize: 10, Page: 1, Data: []interface{}{"user1"}}
-
 type handlerMock struct {
 	mockUsecase   *mock_rank.MockUsecase
 	mockJWTClient *mock_tools.MockJWTClient
@@ -255,168 +253,168 @@ func TestHandler_FetchByClubID(t *testing.T) {
 	}
 }
 
-func TestHandler_Rank(t *testing.T) {
-	return
-	testCases := []struct {
-		description        string
-		bindErr            bool
-		validateErr        bool
-		mockResp           tools.Pagination
-		mockErr            error
-		expectedMessage    string
-		expectedStatusCode int
-	}{
-		{
-			description:        "bind error",
-			bindErr:            true,
-			validateErr:        false,
-			mockResp:           tools.Pagination{},
-			mockErr:            nil,
-			expectedMessage:    "code=400, message=bind error",
-			expectedStatusCode: http.StatusBadRequest,
-		},
-		{
-			description:        "validation error",
-			bindErr:            false,
-			validateErr:        true,
-			mockResp:           tools.Pagination{},
-			mockErr:            nil,
-			expectedMessage:    "error validation",
-			expectedStatusCode: http.StatusUnprocessableEntity,
-		},
-		{
-			description:        "usecase error",
-			bindErr:            false,
-			validateErr:        false,
-			mockResp:           tools.Pagination{},
-			mockErr:            fmt.Errorf("internal error"),
-			expectedMessage:    "internal error",
-			expectedStatusCode: http.StatusInternalServerError,
-		},
-	}
+// func TestHandler_Rank(t *testing.T) {
+// 	return
+// 	testCases := []struct {
+// 		description        string
+// 		bindErr            bool
+// 		validateErr        bool
+// 		mockResp           tools.Pagination
+// 		mockErr            error
+// 		expectedMessage    string
+// 		expectedStatusCode int
+// 	}{
+// 		{
+// 			description:        "bind error",
+// 			bindErr:            true,
+// 			validateErr:        false,
+// 			mockResp:           tools.Pagination{},
+// 			mockErr:            nil,
+// 			expectedMessage:    "code=400, message=bind error",
+// 			expectedStatusCode: http.StatusBadRequest,
+// 		},
+// 		{
+// 			description:        "validation error",
+// 			bindErr:            false,
+// 			validateErr:        true,
+// 			mockResp:           tools.Pagination{},
+// 			mockErr:            nil,
+// 			expectedMessage:    "error validation",
+// 			expectedStatusCode: http.StatusUnprocessableEntity,
+// 		},
+// 		{
+// 			description:        "usecase error",
+// 			bindErr:            false,
+// 			validateErr:        false,
+// 			mockResp:           tools.Pagination{},
+// 			mockErr:            fmt.Errorf("internal error"),
+// 			expectedMessage:    "internal error",
+// 			expectedStatusCode: http.StatusInternalServerError,
+// 		},
+// 	}
 
-	for _, testCase := range testCases {
-		t.Run(testCase.description, func(t *testing.T) {
-			mock, e := newHandlerMock(t)
-			h := rank.NewHandler(mock.mockUsecase, mock.mockJWTClient)
-			rr, httpReq := testutils.MockHttpRequest(t, testutils.MockHttpRequestParam{
-				HttpMethod: http.MethodGet,
-				Url:        "/rank/club",
-			})
-			c := e.NewContext(httpReq, rr)
-			mock.mockJWTClient.EXPECT().Decode(gomock.Any()).Return(jwtFixtures.DecodedJWT).AnyTimes()
-			if testCase.bindErr {
-				c.Set("bindError", true)
-			} else if testCase.validateErr {
-				c.Set("validateError", true)
-			} else {
-				mock.mockUsecase.EXPECT().Rank(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(testCase.mockResp, testCase.mockErr).AnyTimes()
-			}
-			err := h.Rank(c)
-			assert.NoError(t, err)
-			if testCase.description == "success" {
-				var response tools.ResponseData
-				err = json.Unmarshal(rr.Body.Bytes(), &response)
-				assert.NoError(t, err)
-				assert.Equal(t, testCase.expectedStatusCode, rr.Code)
-				assert.Equal(t, testCase.expectedMessage, response.Message)
-				assert.Equal(t, testCase.mockResp, response.Data)
-			} else if testCase.description == "validation error" {
-				var response tools.ResponseValidation
-				err = json.Unmarshal(rr.Body.Bytes(), &response)
-				assert.NoError(t, err)
-				assert.Equal(t, testCase.expectedStatusCode, rr.Code)
-				assert.Equal(t, testCase.expectedMessage, response.Message)
-			} else {
-				var response tools.Response
-				err = json.Unmarshal(rr.Body.Bytes(), &response)
-				assert.NoError(t, err)
-				assert.Equal(t, testCase.expectedStatusCode, rr.Code)
-				assert.Equal(t, testCase.expectedMessage, response.Message)
-			}
-		})
-	}
-}
+// 	for _, testCase := range testCases {
+// 		t.Run(testCase.description, func(t *testing.T) {
+// 			mock, e := newHandlerMock(t)
+// 			h := rank.NewHandler(mock.mockUsecase, mock.mockJWTClient)
+// 			rr, httpReq := testutils.MockHttpRequest(t, testutils.MockHttpRequestParam{
+// 				HttpMethod: http.MethodGet,
+// 				Url:        "/rank/club",
+// 			})
+// 			c := e.NewContext(httpReq, rr)
+// 			mock.mockJWTClient.EXPECT().Decode(gomock.Any()).Return(jwtFixtures.DecodedJWT).AnyTimes()
+// 			if testCase.bindErr {
+// 				c.Set("bindError", true)
+// 			} else if testCase.validateErr {
+// 				c.Set("validateError", true)
+// 			} else {
+// 				mock.mockUsecase.EXPECT().Rank(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(testCase.mockResp, testCase.mockErr).AnyTimes()
+// 			}
+// 			err := h.Rank(c)
+// 			assert.NoError(t, err)
+// 			if testCase.description == "success" {
+// 				var response tools.ResponseData
+// 				err = json.Unmarshal(rr.Body.Bytes(), &response)
+// 				assert.NoError(t, err)
+// 				assert.Equal(t, testCase.expectedStatusCode, rr.Code)
+// 				assert.Equal(t, testCase.expectedMessage, response.Message)
+// 				assert.Equal(t, testCase.mockResp, response.Data)
+// 			} else if testCase.description == "validation error" {
+// 				var response tools.ResponseValidation
+// 				err = json.Unmarshal(rr.Body.Bytes(), &response)
+// 				assert.NoError(t, err)
+// 				assert.Equal(t, testCase.expectedStatusCode, rr.Code)
+// 				assert.Equal(t, testCase.expectedMessage, response.Message)
+// 			} else {
+// 				var response tools.Response
+// 				err = json.Unmarshal(rr.Body.Bytes(), &response)
+// 				assert.NoError(t, err)
+// 				assert.Equal(t, testCase.expectedStatusCode, rr.Code)
+// 				assert.Equal(t, testCase.expectedMessage, response.Message)
+// 			}
+// 		})
+// 	}
+// }
 
-func TestHandler_UserRank(t *testing.T) {
-	return
-	testCases := []struct {
-		description        string
-		bindErr            bool
-		validateErr        bool
-		mockResp           tools.Pagination
-		mockErr            error
-		expectedMessage    string
-		expectedStatusCode int
-	}{
-		{
-			description:        "bind error",
-			bindErr:            true,
-			validateErr:        false,
-			mockResp:           tools.Pagination{},
-			mockErr:            nil,
-			expectedMessage:    "code=400, message=bind error",
-			expectedStatusCode: http.StatusBadRequest,
-		},
-		{
-			description:        "validation error",
-			bindErr:            false,
-			validateErr:        true,
-			mockResp:           tools.Pagination{},
-			mockErr:            nil,
-			expectedMessage:    "error validation",
-			expectedStatusCode: http.StatusUnprocessableEntity,
-		},
-		{
-			description:        "usecase error",
-			bindErr:            false,
-			validateErr:        false,
-			mockResp:           tools.Pagination{},
-			mockErr:            fmt.Errorf("internal error"),
-			expectedMessage:    "internal error",
-			expectedStatusCode: http.StatusInternalServerError,
-		},
-	}
+// func TestHandler_UserRank(t *testing.T) {
+// 	return
+// 	testCases := []struct {
+// 		description        string
+// 		bindErr            bool
+// 		validateErr        bool
+// 		mockResp           tools.Pagination
+// 		mockErr            error
+// 		expectedMessage    string
+// 		expectedStatusCode int
+// 	}{
+// 		{
+// 			description:        "bind error",
+// 			bindErr:            true,
+// 			validateErr:        false,
+// 			mockResp:           tools.Pagination{},
+// 			mockErr:            nil,
+// 			expectedMessage:    "code=400, message=bind error",
+// 			expectedStatusCode: http.StatusBadRequest,
+// 		},
+// 		{
+// 			description:        "validation error",
+// 			bindErr:            false,
+// 			validateErr:        true,
+// 			mockResp:           tools.Pagination{},
+// 			mockErr:            nil,
+// 			expectedMessage:    "error validation",
+// 			expectedStatusCode: http.StatusUnprocessableEntity,
+// 		},
+// 		{
+// 			description:        "usecase error",
+// 			bindErr:            false,
+// 			validateErr:        false,
+// 			mockResp:           tools.Pagination{},
+// 			mockErr:            fmt.Errorf("internal error"),
+// 			expectedMessage:    "internal error",
+// 			expectedStatusCode: http.StatusInternalServerError,
+// 		},
+// 	}
 
-	for _, testCase := range testCases {
-		t.Run(testCase.description, func(t *testing.T) {
-			mock, e := newHandlerMock(t)
-			h := rank.NewHandler(mock.mockUsecase, mock.mockJWTClient)
-			rr, httpReq := testutils.MockHttpRequest(t, testutils.MockHttpRequestParam{
-				HttpMethod: http.MethodGet,
-				Url:        "/rank/user",
-			})
-			c := e.NewContext(httpReq, rr)
-			mock.mockJWTClient.EXPECT().Decode(gomock.Any()).Return(jwtFixtures.DecodedJWT).AnyTimes()
-			if testCase.bindErr {
-				c.Set("bindError", true)
-			} else if testCase.validateErr {
-				c.Set("validateError", true)
-			} else {
-				mock.mockUsecase.EXPECT().UserRank(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(testCase.mockResp, testCase.mockErr).AnyTimes()
-			}
-			err := h.UserRank(c)
-			assert.NoError(t, err)
-			if testCase.description == "success" {
-				var response tools.ResponseData
-				err = json.Unmarshal(rr.Body.Bytes(), &response)
-				assert.NoError(t, err)
-				assert.Equal(t, testCase.expectedStatusCode, rr.Code)
-				assert.Equal(t, testCase.expectedMessage, response.Message)
-				assert.Equal(t, testCase.mockResp, response.Data)
-			} else if testCase.description == "validation error" {
-				var response tools.ResponseValidation
-				err = json.Unmarshal(rr.Body.Bytes(), &response)
-				assert.NoError(t, err)
-				assert.Equal(t, testCase.expectedStatusCode, rr.Code)
-				assert.Equal(t, testCase.expectedMessage, response.Message)
-			} else {
-				var response tools.Response
-				err = json.Unmarshal(rr.Body.Bytes(), &response)
-				assert.NoError(t, err)
-				assert.Equal(t, testCase.expectedStatusCode, rr.Code)
-				assert.Equal(t, testCase.expectedMessage, response.Message)
-			}
-		})
-	}
-}
+// 	for _, testCase := range testCases {
+// 		t.Run(testCase.description, func(t *testing.T) {
+// 			mock, e := newHandlerMock(t)
+// 			h := rank.NewHandler(mock.mockUsecase, mock.mockJWTClient)
+// 			rr, httpReq := testutils.MockHttpRequest(t, testutils.MockHttpRequestParam{
+// 				HttpMethod: http.MethodGet,
+// 				Url:        "/rank/user",
+// 			})
+// 			c := e.NewContext(httpReq, rr)
+// 			mock.mockJWTClient.EXPECT().Decode(gomock.Any()).Return(jwtFixtures.DecodedJWT).AnyTimes()
+// 			if testCase.bindErr {
+// 				c.Set("bindError", true)
+// 			} else if testCase.validateErr {
+// 				c.Set("validateError", true)
+// 			} else {
+// 				mock.mockUsecase.EXPECT().UserRank(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(testCase.mockResp, testCase.mockErr).AnyTimes()
+// 			}
+// 			err := h.UserRank(c)
+// 			assert.NoError(t, err)
+// 			if testCase.description == "success" {
+// 				var response tools.ResponseData
+// 				err = json.Unmarshal(rr.Body.Bytes(), &response)
+// 				assert.NoError(t, err)
+// 				assert.Equal(t, testCase.expectedStatusCode, rr.Code)
+// 				assert.Equal(t, testCase.expectedMessage, response.Message)
+// 				assert.Equal(t, testCase.mockResp, response.Data)
+// 			} else if testCase.description == "validation error" {
+// 				var response tools.ResponseValidation
+// 				err = json.Unmarshal(rr.Body.Bytes(), &response)
+// 				assert.NoError(t, err)
+// 				assert.Equal(t, testCase.expectedStatusCode, rr.Code)
+// 				assert.Equal(t, testCase.expectedMessage, response.Message)
+// 			} else {
+// 				var response tools.Response
+// 				err = json.Unmarshal(rr.Body.Bytes(), &response)
+// 				assert.NoError(t, err)
+// 				assert.Equal(t, testCase.expectedStatusCode, rr.Code)
+// 				assert.Equal(t, testCase.expectedMessage, response.Message)
+// 			}
+// 		})
+// 	}
+// }
