@@ -47,11 +47,11 @@ func (h Handler) Upload(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, tools.Response{Message: err.Error()})
 	}
-	if err := h.usecase.ReadMIMEType(src, &req.FileInformation); err != nil {
+	if err = h.usecase.ReadMIMEType(src, &req.FileInformation); err != nil {
 		return c.JSON(http.StatusInternalServerError, tools.Response{Message: err.Error()})
 	}
 	src.Close()
-	if err := req.FileInformation.Validate(); err != nil {
+	if err = req.FileInformation.Validate(); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
 	}
 	ctx := c.Request().Context()

@@ -13,6 +13,7 @@ type MockHttpRequestParam struct {
 	HttpMethod string
 	Url        string
 	ReqBody    interface{}
+	ReqRawBody *bytes.Buffer
 	ReqHeaders map[string]string
 }
 
@@ -24,14 +25,18 @@ func MockHttpRequest(t *testing.T, input MockHttpRequestParam) (rr *httptest.Res
 		}
 		httpBody := bytes.NewBuffer(req)
 		httpReq = httptest.NewRequest(input.HttpMethod, input.Url, httpBody)
+	} else if input.ReqRawBody != nil {
+		httpReq = httptest.NewRequest(input.HttpMethod, input.Url, input.ReqRawBody)
 	} else {
 		httpReq = httptest.NewRequest(input.HttpMethod, input.Url, nil)
 	}
 
-	httpReq.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-
 	for key, val := range input.ReqHeaders {
 		httpReq.Header.Add(key, val)
+	}
+
+	if httpReq.Header.Get(echo.HeaderContentType) == "" {
+		httpReq.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	}
 
 	rr = httptest.NewRecorder()
