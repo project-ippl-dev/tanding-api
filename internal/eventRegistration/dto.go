@@ -11,7 +11,7 @@ type RegistrationRequest struct {
 	EventID      string       `param:"event"`
 	ClassEventID string       `json:"class_event_id"`
 	ClubID       string       `json:"club_id"`
-	Members      []memberData `json:"members"`
+	Members      []MemberData `json:"members"`
 }
 
 func (r RegistrationRequest) Validate() error {
@@ -23,11 +23,11 @@ func (r RegistrationRequest) Validate() error {
 	)
 }
 
-type memberData struct {
+type MemberData struct {
 	UserID uuid.UUID `json:"user_id"`
 }
 
-func (m memberData) Validate() error {
+func (m MemberData) Validate() error {
 	return validation.ValidateStruct(&m,
 		validation.Field(&m.UserID, validation.Required, is.UUID),
 	)
@@ -41,8 +41,8 @@ type FetchAllParams struct {
 	UserID       string                     `query:"user_id"`
 }
 
-type fetchResponse struct {
-	fetchAllRow
+type FetchResponse struct {
+	FetchAllRow
 	Participants []db.EventParticipantFetchByRegistrationIDRow `json:"participants"`
 }
 

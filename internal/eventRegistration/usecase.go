@@ -144,14 +144,14 @@ func (u usecase) FetchAll(ctx context.Context, args FetchAllParams, page, pageSi
 	if err != nil {
 		return tools.Pagination{}, fmt.Errorf("error in fetch registration : %s", err.Error())
 	}
-	data := []fetchResponse{}
+	data := []FetchResponse{}
 	for _, registration := range registrations {
 		participants, err := u.repository.EventParticipantFetchByRegistrationID(ctx, registration.ID)
 		if err != nil {
 			return tools.Pagination{}, fmt.Errorf("error in fetch participant by specific registration id : %s", err.Error())
 		}
-		data = append(data, fetchResponse{
-			fetchAllRow:  registration,
+		data = append(data, FetchResponse{
+			FetchAllRow:  registration,
 			Participants: participants,
 		})
 	}

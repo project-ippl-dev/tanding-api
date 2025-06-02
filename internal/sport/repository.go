@@ -32,7 +32,7 @@ type fetchAllParams struct {
 	Category string `json:"category"`
 }
 
-type fetchAllRow struct {
+type FetchAllRow struct {
 	ID          uuid.UUID    `json:"id"`
 	Name        string       `json:"name"`
 	Description string       `json:"description"`
@@ -40,7 +40,7 @@ type fetchAllRow struct {
 	Thumbnail   string       `json:"thumbnail"`
 }
 
-func (r *RawRepository) SportFetchAll(ctx context.Context, arg fetchAllParams) ([]fetchAllRow, error) {
+func (r *RawRepository) SportFetchAll(ctx context.Context, arg fetchAllParams) ([]FetchAllRow, error) {
 	var rows *sql.Rows
 	if arg.Category == "" {
 		result, err := r.db.QueryContext(ctx, sportFetchAll, arg.Name, arg.Limit, arg.Offset)
@@ -56,9 +56,9 @@ func (r *RawRepository) SportFetchAll(ctx context.Context, arg fetchAllParams) (
 		rows = result
 	}
 	defer rows.Close()
-	items := []fetchAllRow{}
+	items := []FetchAllRow{}
 	for rows.Next() {
-		var i fetchAllRow
+		var i FetchAllRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
