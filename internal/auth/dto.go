@@ -112,14 +112,14 @@ func (r ResetRequest) Validate() error {
 	)
 }
 
-type bindingRequest struct {
+type BindingRequest struct {
 	Email           string `json:"email"`
 	Password        string `json:"password"`
 	ConfirmPassword string `json:"confirm_password"`
 	Token           string `json:"token"`
 }
 
-func (b bindingRequest) Validate(kind string) error {
+func (b BindingRequest) Validate(kind string) error {
 	switch kind {
 	case string(db.AccountTypeManual):
 		return validation.ValidateStruct(&b,
@@ -137,7 +137,7 @@ func (b bindingRequest) Validate(kind string) error {
 
 type BindingParams struct {
 	Kind    string
-	Request bindingRequest
+	Request BindingRequest
 	Decoded tools.JWT
 	Host    string
 }
