@@ -50,7 +50,7 @@ type StatusReq struct {
 	Status *bool `json:"status"`
 }
 
-type response struct {
+type Response struct {
 	ID            uuid.UUID                        `json:"id"`
 	UserID        uuid.UUID                        `json:"user_id"`
 	UserName      string                           `json:"user_name"`

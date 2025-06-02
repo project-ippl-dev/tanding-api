@@ -124,13 +124,13 @@ func (u usecase) FetchAll(ctx context.Context, page int32, pageSize int32) (tool
 		return tools.Pagination{}, fmt.Errorf("error in count all event : %s", err.Error())
 	}
 
-	data := []response{}
+	data := []Response{}
 	for _, event := range events {
 		classEvents, err := u.repository.ClassEventFetchByEventID(ctx, event.ID)
 		if err != nil {
 			return tools.Pagination{}, fmt.Errorf("error in fetch class event : %s", err.Error())
 		}
-		data = append(data, response{
+		data = append(data, Response{
 			ID:           event.ID,
 			UserID:       event.UserID,
 			UserName:     event.UserName,
@@ -268,13 +268,13 @@ func (u usecase) FetchByUser(ctx context.Context, page int32, pageSize int32, us
 		return tools.Pagination{}, fmt.Errorf("error in count event by user id : %s", err.Error())
 	}
 
-	data := []response{}
+	data := []Response{}
 	for _, event := range events {
 		totalParticipants, err := u.repository.EventRegistrationCountAllByStatusApproved(ctx, event.ID)
 		if err != nil {
 			return tools.Pagination{}, fmt.Errorf("error in count all participants : %s", err.Error())
 		}
-		data = append(data, response{
+		data = append(data, Response{
 			ID:           event.ID,
 			UserID:       event.UserID,
 			UserName:     event.UserName,

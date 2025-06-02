@@ -63,8 +63,8 @@ type FetchByEventPrivilegeParams struct {
 	End     string                `query:"end"`
 }
 
-type response struct {
-	fetchAllRow
+type Response struct {
+	FetchAllRow
 	ClassEvents []db.ClassEventFetchByPaymentIDRow `json:"class_events"`
 }
 
