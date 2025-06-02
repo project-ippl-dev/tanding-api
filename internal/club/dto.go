@@ -35,7 +35,7 @@ func (s sport) Validate() error {
 
 type ParticipantReq struct {
 	ClubID       string            `param:"club"`
-	Participants []participantData `json:"participants"`
+	Participants []ParticipantData `json:"participants"`
 }
 
 func (p ParticipantReq) Validate() error {
@@ -45,12 +45,12 @@ func (p ParticipantReq) Validate() error {
 	)
 }
 
-type participantData struct {
+type ParticipantData struct {
 	UserID  string `json:"user_id"`
 	SportID string `json:"sport_id"`
 }
 
-func (p participantData) Validate() error {
+func (p ParticipantData) Validate() error {
 	return validation.ValidateStruct(&p,
 		validation.Field(&p.UserID, validation.Required, is.UUID),
 		validation.Field(&p.SportID, validation.Required, is.UUID),

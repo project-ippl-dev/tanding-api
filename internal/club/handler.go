@@ -43,7 +43,7 @@ func (h Handler) Store(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
 	if err := req.Validate(); err != nil {
-		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation ", Errors: err.Error()})
+		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
 	}
 	decoded := h.jwtClient.Decode(c)
 	ctx := c.Request().Context()
@@ -155,7 +155,7 @@ func (h Handler) FetchInviteApproval(c echo.Context) error {
 func (h Handler) UpdateJoinApproval(c echo.Context) error {
 	var req UpdateJoinApprovalArgs
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusNotFound, tools.Response{Message: err.Error()})
+		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
 	if err := req.Validate(); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
@@ -172,7 +172,7 @@ func (h Handler) UpdateJoinApproval(c echo.Context) error {
 func (h Handler) UpdateInviteApproval(c echo.Context) error {
 	var req UpdateInviteApprovalArgs
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusNotFound, tools.Response{Message: err.Error()})
+		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
 	if err := req.Validate(); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})
