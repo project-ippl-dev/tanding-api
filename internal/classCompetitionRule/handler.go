@@ -66,7 +66,7 @@ func (h Handler) FetchOne(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusNotFound, tools.Response{Message: err.Error()})
 	}
-	return c.JSON(http.StatusOK, tools.ResponseData{Message: "fetch one competition rules sucess", Data: rule})
+	return c.JSON(http.StatusOK, tools.ResponseData{Message: "fetch one competition rules success", Data: rule})
 }
 
 func (h Handler) Update(c echo.Context) error {
