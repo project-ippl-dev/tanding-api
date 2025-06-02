@@ -162,7 +162,7 @@ func (h Handler) Binding(c echo.Context) error {
 	kind := c.Param("type")
 	decoded := h.jwtClient.Decode(c)
 
-	var req bindingRequest
+	var req BindingRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: "error in binding request : " + err.Error()})
 	}
