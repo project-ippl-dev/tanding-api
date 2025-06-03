@@ -61,6 +61,13 @@ func (u usecase) Store(ctx context.Context, req Request, decoded tools.JWT) (sta
 		return http.StatusUnprocessableEntity, uuid.UUID{}, fmt.Errorf("open must before deadline time")
 	}
 
+	var remark db.RemarkType
+	if open.Before(time.Now()) {
+		remark = db.RemarkTypeOpen
+	} else {
+		remark = db.RemarkTypeSoon
+	}
+
 	tx, err := u.rawRepository.db.Begin()
 	if err != nil {
 		return http.StatusInternalServerError, uuid.UUID{}, fmt.Errorf("error in start transaction : %s", err.Error())
@@ -84,6 +91,10 @@ func (u usecase) Store(ctx context.Context, req Request, decoded tools.JWT) (sta
 		ProposalLink: req.ProposalLink,
 		Quota:        req.Quota,
 		Open:         open,
+		Remark:       remark,
+		Status: sql.NullBool{
+			Bool: true,
+		},
 	})
 	if err != nil {
 		if err := tx.Rollback(); err != nil {

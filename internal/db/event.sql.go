@@ -95,29 +95,31 @@ func (q *Queries) EventCountInfinite(ctx context.Context) (int64, error) {
 
 const eventCreate = `-- name: EventCreate :one
 INSERT INTO events(user_id, type, name, description, prize_pool, location, province, city, thumbnail, start_date, end_date, deadline,
-                   sport_id, rules, proposal_link, quota, open, updated_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW())
+                   sport_id, rules, proposal_link, quota, open, remark, status, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW())
 RETURNING id
 `
 
 type EventCreateParams struct {
-	UserID       uuid.UUID `json:"user_id"`
-	Type         EventType `json:"type"`
-	Name         string    `json:"name"`
-	Description  string    `json:"description"`
-	PrizePool    string    `json:"prize_pool"`
-	Location     string    `json:"location"`
-	Province     string    `json:"province"`
-	City         string    `json:"city"`
-	Thumbnail    string    `json:"thumbnail"`
-	StartDate    time.Time `json:"start_date"`
-	EndDate      time.Time `json:"end_date"`
-	Deadline     time.Time `json:"deadline"`
-	SportID      uuid.UUID `json:"sport_id"`
-	Rules        string    `json:"rules"`
-	ProposalLink string    `json:"proposal_link"`
-	Quota        int32     `json:"quota"`
-	Open         time.Time `json:"open"`
+	UserID       uuid.UUID    `json:"user_id"`
+	Type         EventType    `json:"type"`
+	Name         string       `json:"name"`
+	Description  string       `json:"description"`
+	PrizePool    string       `json:"prize_pool"`
+	Location     string       `json:"location"`
+	Province     string       `json:"province"`
+	City         string       `json:"city"`
+	Thumbnail    string       `json:"thumbnail"`
+	StartDate    time.Time    `json:"start_date"`
+	EndDate      time.Time    `json:"end_date"`
+	Deadline     time.Time    `json:"deadline"`
+	SportID      uuid.UUID    `json:"sport_id"`
+	Rules        string       `json:"rules"`
+	ProposalLink string       `json:"proposal_link"`
+	Quota        int32        `json:"quota"`
+	Open         time.Time    `json:"open"`
+	Remark       RemarkType   `json:"remark"`
+	Status       sql.NullBool `json:"status"`
 }
 
 func (q *Queries) EventCreate(ctx context.Context, arg EventCreateParams) (uuid.UUID, error) {
@@ -139,6 +141,8 @@ func (q *Queries) EventCreate(ctx context.Context, arg EventCreateParams) (uuid.
 		arg.ProposalLink,
 		arg.Quota,
 		arg.Open,
+		arg.Remark,
+		arg.Status,
 	)
 	var id uuid.UUID
 	err := row.Scan(&id)

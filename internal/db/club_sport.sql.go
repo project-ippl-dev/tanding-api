@@ -24,3 +24,38 @@ func (q *Queries) ClubAttachSport(ctx context.Context, arg ClubAttachSportParams
 	_, err := q.db.ExecContext(ctx, clubAttachSport, arg.ClubID, arg.SportID)
 	return err
 }
+
+const clubSportFetchByClubID = `-- name: ClubSportFetchByClubID :many
+SELECT cs.id, s.id as sport_id ,s.name as sport_name FROM club_sport as cs
+INNER JOIN sports as s ON s.id = cs.sport_id
+WHERE cs.club_id = $1
+`
+
+type ClubSportFetchByClubIDRow struct {
+	ID        int64     `json:"id"`
+	SportID   uuid.UUID `json:"sport_id"`
+	SportName string    `json:"sport_name"`
+}
+
+func (q *Queries) ClubSportFetchByClubID(ctx context.Context, clubID uuid.UUID) ([]ClubSportFetchByClubIDRow, error) {
+	rows, err := q.db.QueryContext(ctx, clubSportFetchByClubID, clubID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ClubSportFetchByClubIDRow{}
+	for rows.Next() {
+		var i ClubSportFetchByClubIDRow
+		if err := rows.Scan(&i.ID, &i.SportID, &i.SportName); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

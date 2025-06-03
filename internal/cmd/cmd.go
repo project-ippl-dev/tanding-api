@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/project-ippl-dev/tanding-api/internal/class"
 	"github.com/project-ippl-dev/tanding-api/internal/classCompetitionRule"
+	"github.com/project-ippl-dev/tanding-api/internal/classEvent"
 	"github.com/project-ippl-dev/tanding-api/internal/eventPayment"
 	"github.com/project-ippl-dev/tanding-api/internal/score"
 	"math/rand"
@@ -122,6 +123,7 @@ func routing(conf config.Config, postgresDB *sql.DB, rdb *redis.Client, s3Client
 	classCompetitionRuleUsecase := classCompetitionRule.NewUsecase(repository)
 	eventPaymentUsecase := eventPayment.NewUsecase(repository, eventPaymentRepository, rdb, r)
 	scoreUsecase := score.NewUsecase(repository, scoreRepository)
+	classEventUsecase := classEvent.NewUsecase(repository, postgresDB)
 
 	//Declare Handlers
 	auth.RegisterHandler(authUsecase, jwtClient, middlewareArgs, conf.ServerConfig, e)
@@ -141,4 +143,5 @@ func routing(conf config.Config, postgresDB *sql.DB, rdb *redis.Client, s3Client
 	classCompetitionRule.RegisterHandler(classCompetitionRuleUsecase, middlewareArgs, e)
 	eventPayment.RegisterHandler(eventPaymentUsecase, middlewareArgs, jwtClient, e)
 	score.RegisterHandler(scoreUsecase, middlewareArgs, e)
+	classEvent.RegisterHandler(classEventUsecase, jwtClient, middlewareArgs, e)
 }

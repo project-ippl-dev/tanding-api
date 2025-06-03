@@ -1,7 +1,7 @@
 -- name: EventCreate :one
 INSERT INTO events(user_id, type, name, description, prize_pool, location, province, city, thumbnail, start_date, end_date, deadline,
-                   sport_id, rules, proposal_link, quota, open, updated_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW())
+                   sport_id, rules, proposal_link, quota, open, remark, status, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW())
 RETURNING id;
 
 -- name: EventFetchAll :many
