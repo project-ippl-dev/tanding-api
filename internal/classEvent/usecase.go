@@ -68,6 +68,15 @@ func (u usecase) Detach(ctx context.Context, userID string, eventID uuid.UUID, c
 		return fmt.Errorf("error in check class event : %s", err.Error())
 	}
 
+	res, err := u.repository.EventRegistrationFetchByClassEventIDAndStatus(ctx, classEventID)
+	if err != nil {
+		return fmt.Errorf("error in fetch event : %s", err.Error())
+	}
+
+	if len(res) != 0 {
+		return fmt.Errorf("can't detach class event that already had approved participant")
+	}
+
 	return u.repository.ClassEventDetach(ctx, db.ClassEventDetachParams{
 		ID:      classEventID,
 		EventID: eventID,

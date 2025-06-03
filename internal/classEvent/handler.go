@@ -18,7 +18,7 @@ type Handler struct {
 func RegisterHandler(usecase Usecase, jwtClient tools.JWTClient, m middleware.Params, e *echo.Echo) {
 	classEventHandler := NewHandler(usecase, jwtClient)
 
-	e.POST("/event/:event/class/assign", classEventHandler.Assign, m.JWTMiddleware(), m.Middleware.EventPrivilegeOwner)
+	e.POST("/event/:event/class/assign", classEventHandler.Assign, m.JWTMiddleware(), m.Middleware.EventPrivilegeOwner, m.Middleware.ClassEventManipulation)
 	e.GET("/event/:event/class", classEventHandler.FetchAll)
 	e.DELETE("/event/:event/class/:class", classEventHandler.Detach, m.JWTMiddleware(), m.Middleware.EventPrivilegeOwner, m.Middleware.ClassEventManipulation)
 	e.PUT("/event/:event/class/:class", classEventHandler.Update, m.JWTMiddleware(), m.Middleware.EventPrivilegeOwner, m.Middleware.ClassEventManipulation)
