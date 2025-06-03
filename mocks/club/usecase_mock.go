@@ -16,6 +16,7 @@ import (
 	uuid "github.com/google/uuid"
 	club "github.com/project-ippl-dev/tanding-api/internal/club"
 	db "github.com/project-ippl-dev/tanding-api/internal/db"
+	tools "github.com/project-ippl-dev/tanding-api/internal/tools"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -56,6 +57,21 @@ func (mr *MockUsecaseMockRecorder) Delete(ctx, userID, clubID any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockUsecase)(nil).Delete), ctx, userID, clubID)
 }
 
+// FetchAll mocks base method.
+func (m *MockUsecase) FetchAll(ctx context.Context, page, pageSize int32, sportID string) (tools.Pagination, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchAll", ctx, page, pageSize, sportID)
+	ret0, _ := ret[0].(tools.Pagination)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchAll indicates an expected call of FetchAll.
+func (mr *MockUsecaseMockRecorder) FetchAll(ctx, page, pageSize, sportID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchAll", reflect.TypeOf((*MockUsecase)(nil).FetchAll), ctx, page, pageSize, sportID)
+}
+
 // FetchInviteApproval mocks base method.
 func (m *MockUsecase) FetchInviteApproval(ctx context.Context, limit int32, userID string, ID int64) ([]db.ClubParticipantFetchInviteApprovalRow, error) {
 	m.ctrl.T.Helper()
@@ -86,6 +102,66 @@ func (mr *MockUsecaseMockRecorder) FetchJoinApproval(ctx, limit, clubID, ID any)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchJoinApproval", reflect.TypeOf((*MockUsecase)(nil).FetchJoinApproval), ctx, limit, clubID, ID)
 }
 
+// FetchOne mocks base method.
+func (m *MockUsecase) FetchOne(ctx context.Context, clubID uuid.UUID, userID string) (club.FetchOneResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchOne", ctx, clubID, userID)
+	ret0, _ := ret[0].(club.FetchOneResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchOne indicates an expected call of FetchOne.
+func (mr *MockUsecaseMockRecorder) FetchOne(ctx, clubID, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchOne", reflect.TypeOf((*MockUsecase)(nil).FetchOne), ctx, clubID, userID)
+}
+
+// FetchOwner mocks base method.
+func (m *MockUsecase) FetchOwner(ctx context.Context, userID string) ([]db.ClubFetchAllOwnerRow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchOwner", ctx, userID)
+	ret0, _ := ret[0].([]db.ClubFetchAllOwnerRow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchOwner indicates an expected call of FetchOwner.
+func (mr *MockUsecaseMockRecorder) FetchOwner(ctx, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchOwner", reflect.TypeOf((*MockUsecase)(nil).FetchOwner), ctx, userID)
+}
+
+// FetchParticipant mocks base method.
+func (m *MockUsecase) FetchParticipant(ctx context.Context, req club.FetchParticipantParam) (tools.Pagination, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchParticipant", ctx, req)
+	ret0, _ := ret[0].(tools.Pagination)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchParticipant indicates an expected call of FetchParticipant.
+func (mr *MockUsecaseMockRecorder) FetchParticipant(ctx, req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchParticipant", reflect.TypeOf((*MockUsecase)(nil).FetchParticipant), ctx, req)
+}
+
+// Handover mocks base method.
+func (m *MockUsecase) Handover(ctx context.Context, userID string, req club.HandoverReq) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Handover", ctx, userID, req)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Handover indicates an expected call of Handover.
+func (mr *MockUsecaseMockRecorder) Handover(ctx, userID, req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Handover", reflect.TypeOf((*MockUsecase)(nil).Handover), ctx, userID, req)
+}
+
 // Invite mocks base method.
 func (m *MockUsecase) Invite(ctx context.Context, req club.ParticipantReq, userID string) error {
 	m.ctrl.T.Helper()
@@ -113,6 +189,21 @@ func (m *MockUsecase) Join(ctx context.Context, req club.JoinParam, userID strin
 func (mr *MockUsecaseMockRecorder) Join(ctx, req, userID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Join", reflect.TypeOf((*MockUsecase)(nil).Join), ctx, req, userID)
+}
+
+// Kick mocks base method.
+func (m *MockUsecase) Kick(ctx context.Context, arg club.KickParams, userID string) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Kick", ctx, arg, userID)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Kick indicates an expected call of Kick.
+func (mr *MockUsecaseMockRecorder) Kick(ctx, arg, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Kick", reflect.TypeOf((*MockUsecase)(nil).Kick), ctx, arg, userID)
 }
 
 // Store mocks base method.

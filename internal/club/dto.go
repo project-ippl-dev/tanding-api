@@ -3,6 +3,8 @@ package club
 import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"github.com/google/uuid"
+	"github.com/project-ippl-dev/tanding-api/internal/db"
 )
 
 type Request struct {
@@ -90,5 +92,59 @@ func (j JoinParam) Validate() error {
 	return validation.ValidateStruct(&j,
 		validation.Field(&j.SportID, is.UUID),
 		validation.Field(&j.ClubID, validation.Required, is.UUID),
+	)
+}
+
+type FetchParticipantParam struct {
+	Page           int32
+	PageSize       int32
+	ClubID         uuid.UUID `param:"club"`
+	SportID        string    `query:"sport_id"`
+	CanParticipate *bool     `query:"can_participate"`
+}
+
+func (f FetchParticipantParam) Validate() error {
+	return validation.ValidateStruct(&f,
+		validation.Field(&f.SportID, is.UUID),
+		validation.Field(&f.ClubID, validation.Required, is.UUID),
+	)
+}
+
+type FetchOneResponse struct {
+	db.ClubFetchOneRow
+	Sports    []db.ClubSportFetchByClubIDRow `json:"sports"`
+	Privilege bool                           `json:"privilege"`
+	Joined    bool                           `json:"joined"`
+}
+
+type FetchAllResponse struct {
+	FetchAllRow
+	Sports []db.ClubSportFetchByClubIDRow `json:"sports"`
+}
+
+type fetchParticipantResponse struct {
+	TotalPoint   int64                 `json:"total_point"`
+	Participants []FetchParticipantRow `json:"participants"`
+}
+
+type FetchParticipantRow struct {
+	ParticipantFetchAllRow
+	Point int64 `json:"point"`
+}
+
+type KickParams struct {
+	ClubID            uuid.UUID `param:"club"`
+	ClubParticipantID int64     `param:"participant"`
+}
+
+type HandoverReq struct {
+	UserID string `json:"user_id"`
+	ClubID string `param:"club"`
+}
+
+func (h HandoverReq) Validate() error {
+	return validation.ValidateStruct(&h,
+		validation.Field(&h.UserID, validation.Required, is.UUID),
+		validation.Field(&h.ClubID, validation.Required, is.UUID),
 	)
 }
