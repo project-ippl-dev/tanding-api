@@ -141,14 +141,14 @@ func (u usecase) FetchAll(ctx context.Context, page int32, pageSize int32, arg F
 		return tools.Pagination{}, fmt.Errorf("error in count payment : %s", err.Error())
 	}
 
-	results := []response{}
+	results := []Response{}
 	for _, payment := range payments {
 		classEvents, err := u.repository.ClassEventFetchByPaymentID(ctx, payment.ID)
 		if err != nil {
 			return tools.Pagination{}, fmt.Errorf("error in fetch class events : %s", err.Error())
 		}
-		results = append(results, response{
-			fetchAllRow: payment,
+		results = append(results, Response{
+			FetchAllRow: payment,
 			ClassEvents: classEvents,
 		})
 	}
@@ -257,14 +257,14 @@ func (u usecase) FetchByUserID(ctx context.Context, page, pageSize int32, arg Fe
 		return http.StatusInternalServerError, tools.Pagination{}, fmt.Errorf("error in count payment : %s", err.Error())
 	}
 
-	results := []response{}
+	results := []Response{}
 	for _, payment := range payments {
 		classEvents, err := u.repository.ClassEventFetchByPaymentID(ctx, payment.ID)
 		if err != nil {
 			return http.StatusNotFound, tools.Pagination{}, fmt.Errorf("error in fetch class events : %s", err.Error())
 		}
-		results = append(results, response{
-			fetchAllRow: payment,
+		results = append(results, Response{
+			FetchAllRow: payment,
 			ClassEvents: classEvents,
 		})
 	}
