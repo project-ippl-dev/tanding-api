@@ -6,6 +6,7 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/class"
 	"github.com/project-ippl-dev/tanding-api/internal/classCompetitionRule"
 	"github.com/project-ippl-dev/tanding-api/internal/classEvent"
+	"github.com/project-ippl-dev/tanding-api/internal/cron"
 	"github.com/project-ippl-dev/tanding-api/internal/eventPayment"
 	"github.com/project-ippl-dev/tanding-api/internal/score"
 	"math/rand"
@@ -90,6 +91,11 @@ func routing(conf config.Config, postgresDB *sql.DB, rdb *redis.Client, s3Client
 	middlewareArgs := middlewareApp.Params{
 		Middleware: m,
 	}
+
+	//Init Cron Task
+	cronRepository := cron.NewRepository(postgresDB)
+	cronUsecase := cron.NewUsecase(repository, cronRepository)
+	cron.Init(cronUsecase)
 
 	//Init new group route
 	profileRoute := e.Group("/profile", middlewareArgs.JWTMiddleware())
