@@ -9,6 +9,15 @@ import (
 	"github.com/project-ippl-dev/tanding-api/internal/tools"
 )
 
+var (
+	AllowedClassEventManipulationMap = map[db.RemarkType]bool{
+		db.RemarkTypeUnconfirmed: true,
+		db.RemarkTypeOpen:        true,
+		db.RemarkTypeSoon:        true,
+		db.RemarkTypeRejected:    true,
+	}
+)
+
 func (m Middleware) ClassEventManipulation(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		eventIDParam := c.Param("event")
@@ -21,8 +30,8 @@ func (m Middleware) ClassEventManipulation(next echo.HandlerFunc) echo.HandlerFu
 		if err != nil {
 			return c.JSON(http.StatusNotFound, tools.Response{Message: err.Error()})
 		}
-		if event.Remark != db.RemarkTypeUnconfirmed {
-			return c.JSON(http.StatusForbidden, tools.Response{Message: "can't update class event with event remark beside unconfirmed"})
+		if !AllowedClassEventManipulationMap[event.Remark] {
+			return c.JSON(http.StatusForbidden, tools.Response{Message: "can't update class event with event remark after close"})
 		}
 		return next(c)
 	}
