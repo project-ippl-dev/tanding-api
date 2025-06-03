@@ -13,7 +13,7 @@ func Init(usecase Usecase) {
 	h := handler{usecase: usecase}
 	c := cron.New()
 
-	if _, err := c.AddFunc("@daily", func() {
+	if _, err := c.AddFunc("@every 5m", func() {
 		if err := h.usecase.eventUpdateRemarkSoonToOpen(); err != nil {
 			log.Println("update remark event soon to open cron : " + err.Error())
 		} else {
@@ -23,7 +23,7 @@ func Init(usecase Usecase) {
 		log.Fatal(err)
 	}
 
-	if _, err := c.AddFunc("@daily", func() {
+	if _, err := c.AddFunc("@every 5m", func() {
 		if err := h.usecase.eventUpdateRemarkOpenToClose(); err != nil {
 			log.Println("update remark event open to close cron : " + err.Error())
 		} else {
@@ -32,7 +32,7 @@ func Init(usecase Usecase) {
 	}); err != nil {
 		log.Fatal(err)
 	}
-	if _, err := c.AddFunc("@daily", func() {
+	if _, err := c.AddFunc("@every 5m", func() {
 		if err := h.usecase.eventUpdateRemarkCloseToOngoing(); err != nil {
 			log.Println("update remark event close to ongoing cron : " + err.Error())
 		} else {
@@ -48,7 +48,7 @@ func Init(usecase Usecase) {
 	//		log.Println("running task remark event update ongoing to done success")
 	//	}
 	//})
-	if _, err := c.AddFunc("@every 1h", func() {
+	if _, err := c.AddFunc("@every 5m", func() {
 		if err := h.usecase.registrationUpdate(); err != nil {
 			log.Println("update status registration user error : " + err.Error())
 		} else {

@@ -24,4 +24,12 @@ var (
 			Name:      "name",
 		},
 	}
+
+	ClubFetchAllOwnerRows = []db.ClubFetchAllOwnerRow{
+		{
+			ID:   uuid.New(),
+			Name: "name",
+			Logo: "https://google.com",
+		},
+	}
 )

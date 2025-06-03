@@ -284,7 +284,7 @@ func (u usecase) FetchParticipant(ctx context.Context, req FetchParticipantParam
 		TotalItem: count,
 		PageSize:  req.PageSize,
 		Page:      req.Page,
-		Data: fetchParticipantResponse{
+		Data: FetchParticipantResponse{
 			TotalPoint:   totalPoint,
 			Participants: result,
 		},
