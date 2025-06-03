@@ -196,6 +196,17 @@ func (u usecase) Login(ctx context.Context, req LoginReq) (statusCode int, respo
 		return http.StatusInternalServerError, response, fmt.Errorf("error in fetch user privilege : %s", err.Error())
 	}
 
+	//Fetch Club
+	clubs, err := u.repository.ClubFetchByUserID(ctx, account.UserID)
+	if err != nil {
+		return http.StatusInternalServerError, response, fmt.Errorf("error in fetch user club : %s", err.Error())
+	}
+
+	owners, err := u.repository.ClubFetchAllOwner(ctx, account.UserID)
+	if err != nil {
+		return http.StatusInternalServerError, response, fmt.Errorf("error in fetch club owners : %s", err.Error())
+	}
+
 	return http.StatusOK, LoginResponse{
 		Data: LoginDataResponse{
 			Name:  account.Name,
@@ -204,8 +215,10 @@ func (u usecase) Login(ctx context.Context, req LoginReq) (statusCode int, respo
 		Token:          token,
 		Role:           account.Role,
 		Privileges:     privileges,
+		Clubs:          clubs,
 		CanParticipate: &account.CanParticipate,
 		UserID:         account.UserID,
+		Owners:         owners,
 	}, nil
 }
 
@@ -275,13 +288,26 @@ func (u usecase) Callback(ctx context.Context, kind string, accessToken string) 
 		}
 	}
 
+	//Fetch Club
+	clubs, err := u.repository.ClubFetchByUserID(ctx, account.UserID)
+	if err != nil {
+		return http.StatusInternalServerError, response, fmt.Errorf("error in fetch user club : %s", err.Error())
+	}
+
+	owners, err := u.repository.ClubFetchAllOwner(ctx, account.UserID)
+	if err != nil {
+		return http.StatusInternalServerError, response, fmt.Errorf("error in fetch club owners : %s", err.Error())
+	}
+
 	return http.StatusOK, LoginResponse{
 		Data:           LoginDataResponse{Name: account.Name, Photo: account.Photo},
 		Token:          token,
 		Role:           account.Role,
 		Privileges:     privileges,
+		Clubs:          clubs,
 		CanParticipate: &account.CanParticipate,
 		UserID:         account.UserID,
+		Owners:         owners,
 	}, nil
 }
 
