@@ -3,6 +3,8 @@ package club_test
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	clubFixtures "github.com/project-ippl-dev/tanding-api/mocks/fixtures/club"
 	"net/http"
 	"testing"
 
@@ -961,6 +963,537 @@ func TestHandler_UpdateInviteApproval(t *testing.T) {
 			assert.Equal(t, testCase.expectedResponse, response.Message)
 		} else {
 			var response, expectedResponse tools.Response
+			expectedResponseBytes, _ := json.Marshal(testCase.expectedResponse)
+			_ = json.Unmarshal(expectedResponseBytes, &expectedResponse)
+			_ = json.Unmarshal(rr.Body.Bytes(), &response)
+
+			assert.Equal(t, expectedResponse, response)
+		}
+	}
+}
+
+func TestHandler_FetchParticipant(t *testing.T) {
+	mock, e := newHandlerMock(t)
+
+	clubHandler := club.NewHandler(mock.mockUsecase, mock.mockJWTClient)
+
+	httpMethod := http.MethodGet
+	path := "/club/:club/participant"
+
+	testCases := []struct {
+		description        string
+		req                testutils.MockHttpRequestParam
+		expectedResponse   interface{}
+		expectedErr        bool
+		expectedStatusCode int
+		testMock           func(c echo.Context, mock handlerMock)
+	}{
+		{
+			description: "bind error",
+			req: testutils.MockHttpRequestParam{
+				HttpMethod: httpMethod,
+				Url:        path,
+				ReqBody:    "invalid-req-body",
+			},
+			expectedResponse:   "code=400, message=Unmarshal type error: expected=club.FetchParticipantParam, got=string, field=, offset=18, internal=json: cannot unmarshal string into Go value of type club.FetchParticipantParam",
+			expectedErr:        true,
+			expectedStatusCode: http.StatusBadRequest,
+			testMock: func(c echo.Context, mock handlerMock) {
+				c.SetPath(path)
+			},
+		},
+		{
+			description: "validation return error",
+			req: testutils.MockHttpRequestParam{
+				HttpMethod: httpMethod,
+				Url:        fmt.Sprintf("%s?sport_id=%s", path, "invalid-sport-id"),
+			},
+			expectedResponse:   "error validation",
+			expectedErr:        true,
+			expectedStatusCode: http.StatusUnprocessableEntity,
+			testMock: func(c echo.Context, mock handlerMock) {
+				c.SetPath(fmt.Sprintf("%s?sport_id=%s", path, "invalid-sport-id"))
+			},
+		},
+		{
+			description: "usecase FetchParticipant return error",
+			req: testutils.MockHttpRequestParam{
+				HttpMethod: httpMethod,
+				Url:        path,
+			},
+			expectedResponse:   "error",
+			expectedErr:        true,
+			expectedStatusCode: http.StatusInternalServerError,
+			testMock: func(c echo.Context, mock handlerMock) {
+				c.SetPath(path)
+				c.SetParamNames("club")
+				c.SetParamValues(uuid.NewString())
+				mock.mockUsecase.EXPECT().FetchParticipant(gomock.Any(), gomock.Any()).Return(tools.Pagination{}, errors.New("error"))
+			},
+		},
+		{
+			description: "success",
+			req: testutils.MockHttpRequestParam{
+				HttpMethod: httpMethod,
+				Url:        path,
+			},
+			expectedResponse:   tools.PaginationGetResponse("fetch participant success", clubFixtures.ClubFetchParticipantResponse),
+			expectedErr:        false,
+			expectedStatusCode: http.StatusOK,
+			testMock: func(c echo.Context, mock handlerMock) {
+				c.SetPath(path)
+				c.SetParamNames("club")
+				c.SetParamValues(uuid.NewString())
+				mock.mockUsecase.EXPECT().FetchParticipant(gomock.Any(), gomock.Any()).Return(clubFixtures.ClubFetchParticipantResponse, nil)
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		rr, httpReq := testutils.MockHttpRequest(t, testCase.req)
+		c := e.NewContext(httpReq, rr)
+		testCase.testMock(c, mock)
+		err := clubHandler.FetchParticipant(c)
+		assert.NoError(t, err)
+		assert.Equal(t, testCase.expectedStatusCode, rr.Code)
+
+		if testCase.expectedErr {
+			var response tools.Response
+			err = json.Unmarshal(rr.Body.Bytes(), &response)
+			assert.NoError(t, err)
+			assert.Equal(t, testCase.expectedResponse, response.Message)
+		} else {
+			var response, expectedResponse tools.PaginationResponse
+			expectedResponseBytes, _ := json.Marshal(testCase.expectedResponse)
+			_ = json.Unmarshal(expectedResponseBytes, &expectedResponse)
+			_ = json.Unmarshal(rr.Body.Bytes(), &response)
+
+			assert.Equal(t, expectedResponse, response)
+		}
+	}
+}
+
+func TestHandler_Handover(t *testing.T) {
+	mock, e := newHandlerMock(t)
+
+	clubHandler := club.NewHandler(mock.mockUsecase, mock.mockJWTClient)
+
+	httpMethod := http.MethodPatch
+	path := "/club/:club/handover"
+
+	validReq := club.HandoverReq{
+		UserID: uuid.NewString(),
+		ClubID: uuid.NewString(),
+	}
+
+	testCases := []struct {
+		description        string
+		req                testutils.MockHttpRequestParam
+		expectedResponse   interface{}
+		expectedErr        bool
+		expectedStatusCode int
+		testMock           func(c echo.Context, mock handlerMock)
+	}{
+		{
+			description: "bind error",
+			req: testutils.MockHttpRequestParam{
+				HttpMethod: httpMethod,
+				Url:        path,
+				ReqBody:    "invalid-req-body",
+			},
+			expectedResponse:   "code=400, message=Unmarshal type error: expected=club.HandoverReq, got=string, field=, offset=18, internal=json: cannot unmarshal string into Go value of type club.HandoverReq",
+			expectedErr:        true,
+			expectedStatusCode: http.StatusBadRequest,
+			testMock: func(c echo.Context, mock handlerMock) {
+				c.SetPath(path)
+			},
+		},
+		{
+			description: "validation return error",
+			req: testutils.MockHttpRequestParam{
+				HttpMethod: httpMethod,
+				Url:        path,
+				ReqBody:    club.HandoverReq{},
+			},
+			expectedResponse:   "error validation",
+			expectedErr:        true,
+			expectedStatusCode: http.StatusUnprocessableEntity,
+			testMock: func(c echo.Context, mock handlerMock) {
+				c.SetPath(path)
+			},
+		},
+		{
+			description: "usecase Handover return error",
+			req: testutils.MockHttpRequestParam{
+				HttpMethod: httpMethod,
+				Url:        path,
+				ReqBody:    validReq,
+			},
+			expectedResponse:   "error",
+			expectedErr:        true,
+			expectedStatusCode: http.StatusInternalServerError,
+			testMock: func(c echo.Context, mock handlerMock) {
+				c.SetPath(path)
+				mock.mockJWTClient.EXPECT().Decode(gomock.Any()).Return(jwtFixtures.DecodedJWT)
+				mock.mockUsecase.EXPECT().Handover(gomock.Any(), gomock.Any(), gomock.Any()).Return(http.StatusInternalServerError, errors.New("error"))
+			},
+		},
+		{
+			description: "success",
+			req: testutils.MockHttpRequestParam{
+				HttpMethod: httpMethod,
+				Url:        path,
+				ReqBody:    validReq,
+			},
+			expectedResponse:   tools.Response{Message: "handover club success"},
+			expectedErr:        false,
+			expectedStatusCode: http.StatusOK,
+			testMock: func(c echo.Context, mock handlerMock) {
+				c.SetPath(path)
+				mock.mockJWTClient.EXPECT().Decode(gomock.Any()).Return(jwtFixtures.DecodedJWT)
+				mock.mockUsecase.EXPECT().Handover(gomock.Any(), gomock.Any(), gomock.Any()).Return(http.StatusOK, nil)
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		rr, httpReq := testutils.MockHttpRequest(t, testCase.req)
+		c := e.NewContext(httpReq, rr)
+		testCase.testMock(c, mock)
+		err := clubHandler.Handover(c)
+		assert.NoError(t, err)
+		assert.Equal(t, testCase.expectedStatusCode, rr.Code)
+
+		if testCase.expectedErr {
+			var response tools.Response
+			err = json.Unmarshal(rr.Body.Bytes(), &response)
+			assert.NoError(t, err)
+			assert.Equal(t, testCase.expectedResponse, response.Message)
+		} else {
+			var response, expectedResponse tools.Response
+			expectedResponseBytes, _ := json.Marshal(testCase.expectedResponse)
+			_ = json.Unmarshal(expectedResponseBytes, &expectedResponse)
+			_ = json.Unmarshal(rr.Body.Bytes(), &response)
+
+			assert.Equal(t, expectedResponse, response)
+		}
+	}
+}
+
+func TestHandler_FetchAll(t *testing.T) {
+	mock, e := newHandlerMock(t)
+
+	clubHandler := club.NewHandler(mock.mockUsecase, mock.mockJWTClient)
+
+	httpMethod := http.MethodGet
+	path := "/club"
+
+	testCases := []struct {
+		description        string
+		req                testutils.MockHttpRequestParam
+		expectedResponse   interface{}
+		expectedErr        bool
+		expectedStatusCode int
+		testMock           func(c echo.Context, mock handlerMock)
+	}{
+		{
+			description: "usecase FetchAll return error",
+			req: testutils.MockHttpRequestParam{
+				HttpMethod: httpMethod,
+				Url:        path,
+			},
+			expectedResponse:   "error",
+			expectedErr:        true,
+			expectedStatusCode: http.StatusInternalServerError,
+			testMock: func(c echo.Context, mock handlerMock) {
+				c.SetPath(path)
+				mock.mockUsecase.EXPECT().FetchAll(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(tools.Pagination{}, errors.New("error"))
+			},
+		},
+		{
+			description: "success",
+			req: testutils.MockHttpRequestParam{
+				HttpMethod: httpMethod,
+				Url:        path,
+			},
+			expectedResponse:   tools.PaginationGetResponse("fetch all club success", clubFixtures.ClubFetchAllResponse),
+			expectedErr:        false,
+			expectedStatusCode: http.StatusOK,
+			testMock: func(c echo.Context, mock handlerMock) {
+				c.SetPath(path)
+				mock.mockUsecase.EXPECT().FetchAll(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(clubFixtures.ClubFetchAllResponse, nil)
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		rr, httpReq := testutils.MockHttpRequest(t, testCase.req)
+		c := e.NewContext(httpReq, rr)
+		testCase.testMock(c, mock)
+		err := clubHandler.FetchAll(c)
+		assert.NoError(t, err)
+		assert.Equal(t, testCase.expectedStatusCode, rr.Code)
+
+		if testCase.expectedErr {
+			var response tools.Response
+			err = json.Unmarshal(rr.Body.Bytes(), &response)
+			assert.NoError(t, err)
+			assert.Equal(t, testCase.expectedResponse, response.Message)
+		} else {
+			var response, expectedResponse tools.ResponseData
+			expectedResponseBytes, _ := json.Marshal(testCase.expectedResponse)
+			_ = json.Unmarshal(expectedResponseBytes, &expectedResponse)
+			_ = json.Unmarshal(rr.Body.Bytes(), &response)
+
+			assert.Equal(t, expectedResponse, response)
+		}
+	}
+}
+
+func TestHandler_FetchOne(t *testing.T) {
+	mock, e := newHandlerMock(t)
+
+	clubHandler := club.NewHandler(mock.mockUsecase, mock.mockJWTClient)
+
+	httpMethod := http.MethodGet
+	path := "/club/:club"
+
+	testCases := []struct {
+		description        string
+		req                testutils.MockHttpRequestParam
+		expectedResponse   interface{}
+		expectedErr        bool
+		expectedStatusCode int
+		testMock           func(c echo.Context, mock handlerMock)
+	}{
+		{
+			description: "invalid club id",
+			req: testutils.MockHttpRequestParam{
+				HttpMethod: httpMethod,
+				Url:        path,
+			},
+			expectedResponse:   "invalid UUID length: 15",
+			expectedErr:        true,
+			expectedStatusCode: http.StatusBadRequest,
+			testMock: func(c echo.Context, mock handlerMock) {
+				c.SetPath(path)
+				c.SetParamNames("club")
+				c.SetParamValues("invalid-club-id")
+			},
+		},
+		{
+			description: "usecase FetchOne return error",
+			req: testutils.MockHttpRequestParam{
+				HttpMethod: httpMethod,
+				Url:        path,
+			},
+			expectedResponse:   "error",
+			expectedErr:        true,
+			expectedStatusCode: http.StatusNotFound,
+			testMock: func(c echo.Context, mock handlerMock) {
+				c.SetPath(path)
+				c.SetParamNames("club")
+				c.SetParamValues(uuid.NewString())
+				mock.mockJWTClient.EXPECT().Decode(gomock.Any()).Return(jwtFixtures.DecodedJWT)
+				mock.mockUsecase.EXPECT().FetchOne(gomock.Any(), gomock.Any(), gomock.Any()).Return(club.FetchOneResponse{}, errors.New("error"))
+			},
+		},
+		{
+			description: "success",
+			req: testutils.MockHttpRequestParam{
+				HttpMethod: httpMethod,
+				Url:        path,
+			},
+			expectedResponse:   tools.ResponseData{Message: "fetch one club success", Data: clubFixtures.ClubFetchOneResponse},
+			expectedErr:        false,
+			expectedStatusCode: http.StatusOK,
+			testMock: func(c echo.Context, mock handlerMock) {
+				c.SetPath(path)
+				c.SetParamNames("club")
+				c.SetParamValues(uuid.NewString())
+				mock.mockJWTClient.EXPECT().Decode(gomock.Any()).Return(jwtFixtures.DecodedJWT)
+				mock.mockUsecase.EXPECT().FetchOne(gomock.Any(), gomock.Any(), gomock.Any()).Return(clubFixtures.ClubFetchOneResponse, nil)
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		rr, httpReq := testutils.MockHttpRequest(t, testCase.req)
+		c := e.NewContext(httpReq, rr)
+		testCase.testMock(c, mock)
+		err := clubHandler.FetchOne(c)
+		assert.NoError(t, err)
+		assert.Equal(t, testCase.expectedStatusCode, rr.Code)
+
+		if testCase.expectedErr {
+			var response tools.Response
+			err = json.Unmarshal(rr.Body.Bytes(), &response)
+			assert.NoError(t, err)
+			assert.Equal(t, testCase.expectedResponse, response.Message)
+		} else {
+			var response, expectedResponse tools.ResponseData
+			expectedResponseBytes, _ := json.Marshal(testCase.expectedResponse)
+			_ = json.Unmarshal(expectedResponseBytes, &expectedResponse)
+			_ = json.Unmarshal(rr.Body.Bytes(), &response)
+
+			assert.Equal(t, expectedResponse, response)
+		}
+	}
+}
+
+func TestHandler_FetchOwner(t *testing.T) {
+	mock, e := newHandlerMock(t)
+
+	clubHandler := club.NewHandler(mock.mockUsecase, mock.mockJWTClient)
+
+	httpMethod := http.MethodGet
+	path := "/club/owner"
+
+	testCases := []struct {
+		description        string
+		req                testutils.MockHttpRequestParam
+		expectedResponse   interface{}
+		expectedErr        bool
+		expectedStatusCode int
+		testMock           func(c echo.Context, mock handlerMock)
+	}{
+		{
+			description: "usecase FetchOwner return error",
+			req: testutils.MockHttpRequestParam{
+				HttpMethod: httpMethod,
+				Url:        path,
+			},
+			expectedResponse:   "error",
+			expectedErr:        true,
+			expectedStatusCode: http.StatusNotFound,
+			testMock: func(c echo.Context, mock handlerMock) {
+				c.SetPath(path)
+				mock.mockJWTClient.EXPECT().Decode(gomock.Any()).Return(jwtFixtures.DecodedJWT)
+				mock.mockUsecase.EXPECT().FetchOwner(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
+			},
+		},
+		{
+			description: "success",
+			req: testutils.MockHttpRequestParam{
+				HttpMethod: httpMethod,
+				Url:        path,
+			},
+			expectedResponse:   tools.ResponseData{Message: "fetch club owner by specific id success", Data: dbFixtures.ClubFetchAllOwnerRows},
+			expectedErr:        false,
+			expectedStatusCode: http.StatusOK,
+			testMock: func(c echo.Context, mock handlerMock) {
+				c.SetPath(path)
+				mock.mockJWTClient.EXPECT().Decode(gomock.Any()).Return(jwtFixtures.DecodedJWT)
+				mock.mockUsecase.EXPECT().FetchOwner(gomock.Any(), gomock.Any()).Return(dbFixtures.ClubFetchAllOwnerRows, nil)
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		rr, httpReq := testutils.MockHttpRequest(t, testCase.req)
+		c := e.NewContext(httpReq, rr)
+		testCase.testMock(c, mock)
+		err := clubHandler.FetchOwner(c)
+		assert.NoError(t, err)
+		assert.Equal(t, testCase.expectedStatusCode, rr.Code)
+
+		if testCase.expectedErr {
+			var response tools.Response
+			err = json.Unmarshal(rr.Body.Bytes(), &response)
+			assert.NoError(t, err)
+			assert.Equal(t, testCase.expectedResponse, response.Message)
+		} else {
+			var response, expectedResponse tools.ResponseData
+			expectedResponseBytes, _ := json.Marshal(testCase.expectedResponse)
+			_ = json.Unmarshal(expectedResponseBytes, &expectedResponse)
+			_ = json.Unmarshal(rr.Body.Bytes(), &response)
+
+			assert.Equal(t, expectedResponse, response)
+		}
+	}
+}
+
+func TestHandler_Kick(t *testing.T) {
+	mock, e := newHandlerMock(t)
+
+	clubHandler := club.NewHandler(mock.mockUsecase, mock.mockJWTClient)
+
+	httpMethod := http.MethodPatch
+	path := "/club/:club/participant/:participant/kick"
+
+	testCases := []struct {
+		description        string
+		req                testutils.MockHttpRequestParam
+		expectedResponse   interface{}
+		expectedErr        bool
+		expectedStatusCode int
+		testMock           func(c echo.Context, mock handlerMock)
+	}{
+		{
+			description: "bind error",
+			req: testutils.MockHttpRequestParam{
+				HttpMethod: httpMethod,
+				Url:        path,
+				ReqBody:    "invalid-req-body",
+			},
+			expectedResponse:   "code=400, message=Unmarshal type error: expected=club.KickParams, got=string, field=, offset=18, internal=json: cannot unmarshal string into Go value of type club.KickParams",
+			expectedErr:        true,
+			expectedStatusCode: http.StatusBadRequest,
+			testMock: func(c echo.Context, mock handlerMock) {
+				c.SetPath(path)
+			},
+		},
+		{
+			description: "usecase Kick return error",
+			req: testutils.MockHttpRequestParam{
+				HttpMethod: httpMethod,
+				Url:        path,
+			},
+			expectedResponse:   "error",
+			expectedErr:        true,
+			expectedStatusCode: http.StatusInternalServerError,
+			testMock: func(c echo.Context, mock handlerMock) {
+				c.SetPath(path)
+				c.SetParamNames("club", "participant")
+				c.SetParamValues(uuid.NewString(), "1")
+				mock.mockJWTClient.EXPECT().Decode(gomock.Any()).Return(jwtFixtures.DecodedJWT)
+				mock.mockUsecase.EXPECT().Kick(gomock.Any(), gomock.Any(), gomock.Any()).Return(http.StatusInternalServerError, errors.New("error"))
+			},
+		},
+		{
+			description: "success",
+			req: testutils.MockHttpRequestParam{
+				HttpMethod: httpMethod,
+				Url:        path,
+			},
+			expectedResponse:   tools.Response{Message: "kick participant success"},
+			expectedErr:        false,
+			expectedStatusCode: http.StatusOK,
+			testMock: func(c echo.Context, mock handlerMock) {
+				c.SetPath(path)
+				c.SetParamNames("club", "participant")
+				c.SetParamValues(uuid.NewString(), "1")
+				mock.mockJWTClient.EXPECT().Decode(gomock.Any()).Return(jwtFixtures.DecodedJWT)
+				mock.mockUsecase.EXPECT().Kick(gomock.Any(), gomock.Any(), gomock.Any()).Return(http.StatusOK, nil)
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		rr, httpReq := testutils.MockHttpRequest(t, testCase.req)
+		c := e.NewContext(httpReq, rr)
+		testCase.testMock(c, mock)
+		err := clubHandler.Kick(c)
+		assert.NoError(t, err)
+		assert.Equal(t, testCase.expectedStatusCode, rr.Code)
+
+		if testCase.expectedErr {
+			var response tools.Response
+			err = json.Unmarshal(rr.Body.Bytes(), &response)
+			assert.NoError(t, err)
+			assert.Equal(t, testCase.expectedResponse, response.Message)
+		} else {
+			var response, expectedResponse tools.ResponseData
 			expectedResponseBytes, _ := json.Marshal(testCase.expectedResponse)
 			_ = json.Unmarshal(expectedResponseBytes, &expectedResponse)
 			_ = json.Unmarshal(rr.Body.Bytes(), &response)

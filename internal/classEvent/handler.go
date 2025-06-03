@@ -98,7 +98,7 @@ func (h Handler) Update(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
-	var req updateReq
+	var req UpdateReq
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}

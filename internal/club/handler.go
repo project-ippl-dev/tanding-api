@@ -211,7 +211,7 @@ func (h Handler) FetchParticipant(c echo.Context) error {
 func (h Handler) Handover(c echo.Context) error {
 	var req HandoverReq
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusNotFound, tools.Response{Message: err.Error()})
+		return c.JSON(http.StatusBadRequest, tools.Response{Message: err.Error()})
 	}
 	if err := req.Validate(); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, tools.ResponseValidation{Message: "error validation", Errors: err.Error()})

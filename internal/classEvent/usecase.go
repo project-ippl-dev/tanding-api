@@ -16,7 +16,7 @@ type Usecase interface {
 	Assign(ctx context.Context, userID string, req Request, eventID uuid.UUID) error
 	Detach(ctx context.Context, userID string, eventID uuid.UUID, classID uuid.UUID) error
 	FetchAll(ctx context.Context, userID string, eventID uuid.UUID) ([]db.ClassEventFetchAllRow, error)
-	Update(ctx context.Context, req updateReq, userID string, eventID uuid.UUID, classID uuid.UUID) error
+	Update(ctx context.Context, req UpdateReq, userID string, eventID uuid.UUID, classID uuid.UUID) error
 }
 
 type usecase struct {
@@ -90,7 +90,7 @@ func (u usecase) FetchAll(ctx context.Context, userID string, eventID uuid.UUID)
 	})
 }
 
-func (u usecase) Update(ctx context.Context, req updateReq, userID string, eventID uuid.UUID, classID uuid.UUID) error {
+func (u usecase) Update(ctx context.Context, req UpdateReq, userID string, eventID uuid.UUID, classID uuid.UUID) error {
 	classEventID, err := u.repository.ClassEventCheckOne(ctx, db.ClassEventCheckOneParams{
 		ID:      classID,
 		EventID: eventID,
