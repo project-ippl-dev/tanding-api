@@ -172,7 +172,7 @@ type fetchAllDBParams struct {
 	Offset int32 `json:"offset"`
 }
 
-type fetchAllRow struct {
+type FetchAllRow struct {
 	ID           uuid.UUID                  `json:"id"`
 	ClassEventID uuid.UUID                  `json:"class_event_id"`
 	ClassName    string                     `json:"class_name"`
@@ -200,7 +200,7 @@ func (r *RawRepository) setQueryStatus(arg fetchQueryParams) string {
 	return strings.Join(data, "-")
 }
 
-func (r *RawRepository) EventRegistrationFetchAll(ctx context.Context, arg fetchAllDBParams) ([]fetchAllRow, error) {
+func (r *RawRepository) EventRegistrationFetchAll(ctx context.Context, arg fetchAllDBParams) ([]FetchAllRow, error) {
 	var rows *sql.Rows
 	status := r.setQueryStatus(arg.fetchQueryParams)
 	switch status {
@@ -335,9 +335,9 @@ func (r *RawRepository) EventRegistrationFetchAll(ctx context.Context, arg fetch
 	}
 
 	defer rows.Close()
-	items := []fetchAllRow{}
+	items := []FetchAllRow{}
 	for rows.Next() {
-		var i fetchAllRow
+		var i FetchAllRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.ClassName,
