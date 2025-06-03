@@ -25,3 +25,12 @@ func NewMockResponseClassEventFetchOneRow(mockReq MockResponseClassEventFetchOne
 	}).AddRow(uuid.NewString(), string(mockReq.MatchType), mockReq.IsBracketGenerate, mockReq.IsBracketLock, mockReq.IsScoreLock, 1000, mockReq.RuleMale, mockReq.RuleFemale, mockReq.RuleTotal, eventFixtures.EventID.String(), mockReq.MatchIndex)
 
 }
+
+var (
+	ClassEventFetchAllRows = []db.ClassEventFetchAllRow{
+		{
+			ID:        uuid.New(),
+			ClassName: "class event name",
+		},
+	}
+)

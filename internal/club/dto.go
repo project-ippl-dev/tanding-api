@@ -122,7 +122,7 @@ type FetchAllResponse struct {
 	Sports []db.ClubSportFetchByClubIDRow `json:"sports"`
 }
 
-type fetchParticipantResponse struct {
+type FetchParticipantResponse struct {
 	TotalPoint   int64                 `json:"total_point"`
 	Participants []FetchParticipantRow `json:"participants"`
 }

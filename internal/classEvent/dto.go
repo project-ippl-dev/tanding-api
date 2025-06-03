@@ -27,11 +27,11 @@ func (r RequestData) Validate() error {
 	)
 }
 
-type updateReq struct {
+type UpdateReq struct {
 	Price int32 `json:"price"`
 }
 
-func (u updateReq) Validate() error {
+func (u UpdateReq) Validate() error {
 	return validation.ValidateStruct(&u,
 		validation.Field(&u.Price, validation.Min(0)),
 	)
