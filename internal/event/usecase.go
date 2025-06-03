@@ -93,7 +93,8 @@ func (u usecase) Store(ctx context.Context, req Request, decoded tools.JWT) (sta
 		Open:         open,
 		Remark:       remark,
 		Status: sql.NullBool{
-			Bool: true,
+			Bool:  true,
+			Valid: true,
 		},
 	})
 	if err != nil {
